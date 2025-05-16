@@ -1,0 +1,1983 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "UTFPets API Documentation",
+        "description": "API para gerenciamento de pets e suas refeições",
+        "contact": {
+            "email": "utfpets@example.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080",
+            "description": "Local"
+        }
+    ],
+    "paths": {
+        "/api/auth/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Registra um novo usuário",
+                "description": "Cria uma nova conta de usuário e retorna o token JWT",
+                "operationId": "d764dd091cc4494ae0baf360b03319f3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Nome completo do usuário",
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "description": "Email único do usuário",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Senha com mínimo de 8 caracteres",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Confirmação da senha",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuário registrado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Registro realizado com sucesso"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-20T10:00:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-20T10:00:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "authorization": {
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erros de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O email já está em uso"
+                                                    }
+                                                },
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A senha deve ter pelo menos 8 caracteres"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Realiza login do usuário",
+                "description": "Autentica o usuário e retorna o token JWT",
+                "operationId": "8dcb70df1020986038d098cc08d05dae",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Email do usuário",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "description": "Senha do usuário",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login realizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login realizado com sucesso"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-20T10:00:00Z"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2024-03-20T10:00:00Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "authorization": {
+                                            "properties": {
+                                                "token": {
+                                                    "type": "string",
+                                                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "bearer"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "E-mail ou senha inválidos"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erros de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo email é obrigatório"
+                                                    }
+                                                },
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo senha é obrigatório"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Realiza logout do usuário",
+                "description": "Invalida o token JWT atual",
+                "operationId": "69281b12abb272c76871f19cb17ca563",
+                "responses": {
+                    "200": {
+                        "description": "Logout realizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logout realizado com sucesso"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token inválido ou expirado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Retorna os dados do usuário autenticado",
+                "operationId": "b9abb1a7a74670a19c215c2c133f14d8",
+                "responses": {
+                    "200": {
+                        "description": "Dados do usuário autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "John Doe"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "example": "john@example.com"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Token inválido ou expirado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pets/{pet_id}/meals": {
+            "get": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Lista todas as refeições de um pet",
+                "description": "Retorna uma lista de todas as refeições agendadas para um pet específico, ordenadas por data",
+                "operationId": "839c7e74cb00d02458861aa82088052b",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de refeições",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Meal"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pet não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet não encontrado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Cria uma nova refeição para um pet",
+                "description": "Agenda uma nova refeição para um pet específico",
+                "operationId": "19bd364278a9b0d973e089a02449193a",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "food_type",
+                                    "quantity",
+                                    "unit",
+                                    "scheduled_for"
+                                ],
+                                "properties": {
+                                    "food_type": {
+                                        "description": "Tipo de alimento",
+                                        "type": "string",
+                                        "example": "Ração Premium"
+                                    },
+                                    "quantity": {
+                                        "description": "Quantidade do alimento",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "unit": {
+                                        "description": "Unidade de medida",
+                                        "type": "string",
+                                        "example": "g"
+                                    },
+                                    "scheduled_for": {
+                                        "description": "Data e hora agendada",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-05-17T08:00:00Z"
+                                    },
+                                    "notes": {
+                                        "description": "Observações sobre a refeição",
+                                        "type": "string",
+                                        "example": "Refeição matinal",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Refeição criada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Meal"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erros de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "properties": {
+                                                "food_type": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O tipo de alimento é obrigatório"
+                                                    }
+                                                },
+                                                "quantity": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A quantidade é obrigatória"
+                                                    }
+                                                },
+                                                "unit": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A unidade de medida é obrigatória"
+                                                    }
+                                                },
+                                                "scheduled_for": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A data e hora são obrigatórias"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pet não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet não encontrado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pets/{pet_id}/meals/{meal_id}": {
+            "get": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Retorna os detalhes de uma refeição",
+                "description": "Retorna informações detalhadas de uma refeição específica",
+                "operationId": "446b74d1aab5b04cd3e126f851dfe00f",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "meal_id",
+                        "in": "path",
+                        "description": "ID da refeição",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes da refeição",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Meal"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Refeição não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição não encontrada"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Atualiza uma refeição",
+                "description": "Atualiza as informações de uma refeição existente",
+                "operationId": "94816be126951e6cf4805de443e70c1c",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "meal_id",
+                        "in": "path",
+                        "description": "ID da refeição",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "food_type",
+                                    "quantity",
+                                    "unit",
+                                    "scheduled_for"
+                                ],
+                                "properties": {
+                                    "food_type": {
+                                        "description": "Tipo de alimento",
+                                        "type": "string",
+                                        "example": "Ração Premium"
+                                    },
+                                    "quantity": {
+                                        "description": "Quantidade do alimento",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 90
+                                    },
+                                    "unit": {
+                                        "description": "Unidade de medida",
+                                        "type": "string",
+                                        "example": "g"
+                                    },
+                                    "scheduled_for": {
+                                        "description": "Data e hora agendada",
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-05-17T08:00:00Z"
+                                    },
+                                    "notes": {
+                                        "description": "Observações sobre a refeição",
+                                        "type": "string",
+                                        "example": "Alteração de quantidade",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Refeição atualizada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição atualizada com sucesso"
+                                        },
+                                        "meal": {
+                                            "$ref": "#/components/schemas/Meal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erros de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "properties": {
+                                                "food_type": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O tipo de alimento é obrigatório"
+                                                    }
+                                                },
+                                                "quantity": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A quantidade é obrigatória"
+                                                    }
+                                                },
+                                                "unit": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A unidade de medida é obrigatória"
+                                                    }
+                                                },
+                                                "scheduled_for": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "A data e hora são obrigatórias"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Refeição não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição não encontrada"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Remove uma refeição",
+                "description": "Remove uma refeição existente (soft delete)",
+                "operationId": "165a53d12fc3cc8d4301d345f7cfabfd",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "meal_id",
+                        "in": "path",
+                        "description": "ID da refeição",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Refeição removida com sucesso"
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Refeição não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição não encontrada"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pets/{pet_id}/meals/{meal_id}/consume": {
+            "post": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Marca uma refeição como consumida",
+                "description": "Registra que uma refeição foi consumida pelo pet",
+                "operationId": "5e069ef8cb38214bcc1b150a977a3321",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "meal_id",
+                        "in": "path",
+                        "description": "ID da refeição",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Refeição marcada como consumida",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição marcada como consumida"
+                                        },
+                                        "meal": {
+                                            "$ref": "#/components/schemas/Meal"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Refeição já consumida",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Esta refeição já foi consumida"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Refeição não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição não encontrada"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pets": {
+            "get": {
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Lista todos os pets do usuário",
+                "description": "Retorna uma lista de todos os pets cadastrados pelo usuário autenticado",
+                "operationId": "7b44ba1ad8a38f7865a2845fa9ebbfe3",
+                "responses": {
+                    "200": {
+                        "description": "Lista de pets",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Pet"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Cria um novo pet",
+                "description": "Cadastra um novo pet para o usuário autenticado",
+                "operationId": "9523721805529edb47b46332d56f2826",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "species",
+                                    "photo"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Nome do pet",
+                                        "type": "string",
+                                        "example": "Rex"
+                                    },
+                                    "species": {
+                                        "description": "Espécie do pet",
+                                        "type": "string",
+                                        "example": "Cachorro"
+                                    },
+                                    "breed": {
+                                        "description": "Raça do pet",
+                                        "type": "string",
+                                        "example": "Labrador",
+                                        "nullable": true
+                                    },
+                                    "birth_date": {
+                                        "description": "Data de nascimento",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2020-01-01",
+                                        "nullable": true
+                                    },
+                                    "weight": {
+                                        "description": "Peso em kg",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25.5,
+                                        "nullable": true
+                                    },
+                                    "photo": {
+                                        "description": "Foto do pet",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "notes": {
+                                        "description": "Observações sobre o pet",
+                                        "type": "string",
+                                        "example": "Cachorro muito dócil",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pet criado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet cadastrado com sucesso"
+                                        },
+                                        "pet": {
+                                            "$ref": "#/components/schemas/Pet"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erros de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo nome é obrigatório"
+                                                    }
+                                                },
+                                                "species": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo espécie é obrigatório"
+                                                    }
+                                                },
+                                                "photo": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "O campo foto é obrigatório"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pets/{id}": {
+            "get": {
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Retorna os detalhes de um pet",
+                "description": "Retorna informações detalhadas de um pet específico, incluindo suas refeições",
+                "operationId": "25e25b195a59c4b940a33f9961ad6eed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do pet",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Pet"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pet não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet não encontrado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Atualiza um pet",
+                "description": "Atualiza as informações de um pet existente",
+                "operationId": "652be7eab297dff87f093d849bdecb12",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Nome do pet",
+                                        "type": "string",
+                                        "example": "Rex"
+                                    },
+                                    "species": {
+                                        "description": "Espécie do pet",
+                                        "type": "string",
+                                        "example": "Cachorro"
+                                    },
+                                    "breed": {
+                                        "description": "Raça do pet",
+                                        "type": "string",
+                                        "example": "Labrador",
+                                        "nullable": true
+                                    },
+                                    "birth_date": {
+                                        "description": "Data de nascimento",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2020-01-01",
+                                        "nullable": true
+                                    },
+                                    "weight": {
+                                        "description": "Peso em kg",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25.5,
+                                        "nullable": true
+                                    },
+                                    "photo": {
+                                        "description": "Nova foto do pet",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "notes": {
+                                        "description": "Observações sobre o pet",
+                                        "type": "string",
+                                        "example": "Cachorro muito dócil",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        },
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Nome do pet",
+                                        "type": "string",
+                                        "example": "Rex"
+                                    },
+                                    "species": {
+                                        "description": "Espécie do pet",
+                                        "type": "string",
+                                        "example": "Cachorro"
+                                    },
+                                    "breed": {
+                                        "description": "Raça do pet",
+                                        "type": "string",
+                                        "example": "Labrador",
+                                        "nullable": true
+                                    },
+                                    "birth_date": {
+                                        "description": "Data de nascimento",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2020-01-01",
+                                        "nullable": true
+                                    },
+                                    "weight": {
+                                        "description": "Peso em kg",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25.5,
+                                        "nullable": true
+                                    },
+                                    "notes": {
+                                        "description": "Observações sobre o pet",
+                                        "type": "string",
+                                        "example": "Cachorro muito dócil",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pet atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet atualizado com sucesso"
+                                        },
+                                        "pet": {
+                                            "$ref": "#/components/schemas/Pet"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erros de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pet não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet não encontrado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pets"
+                ],
+                "summary": "Remove um pet",
+                "description": "Remove um pet existente (soft delete)",
+                "operationId": "dab25348cae9362e48ade0e7cf34c465",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Pet removido com sucesso"
+                    },
+                    "404": {
+                        "description": "Pet não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Pet não encontrado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Meal": {
+                "title": "Meal",
+                "description": "Modelo de Refeição",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "pet_id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "food_type": {
+                        "type": "string",
+                        "example": "Ração Premium"
+                    },
+                    "quantity": {
+                        "type": "number",
+                        "format": "float",
+                        "example": "100.5"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "example": "g"
+                    },
+                    "scheduled_for": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-21 08:00:00"
+                    },
+                    "consumed_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-21 08:05:00",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Refeição da manhã",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-20 10:00:00"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-20 10:00:00"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-20 10:00:00",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "Meal"
+                }
+            },
+            "Pet": {
+                "title": "Pet",
+                "description": "Modelo de Pet",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Rex"
+                    },
+                    "species": {
+                        "type": "string",
+                        "example": "Cachorro"
+                    },
+                    "breed": {
+                        "type": "string",
+                        "example": "Labrador",
+                        "nullable": true
+                    },
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2020-01-01",
+                        "nullable": true
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "float",
+                        "example": "25.5",
+                        "nullable": true
+                    },
+                    "photo": {
+                        "type": "string",
+                        "example": "https://res.cloudinary.com/demo/image/upload/v1/pets/dog.jpg",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Cachorro muito dócil",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-20 10:00:00"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-20 10:00:00"
+                    },
+                    "deleted_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-20 10:00:00",
+                        "nullable": true
+                    }
+                },
+                "type": "object",
+                "xml": {
+                    "name": "Pet"
+                }
+            },
+            "MealRequest": {
+                "title": "Meal Request",
+                "description": "Requisição para criação/atualização de Refeição",
+                "required": [
+                    "food_type",
+                    "quantity",
+                    "unit",
+                    "scheduled_for"
+                ],
+                "properties": {
+                    "food_type": {
+                        "type": "string",
+                        "example": "Ração Premium"
+                    },
+                    "quantity": {
+                        "type": "number",
+                        "format": "float",
+                        "example": "100.5"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "example": "g"
+                    },
+                    "scheduled_for": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-21 08:00:00"
+                    },
+                    "consumed_at": {
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2024-03-21 08:05:00",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Refeição da manhã",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PetRequest": {
+                "title": "Pet Request",
+                "description": "Requisição para criação/atualização de Pet",
+                "required": [
+                    "name",
+                    "species"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Rex"
+                    },
+                    "species": {
+                        "type": "string",
+                        "example": "Cachorro"
+                    },
+                    "breed": {
+                        "type": "string",
+                        "example": "Labrador",
+                        "nullable": true
+                    },
+                    "birth_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2020-01-01",
+                        "nullable": true
+                    },
+                    "weight": {
+                        "type": "number",
+                        "format": "float",
+                        "example": "25.5",
+                        "nullable": true
+                    },
+                    "photo": {
+                        "type": "string",
+                        "format": "binary",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Cachorro muito dócil",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Autenticação de usuários via JWT"
+        },
+        {
+            "name": "Meals",
+            "description": "Gerenciamento de refeições dos pets"
+        },
+        {
+            "name": "Pets",
+            "description": "API Endpoints de gerenciamento de pets"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ]
+}
