@@ -120,7 +120,7 @@ A API oferece os seguintes endpoints principais:
 - `GET /api/pets` - Lista todos os pets do usuário
 - `POST /api/pets` - Cadastra um novo pet
 - `GET /api/pets/{id}` - Obtém detalhes de um pet específico
-- `PUT /api/pets/{id}` - Atualiza informações de um pet
+- `POST /api/pets/{id}` - Atualiza informações de um pet
 - `DELETE /api/pets/{id}` - Remove um pet
 
 ### Refeições

@@ -12,6 +12,9 @@
         {
             "url": "http://localhost:8080",
             "description": "Local"
+        },
+        {
+            "url": "/api/v1"
         }
     ],
     "paths": {
@@ -50,13 +53,13 @@
                                         "description": "Senha com mínimo de 8 caracteres",
                                         "type": "string",
                                         "format": "password",
-                                        "example": "secret123"
+                                        "example": "Password@123"
                                     },
                                     "password_confirmation": {
                                         "description": "Confirmação da senha",
                                         "type": "string",
                                         "format": "password",
-                                        "example": "secret123"
+                                        "example": "Password@123"
                                     }
                                 },
                                 "type": "object"
@@ -183,7 +186,7 @@
                                         "description": "Senha do usuário",
                                         "type": "string",
                                         "format": "password",
-                                        "example": "secret123"
+                                        "example": "Password@123"
                                     }
                                 },
                                 "type": "object"
@@ -412,14 +415,14 @@
                 ]
             }
         },
-        "/api/pets/{pet_id}/meals": {
+        "/api/v1/pets/{pet_id}/meals": {
             "get": {
                 "tags": [
                     "Meals"
                 ],
                 "summary": "Lista todas as refeições de um pet",
                 "description": "Retorna uma lista de todas as refeições agendadas para um pet específico, ordenadas por data",
-                "operationId": "839c7e74cb00d02458861aa82088052b",
+                "operationId": "6b311d20c3095f6336262335407bd254",
                 "parameters": [
                     {
                         "name": "pet_id",
@@ -506,7 +509,7 @@
                 ],
                 "summary": "Cria uma nova refeição para um pet",
                 "description": "Agenda uma nova refeição para um pet específico",
-                "operationId": "19bd364278a9b0d973e089a02449193a",
+                "operationId": "dd9f01d9893ca0a7a3f05ea8bc2d09b6",
                 "parameters": [
                     {
                         "name": "pet_id",
@@ -676,14 +679,14 @@
                 ]
             }
         },
-        "/api/pets/{pet_id}/meals/{meal_id}": {
+        "/api/v1/pets/{pet_id}/meals/{meal_id}": {
             "get": {
                 "tags": [
                     "Meals"
                 ],
                 "summary": "Retorna os detalhes de uma refeição",
                 "description": "Retorna informações detalhadas de uma refeição específica",
-                "operationId": "446b74d1aab5b04cd3e126f851dfe00f",
+                "operationId": "5355fdbdc00172af83c911b0496a6740",
                 "parameters": [
                     {
                         "name": "pet_id",
@@ -770,13 +773,99 @@
                     }
                 ]
             },
-            "put": {
+            "delete": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Remove uma refeição",
+                "description": "Remove uma refeição existente (soft delete)",
+                "operationId": "1b8830f9a1fabeeccb6c8c5acdf1a1a8",
+                "parameters": [
+                    {
+                        "name": "pet_id",
+                        "in": "path",
+                        "description": "ID do pet",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "meal_id",
+                        "in": "path",
+                        "description": "ID da refeição",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Refeição removida com sucesso"
+                    },
+                    "403": {
+                        "description": "Acesso negado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Refeição não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Refeição não encontrada"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autorizado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autorizado"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
                 "tags": [
                     "Meals"
                 ],
                 "summary": "Atualiza uma refeição",
                 "description": "Atualiza as informações de uma refeição existente",
-                "operationId": "94816be126951e6cf4805de443e70c1c",
+                "operationId": "a0304e65c4a40d213721ebe73fc63a17",
                 "parameters": [
                     {
                         "name": "pet_id",
@@ -962,102 +1051,16 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "delete": {
-                "tags": [
-                    "Meals"
-                ],
-                "summary": "Remove uma refeição",
-                "description": "Remove uma refeição existente (soft delete)",
-                "operationId": "165a53d12fc3cc8d4301d345f7cfabfd",
-                "parameters": [
-                    {
-                        "name": "pet_id",
-                        "in": "path",
-                        "description": "ID do pet",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "meal_id",
-                        "in": "path",
-                        "description": "ID da refeição",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Refeição removida com sucesso"
-                    },
-                    "403": {
-                        "description": "Acesso negado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Unauthorized"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Refeição não encontrada",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Refeição não encontrada"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Não autorizado",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Não autorizado"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
-        "/api/pets/{pet_id}/meals/{meal_id}/consume": {
+        "/api/v1/pets/{pet_id}/meals/{meal_id}/consume": {
             "post": {
                 "tags": [
                     "Meals"
                 ],
                 "summary": "Marca uma refeição como consumida",
                 "description": "Registra que uma refeição foi consumida pelo pet",
-                "operationId": "5e069ef8cb38214bcc1b150a977a3321",
+                "operationId": "ebf99701c84cadcd297bc3967a746353",
                 "parameters": [
                     {
                         "name": "pet_id",
@@ -1170,14 +1173,14 @@
                 ]
             }
         },
-        "/api/pets": {
+        "/api/v1/pets": {
             "get": {
                 "tags": [
                     "Pets"
                 ],
                 "summary": "Lista todos os pets do usuário",
                 "description": "Retorna uma lista de todos os pets cadastrados pelo usuário autenticado",
-                "operationId": "7b44ba1ad8a38f7865a2845fa9ebbfe3",
+                "operationId": "fec1c3fc3b7ca9c3aee8c141acb59c6c",
                 "responses": {
                     "200": {
                         "description": "Lista de pets",
@@ -1221,7 +1224,7 @@
                 ],
                 "summary": "Cria um novo pet",
                 "description": "Cadastra um novo pet para o usuário autenticado",
-                "operationId": "9523721805529edb47b46332d56f2826",
+                "operationId": "a931458cc75b6b424cc10814321b7bee",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1362,14 +1365,14 @@
                 ]
             }
         },
-        "/api/pets/{id}": {
+        "/api/v1/pets/{id}": {
             "get": {
                 "tags": [
                     "Pets"
                 ],
                 "summary": "Retorna os detalhes de um pet",
                 "description": "Retorna informações detalhadas de um pet específico, incluindo suas refeições",
-                "operationId": "25e25b195a59c4b940a33f9961ad6eed",
+                "operationId": "875fe61fdc2cdba75d322d145e20acfd",
                 "parameters": [
                     {
                         "name": "id",
@@ -1447,13 +1450,13 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Pets"
                 ],
                 "summary": "Atualiza um pet",
                 "description": "Atualiza as informações de um pet existente",
-                "operationId": "652be7eab297dff87f093d849bdecb12",
+                "operationId": "cb0f0a11d238fe59c15f1d1a692d5717",
                 "parameters": [
                     {
                         "name": "id",
@@ -1502,52 +1505,9 @@
                                         "nullable": true
                                     },
                                     "photo": {
-                                        "description": "Nova foto do pet",
+                                        "description": "Foto do pet",
                                         "type": "file",
                                         "format": "binary"
-                                    },
-                                    "notes": {
-                                        "description": "Observações sobre o pet",
-                                        "type": "string",
-                                        "example": "Cachorro muito dócil",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        },
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "name": {
-                                        "description": "Nome do pet",
-                                        "type": "string",
-                                        "example": "Rex"
-                                    },
-                                    "species": {
-                                        "description": "Espécie do pet",
-                                        "type": "string",
-                                        "example": "Cachorro"
-                                    },
-                                    "breed": {
-                                        "description": "Raça do pet",
-                                        "type": "string",
-                                        "example": "Labrador",
-                                        "nullable": true
-                                    },
-                                    "birth_date": {
-                                        "description": "Data de nascimento",
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2020-01-01",
-                                        "nullable": true
-                                    },
-                                    "weight": {
-                                        "description": "Peso em kg",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 25.5,
-                                        "nullable": true
                                     },
                                     "notes": {
                                         "description": "Observações sobre o pet",
@@ -1657,7 +1617,7 @@
                 ],
                 "summary": "Remove um pet",
                 "description": "Remove um pet existente (soft delete)",
-                "operationId": "dab25348cae9362e48ade0e7cf34c465",
+                "operationId": "313133d4674a667ea5896cd35b28adee",
                 "parameters": [
                     {
                         "name": "id",

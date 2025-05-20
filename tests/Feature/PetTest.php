@@ -33,25 +33,39 @@ class PetTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->getJson('/api/pets');
+        ])->getJson('/api/v1/pets');
 
         $response->assertStatus(200)
-            ->assertJsonCount(3)
             ->assertJsonStructure([
-                '*' => [
-                    'id',
-                    'user_id',
-                    'name',
-                    'species',
-                    'breed',
-                    'birth_date',
-                    'weight',
-                    'photo',
-                    'notes',
-                    'created_at',
-                    'updated_at'
-                ]
-            ]);
+                'current_page',
+                'data' => [
+                    '*' => [
+                        'id',
+                        'user_id',
+                        'name',
+                        'species',
+                        'breed',
+                        'birth_date',
+                        'weight',
+                        'photo',
+                        'notes',
+                        'created_at',
+                        'updated_at'
+                    ]
+                ],
+                'first_page_url',
+                'from',
+                'last_page',
+                'last_page_url',
+                'links',
+                'next_page_url',
+                'path',
+                'per_page',
+                'prev_page_url',
+                'to',
+                'total'
+            ])
+            ->assertJsonPath('total', 3);
     }
 
     public function test_user_can_create_pet(): void
@@ -61,7 +75,7 @@ class PetTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->postJson('/api/pets', [
+        ])->postJson('/api/v1/pets', [
             'name' => 'Rex',
             'species' => 'Cachorro',
             'breed' => 'Labrador',
@@ -92,7 +106,7 @@ class PetTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->getJson("/api/pets/{$pet->id}");
+        ])->getJson("/api/v1/pets/{$pet->id}");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -110,7 +124,7 @@ class PetTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->putJson("/api/pets/{$pet->id}", [
+        ])->postJson("/api/v1/pets/{$pet->id}", [
             'name' => 'Updated Name',
             'weight' => 30.5
         ]);
@@ -135,7 +149,7 @@ class PetTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->deleteJson("/api/pets/{$pet->id}");
+        ])->deleteJson("/api/v1/pets/{$pet->id}");
 
         $response->assertStatus(204);
 
@@ -153,8 +167,33 @@ class PetTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->getJson("/api/pets/{$pet->id}");
+        ])->getJson("/api/v1/pets/{$pet->id}");
 
         $response->assertStatus(403);
+    }
+
+    public function test_user_can_update_pet_with_image(): void
+    {
+        Storage::fake('local');
+        $pet = Pet::factory()->create([
+            'user_id' => $this->user->id,
+            'photo' => 'old_photo.jpg'
+        ]);
+        $file = UploadedFile::fake()->image('new_pet.jpg');
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $this->token
+        ])->post(
+            "/api/v1/pets/{$pet->id}",
+            [
+                'name' => 'Pet com nova foto',
+                'photo' => $file
+            ]
+        );
+
+        $response->assertStatus(200)
+            ->assertJsonPath('pet.id', $pet->id)
+            ->assertJsonPath('pet.name', 'Pet com nova foto')
+            ->assertJsonPath('pet.photo', fn($value) => $value !== 'old_photo.jpg' && !empty($value));
     }
 } 

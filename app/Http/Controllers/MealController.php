@@ -35,7 +35,7 @@ class MealController extends BaseController
 
     /**
      * @OA\Get(
-     *     path="/api/pets/{pet_id}/meals",
+     *     path="/api/v1/pets/{pet_id}/meals",
      *     tags={"Meals"},
      *     summary="Lista todas as refeições de um pet",
      *     description="Retorna uma lista de todas as refeições agendadas para um pet específico, ordenadas por data",
@@ -87,7 +87,7 @@ class MealController extends BaseController
 
     /**
      * @OA\Post(
-     *     path="/api/pets/{pet_id}/meals",
+     *     path="/api/v1/pets/{pet_id}/meals",
      *     tags={"Meals"},
      *     summary="Cria uma nova refeição para um pet",
      *     description="Agenda uma nova refeição para um pet específico",
@@ -159,7 +159,7 @@ class MealController extends BaseController
 
     /**
      * @OA\Get(
-     *     path="/api/pets/{pet_id}/meals/{meal_id}",
+     *     path="/api/v1/pets/{pet_id}/meals/{meal_id}",
      *     tags={"Meals"},
      *     summary="Retorna os detalhes de uma refeição",
      *     description="Retorna informações detalhadas de uma refeição específica",
@@ -213,8 +213,8 @@ class MealController extends BaseController
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/pets/{pet_id}/meals/{meal_id}",
+     * @OA\Patch(
+     *     path="/api/v1/pets/{pet_id}/meals/{meal_id}",
      *     tags={"Meals"},
      *     summary="Atualiza uma refeição",
      *     description="Atualiza as informações de uma refeição existente",
@@ -310,7 +310,7 @@ class MealController extends BaseController
 
     /**
      * @OA\Delete(
-     *     path="/api/pets/{pet_id}/meals/{meal_id}",
+     *     path="/api/v1/pets/{pet_id}/meals/{meal_id}",
      *     tags={"Meals"},
      *     summary="Remove uma refeição",
      *     description="Remove uma refeição existente (soft delete)",
@@ -364,7 +364,7 @@ class MealController extends BaseController
 
     /**
      * @OA\Post(
-     *     path="/api/pets/{pet_id}/meals/{meal_id}/consume",
+     *     path="/api/v1/pets/{pet_id}/meals/{meal_id}/consume",
      *     tags={"Meals"},
      *     summary="Marca uma refeição como consumida",
      *     description="Registra que uma refeição foi consumida pelo pet",

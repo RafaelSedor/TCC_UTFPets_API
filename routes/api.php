@@ -25,9 +25,13 @@ Route::prefix('auth')->group(function () {
 });
 
 // Rotas protegidas que requerem autenticação
-Route::middleware('jwt.auth')->group(function () {
+Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     // Rotas de pets
-    Route::apiResource('pets', PetController::class);
+    Route::get('pets', [PetController::class, 'index']);
+    Route::post('pets', [PetController::class, 'store']);
+    Route::get('pets/{pet}', [PetController::class, 'show']);
+    Route::post('pets/{pet}', [PetController::class, 'update']);
+    Route::delete('pets/{pet}', [PetController::class, 'destroy']);
     
     // Rotas de refeições aninhadas com pets
     Route::prefix('pets/{pet}')->group(function () {

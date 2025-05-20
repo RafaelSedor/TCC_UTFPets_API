@@ -44,4 +44,20 @@ class Pet extends Model
     {
         return $this->hasMany(Meal::class);
     }
+
+    /**
+     * Extrai o publicId da foto do pet para uso com Cloudinary.
+     */
+    public function getCloudinaryPublicId(): ?string
+    {
+        if (!$this->photo) {
+            return null;
+        }
+        // Remove a URL base e extensão, se houver
+        $path = parse_url($this->photo, PHP_URL_PATH);
+        $filename = pathinfo($path, PATHINFO_FILENAME);
+        // Se a foto estiver em subpastas, Cloudinary espera o caminho relativo
+        $dirname = trim(pathinfo($path, PATHINFO_DIRNAME), '/');
+        return $dirname ? $dirname . '/' . $filename : $filename;
+    }
 } 

@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Enums\Species;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,13 +23,13 @@ class PetUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|required|string|max:255',
-            'species' => 'sometimes|required|string|max:255',
-            'breed' => 'nullable|string|max:255',
-            'birth_date' => 'nullable|date',
-            'weight' => 'nullable|numeric|min:0',
-            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'notes' => 'nullable|string'
+            'name' => 'sometimes|string|max:255',
+            'species' => ['sometimes', 'string', \Illuminate\Validation\Rule::in(array_column(\App\Enums\Species::cases(), 'value'))],
+            'breed' => 'sometimes|nullable|string|max:255',
+            'birth_date' => 'sometimes|nullable|date',
+            'weight' => 'sometimes|nullable|numeric|min:0',
+            'photo' => 'sometimes|image|mimes:jpeg,jpg,png|max:2048',
+            'notes' => 'sometimes|nullable|string'
         ];
     }
 

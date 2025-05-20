@@ -53,24 +53,6 @@ services:
       timeout: 5s
       retries: 5
 
-  selenium:
-    image: selenium/standalone-chrome:latest
-    container_name: utfpets-selenium
-    ports:
-      - "127.0.0.1:4444:4444"
-    shm_size: 2g
-    volumes:
-      - /dev/shm:/dev/shm:rw
-    networks:
-      - app-network
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 2G
-    security_opt:
-      - no-new-privileges:true
-
   nginx:
     image: nginx:1.24-alpine
     container_name: utfpets-nginx

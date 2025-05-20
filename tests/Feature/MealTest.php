@@ -6,6 +6,7 @@ use Tests\TestCase;
 use App\Models\Pet;
 use App\Models\User;
 use App\Models\Meal;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class MealTest extends TestCase
@@ -19,9 +20,9 @@ class MealTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->user = User::factory()->create();
-        $this->token = $this->getToken($this->user);
+        $this->token = Auth::login($this->user) ?? '';
         $this->pet = Pet::factory()->create(['user_id' => $this->user->id]);
     }
 
@@ -33,7 +34,7 @@ class MealTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->getJson("/api/pets/{$this->pet->id}/meals");
+        ])->getJson("/api/v1/pets/{$this->pet->id}/meals");
 
         $response->assertStatus(200)
             ->assertJsonCount(3)
@@ -57,7 +58,7 @@ class MealTest extends TestCase
     {
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->postJson("/api/pets/{$this->pet->id}/meals", [
+        ])->postJson("/api/v1/pets/{$this->pet->id}/meals", [
             'food_type' => 'Ração Premium',
             'quantity' => 100.5,
             'unit' => 'g',
@@ -87,7 +88,7 @@ class MealTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->postJson("/api/pets/{$this->pet->id}/meals/{$meal->id}/consume");
+        ])->postJson("/api/v1/pets/{$this->pet->id}/meals/{$meal->id}/consume");
 
         $response->assertStatus(200);
         $this->assertNotNull($meal->fresh()->consumed_at);
@@ -101,7 +102,7 @@ class MealTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->getJson("/api/pets/{$otherPet->id}/meals/{$meal->id}");
+        ])->getJson("/api/v1/pets/{$otherPet->id}/meals/{$meal->id}");
 
         $response->assertStatus(403);
     }
@@ -115,7 +116,7 @@ class MealTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->putJson("/api/pets/{$this->pet->id}/meals/{$meal->id}", [
+        ])->patchJson("/api/v1/pets/{$this->pet->id}/meals/{$meal->id}", [
             'food_type' => 'Ração Atualizada',
             'quantity' => 150.0,
             'unit' => 'g',
@@ -139,7 +140,7 @@ class MealTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token
-        ])->deleteJson("/api/pets/{$this->pet->id}/meals/{$meal->id}");
+        ])->deleteJson("/api/v1/pets/{$this->pet->id}/meals/{$meal->id}");
 
         $response->assertStatus(204);
 
@@ -147,4 +148,4 @@ class MealTest extends TestCase
             'id' => $meal->id
         ]);
     }
-} 
+}

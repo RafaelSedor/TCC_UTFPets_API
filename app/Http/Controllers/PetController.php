@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Validator;
 use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use App\Http\Requests\PetStoreRequest;
 use App\Http\Requests\PetUpdateRequest;
+use Illuminate\Support\Facades\Log;
 
 /**
  * @OA\Tag(
@@ -22,7 +23,7 @@ class PetController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/pets",
+     *     path="/api/v1/pets",
      *     tags={"Pets"},
      *     summary="Lista todos os pets do usuário",
      *     description="Retorna uma lista de todos os pets cadastrados pelo usuário autenticado",
@@ -46,13 +47,14 @@ class PetController extends Controller
      */
     public function index(): JsonResponse
     {
-        $pets = Auth::user()->pets;
+        $user = Auth::user();
+        $pets = Pet::where('user_id', $user->id)->paginate(10);
         return response()->json($pets);
     }
 
     /**
      * @OA\Post(
-     *     path="/api/pets",
+     *     path="/api/v1/pets",
      *     tags={"Pets"},
      *     summary="Cria um novo pet",
      *     description="Cadastra um novo pet para o usuário autenticado",
@@ -107,13 +109,7 @@ class PetController extends Controller
             $data = $request->validated();
             $data['user_id'] = Auth::id();
 
-            if ($request->hasFile('photo')) {
-                $uploadedFile = $request->file('photo');
-                $result = Cloudinary::upload($uploadedFile->getRealPath());
-                $data['photo'] = $result->getSecurePath();
-            }
-
-            $pet = Pet::create($data);
+            $pet = app(\App\Services\PetService::class)->create($data);
 
             return response()->json([
                 'message' => 'Pet cadastrado com sucesso',
@@ -129,7 +125,7 @@ class PetController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/pets/{id}",
+     *     path="/api/v1/pets/{id}",
      *     tags={"Pets"},
      *     summary="Retorna os detalhes de um pet",
      *     description="Retorna informações detalhadas de um pet específico, incluindo suas refeições",
@@ -171,16 +167,13 @@ class PetController extends Controller
      */
     public function show(Pet $pet): JsonResponse
     {
-        if ($pet->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
+        $this->authorize('view', $pet);
         return response()->json($pet->load('meals'));
     }
 
     /**
-     * @OA\Put(
-     *     path="/api/pets/{id}",
+     * @OA\Post(
+     *     path="/api/v1/pets/{id}",
      *     tags={"Pets"},
      *     summary="Atualiza um pet",
      *     description="Atualiza as informações de um pet existente",
@@ -197,25 +190,12 @@ class PetController extends Controller
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
-     *                 type="object",
      *                 @OA\Property(property="name", type="string", description="Nome do pet", example="Rex"),
      *                 @OA\Property(property="species", type="string", description="Espécie do pet", example="Cachorro"),
      *                 @OA\Property(property="breed", type="string", description="Raça do pet", example="Labrador", nullable=true),
      *                 @OA\Property(property="birth_date", type="string", format="date", description="Data de nascimento", example="2020-01-01", nullable=true),
      *                 @OA\Property(property="weight", type="number", format="float", description="Peso em kg", example=25.5, nullable=true),
-     *                 @OA\Property(property="photo", type="file", format="binary", description="Nova foto do pet"),
-     *                 @OA\Property(property="notes", type="string", description="Observações sobre o pet", example="Cachorro muito dócil", nullable=true)
-     *             )
-     *         ),
-     *         @OA\MediaType(
-     *             mediaType="application/json",
-     *             @OA\Schema(
-     *                 type="object",
-     *                 @OA\Property(property="name", type="string", description="Nome do pet", example="Rex"),
-     *                 @OA\Property(property="species", type="string", description="Espécie do pet", example="Cachorro"),
-     *                 @OA\Property(property="breed", type="string", description="Raça do pet", example="Labrador", nullable=true),
-     *                 @OA\Property(property="birth_date", type="string", format="date", description="Data de nascimento", example="2020-01-01", nullable=true),
-     *                 @OA\Property(property="weight", type="number", format="float", description="Peso em kg", example=25.5, nullable=true),
+     *                 @OA\Property(property="photo", type="file", format="binary", description="Foto do pet"),
      *                 @OA\Property(property="notes", type="string", description="Observações sobre o pet", example="Cachorro muito dócil", nullable=true)
      *             )
      *         )
@@ -260,35 +240,14 @@ class PetController extends Controller
      */
     public function update(PetUpdateRequest $request, Pet $pet): JsonResponse
     {
-        if ($pet->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('update', $pet);
 
         try {
-            $data = $request->validated();
+            Log::info('Requisição recebida para update:', $request->all());
 
-            // Remove campos vazios para não sobrescrever dados existentes
-            $data = array_filter($data, function ($value) {
-                return $value !== null && $value !== '';
-            });
+            $data = $request->all();
+            $pet = app(\App\Services\PetService::class)->update($pet, $data);
 
-            if ($request->hasFile('photo')) {
-                if ($pet->photo) {
-                    $publicId = substr(strrchr($pet->photo, '/'), 1);
-                    Cloudinary::destroy($publicId);
-                }
-
-                $uploadedFile = $request->file('photo');
-                $result = Cloudinary::upload($uploadedFile->getRealPath());
-                $data['photo'] = $result->getSecurePath();
-            } elseif (isset($data['photo'])) {
-                // Se photo foi enviado mas não é um arquivo, remove do array
-                unset($data['photo']);
-            }
-
-            $pet->update($data);
-            $pet->refresh();
-            
             return response()->json([
                 'message' => 'Pet atualizado com sucesso',
                 'pet' => $pet
@@ -303,7 +262,7 @@ class PetController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/pets/{id}",
+     *     path="/api/v1/pets/{id}",
      *     tags={"Pets"},
      *     summary="Remove um pet",
      *     description="Remove um pet existente (soft delete)",
@@ -344,12 +303,10 @@ class PetController extends Controller
      */
     public function destroy(Pet $pet): JsonResponse
     {
-        if ($pet->user_id !== Auth::id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
+        $this->authorize('delete', $pet);
 
         if ($pet->photo) {
-            $publicId = substr(strrchr($pet->photo, '/'), 1);
+            $publicId = $pet->getCloudinaryPublicId();
             Cloudinary::destroy($publicId);
         }
 

@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Enums\Species;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +24,11 @@ class PetStoreRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'species' => 'required|string|max:255',
+            'species' => ['required', Rule::in(array_column(Species::cases(), 'value'))],
             'breed' => 'required|string|max:255',
             'birth_date' => 'required|date',
             'weight' => 'required|numeric|min:0',
-            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'photo' => 'required|image|mimes:jpeg,jpg,png|max:2048',
             'notes' => 'nullable|string'
         ];
     }
