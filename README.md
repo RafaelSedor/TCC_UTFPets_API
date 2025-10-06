@@ -52,59 +52,73 @@ Policies serão utilizadas para restringir ações como editar/remover apenas ao
 
 ## Configuração e Execução
 
-1. Clone o repositório:
+### 🚀 Configuração Rápida (Recomendada)
+
+Use o script automatizado para configurar os ambientes:
+
+```bash
+# Windows (PowerShell)
+.\scripts\db-setup.ps1 test
+
+# Linux/Mac (Bash)
+./scripts/db-setup.sh test
+```
+
+### 📋 Configuração Manual
+
+1. **Clone o repositório:**
 ```bash
 git clone https://github.com/seu-usuario/TCC_UTFPets_API.git
 cd TCC_UTFPets_API
 ```
 
-2. Copie o arquivo de ambiente:
+2. **Configure o ambiente de produção (.env):**
 ```bash
 cp .env.example .env
 ```
 
-3. Configure as variáveis de ambiente no arquivo `.env`:
+Configure as variáveis para **Supabase** (produção):
 ```env
-DB_CONNECTION=
-DB_HOST=
-DB_PORT=
-DB_DATABASE=
-DB_USERNAME=
-DB_PASSWORD=
+# Banco de Produção (Supabase)
+DB_CONNECTION=pgsql
+DB_HOST=db.xxx.supabase.co
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres
+DB_PASSWORD=sua_senha_supabase
+DB_SSLMODE=require
+
+# Outras configurações
 APP_KEY=
-SESSION_DRIVER=file
-JWT_SECRET= 
-APP_ENV=production
-APP_DEBUG=true
+JWT_SECRET=
 CLOUDINARY_API_SECRET=
 CLOUDINARY_API_KEY=
 CLOUDINARY_CLOUD_NAME=
 CLOUDINARY_URL=cloudinary://sua_api_key:seu_api_secret@seu_cloud_name
-JWT_ALGO=
 ```
 
-4. Inicie os containers:
+3. **Inicie os containers:**
 ```bash
 docker-compose up -d
 ```
 
-5. Aguarde todos os containers iniciarem e execute os seguintes comandos:
+4. **Execute as migrações:**
 ```bash
-# Instalar dependências
-docker-compose exec utfpets-app composer install
+# Para produção (Supabase)
+docker-compose exec utfpets-app php artisan migrate --force
 
-# Gerar chave da aplicação
-docker-compose exec utfpets-app php artisan key:generate
-
-# Gerar chave JWT
-docker-compose exec utfpets-app php artisan jwt:secret
-
-# Executar migrações
-docker-compose exec utfpets-app php artisan migrate
-
-# Gerar documentação Swagger
-docker-compose exec utfpets-app php artisan l5-swagger:generate
+# Para testes (automático)
+docker-compose exec utfpets-app php artisan test
 ```
+
+### 🧪 Ambientes de Banco de Dados
+
+O projeto agora suporta **dois ambientes distintos**:
+
+- **🧪 Testes**: PostgreSQL local via Docker (porta 5433)
+- **🚀 Produção**: Supabase (PostgreSQL gerenciado)
+
+**📚 Documentação completa**: Veja [DATABASE_SETUP.md](DATABASE_SETUP.md) para detalhes.
 
 ## Endpoints Principais
 

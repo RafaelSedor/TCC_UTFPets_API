@@ -2,12 +2,12 @@
 
 set -e
 
-# Aguarda o PostgreSQL estar pronto
-echo "🔄 Aguardando PostgreSQL..."
-while ! nc -z db 5432; do
+# Aguarda o PostgreSQL de teste estar pronto
+echo "🔄 Aguardando PostgreSQL de teste..."
+while ! nc -z test-db 5432; do
     sleep 0.1
 done
-echo "✅ PostgreSQL está pronto!"
+echo "✅ PostgreSQL de teste está pronto!"
 
 # Configuração inicial do Laravel
 echo "🚀 Iniciando setup do Laravel..."
@@ -22,7 +22,13 @@ fi
 if [ ! -f .env.testing ]; then
     echo "Criando arquivo .env.testing..."
     cp .env.example .env.testing
-    sed -i 's/DB_DATABASE=.*/DB_DATABASE=testing/g' .env.testing
+    # Configura as variáveis para o banco de teste Docker
+    sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=pgsql_testing/' .env.testing
+    sed -i 's/DB_HOST=.*/DB_HOST=test-db/' .env.testing
+    sed -i 's/DB_PORT=.*/DB_PORT=5432/' .env.testing
+    sed -i 's/DB_DATABASE=.*/DB_DATABASE=utfpets_test/' .env.testing
+    sed -i 's/DB_USERNAME=.*/DB_USERNAME=test_user/' .env.testing
+    sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=test_password/' .env.testing
 fi
 
 # Instala as dependências do Composer
@@ -48,9 +54,13 @@ echo "🔑 Configurando JWT para ambiente de testes..."
 php artisan jwt:secret --force --env=testing
 
 
-# Executa as migrações no ambiente principal
-echo "🔄 Executando migrações no ambiente principal..."
-php artisan migrate --force
+# NOTA: As migrações devem ser executadas manualmente quando necessário
+echo "ℹ️  Para executar migrações:"
+echo "   - Teste: php artisan migrate --force --env=testing"
+echo "   - Produção: php artisan migrate --force"
+echo ""
+echo "✅ Setup do Laravel concluído!"
+echo "✅ Aplicação pronta para uso!"
 
 # Otimiza a aplicação
 echo "⚡ Otimizando aplicação..."

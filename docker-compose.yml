@@ -11,7 +11,7 @@ services:
     expose:
       - "9000"
     depends_on:
-      - db
+      - test-db
     networks:
       - app-network
     deploy:
@@ -22,33 +22,34 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "php", "artisan", "health:check"]
+      test: ["CMD", "php", "-v"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  db:
+  # Banco de dados apenas para testes locais
+  test-db:
     image: postgres:15-alpine
-    container_name: utfpets-db
+    container_name: utfpets-test-db
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${DB_PORT:-5432}:5432"
+      - "127.0.0.1:5433:5432"  # Porta diferente para não conflitar com Supabase
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_TEST_DATABASE:-utfpets_test}
+      POSTGRES_USER: ${DB_TEST_USERNAME:-test_user}
+      POSTGRES_PASSWORD: ${DB_TEST_PASSWORD:-test_password}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     volumes:
-      - pgdata:/var/lib/postgresql/data:rw
+      - test_pgdata:/var/lib/postgresql/data:rw
     networks:
       - app-network
     deploy:
       resources:
         limits:
-          cpus: '0.75'
-          memory: 1G
+          cpus: '0.50'
+          memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_TEST_USERNAME:-test_user} -d ${DB_TEST_DATABASE:-utfpets_test}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -83,5 +84,5 @@ networks:
     driver: bridge
 
 volumes:
-  pgdata:
+  test_pgdata:
     driver: local

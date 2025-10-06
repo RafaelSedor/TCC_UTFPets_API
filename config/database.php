@@ -82,6 +82,7 @@ return [
             ]) : [],
         ],
 
+        // Configuração para produção (Supabase)
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
@@ -94,17 +95,18 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'prefer',
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        // Configuração para testes (Docker local)
         'pgsql_testing' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_TEST_DATABASE', 'testing'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', ''),
+            'host' => env('DB_TEST_HOST', 'test-db'),
+            'port' => env('DB_TEST_PORT', '5432'),
+            'database' => env('DB_TEST_DATABASE', 'utfpets_test'),
+            'username' => env('DB_TEST_USERNAME', 'test_user'),
+            'password' => env('DB_TEST_PASSWORD', 'test_password'),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
