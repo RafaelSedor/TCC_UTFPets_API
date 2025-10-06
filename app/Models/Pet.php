@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SharedPetRole;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -43,6 +44,52 @@ class Pet extends Model
     public function meals(): HasMany
     {
         return $this->hasMany(Meal::class);
+    }
+
+    /**
+     * Relacionamento com compartilhamentos
+     */
+    public function sharedWith(): HasMany
+    {
+        return $this->hasMany(SharedPet::class);
+    }
+
+    /**
+     * Retorna todos os participantes (incluindo compartilhamentos aceitos)
+     */
+    public function participants()
+    {
+        return $this->sharedWith()->accepted();
+    }
+
+    /**
+     * Verifica se o pet é compartilhado com o usuário
+     */
+    public function isSharedWith(User $user): bool
+    {
+        return $this->sharedWith()
+            ->where('user_id', $user->id)
+            ->accepted()
+            ->exists();
+    }
+
+    /**
+     * Retorna o papel do usuário no pet
+     */
+    public function getUserRole(User $user): ?SharedPetRole
+    {
+        // Se é o dono original
+        if ($this->user_id === $user->id) {
+            return SharedPetRole::OWNER;
+        }
+
+        // Se é compartilhado
+        $shared = $this->sharedWith()
+            ->where('user_id', $user->id)
+            ->accepted()
+            ->first();
+
+        return $shared ? $shared->role : null;
     }
 
     /**

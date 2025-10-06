@@ -66,14 +66,8 @@ echo "✅ Aplicação pronta para uso!"
 echo "⚡ Otimizando aplicação..."
 php artisan optimize
 
-# Gera a documentação Swagger
-echo "📚 Gerando documentação Swagger..."
-php artisan l5-swagger:generate
-
-# Configura permissões para a documentação
-chmod -R 777 storage/api-docs
-
-echo "✅ Documentação Swagger gerada com sucesso!"
+# Documentação Swagger será servida pelo container externo
+echo "📚 Documentação Swagger disponível em http://localhost:8081/swagger"
 echo "✅ Setup do Laravel concluído!"
 
 # Inicia o servidor PHP-FPM
