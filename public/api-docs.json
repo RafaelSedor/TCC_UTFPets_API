@@ -31,6 +31,10 @@
     {
       "name": "Pet Sharing",
       "description": "Compartilhamento de pets com sistema de papéis (owner/editor/viewer)"
+    },
+    {
+      "name": "Reminders",
+      "description": "Lembretes de refeições/medicações com agendamento e recorrência"
     }
   ],
   "paths": {
@@ -1034,6 +1038,212 @@
           }
         }
       }
+    },
+    "/v1/pets/{pet}/reminders": {
+      "get": {
+        "tags": ["Reminders"],
+        "summary": "Listar lembretes do pet",
+        "description": "Retorna todos os lembretes de um pet com filtros opcionais",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer", "example": 1}
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["active", "paused", "done"], "example": "active"}
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time", "example": "2025-10-07 00:00:00"}
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time", "example": "2025-10-14 23:59:59"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de lembretes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {"$ref": "#/components/schemas/Reminder"}
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Criar novo lembrete",
+        "description": "Cria um novo lembrete para o pet (owner e editor)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer", "example": 1}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {"type": "string", "example": "Ração manhã"},
+                  "description": {"type": "string", "example": "150g de ração premium"},
+                  "scheduled_at": {"type": "string", "format": "date-time", "example": "2025-10-07 08:00:00"},
+                  "repeat_rule": {"type": "string", "enum": ["none", "daily", "weekly", "custom"], "example": "daily"},
+                  "channel": {"type": "string", "enum": ["in-app", "email", "push"], "example": "in-app"}
+                },
+                "required": ["title", "scheduled_at"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Lembrete criado"},
+          "403": {"description": "Sem permissão (apenas owner e editor)"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}": {
+      "get": {
+        "tags": ["Reminders"],
+        "summary": "Visualizar lembrete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do lembrete",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Reminder"}
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Reminders"],
+        "summary": "Atualizar lembrete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {"type": "string", "example": "Ração atualizada"},
+                  "description": {"type": "string"},
+                  "scheduled_at": {"type": "string", "format": "date-time"},
+                  "repeat_rule": {"type": "string", "enum": ["none", "daily", "weekly", "custom"]},
+                  "status": {"type": "string", "enum": ["active", "paused", "done"]},
+                  "channel": {"type": "string", "enum": ["in-app", "email", "push"]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Lembrete atualizado"}
+        }
+      },
+      "delete": {
+        "tags": ["Reminders"],
+        "summary": "Deletar lembrete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {"description": "Lembrete removido"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}/snooze": {
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Adiar lembrete",
+        "description": "Adia o lembrete por X minutos",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "minutes": {"type": "integer", "minimum": 1, "maximum": 1440, "example": 30}
+                },
+                "required": ["minutes"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Lembrete adiado"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}/complete": {
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Marcar lembrete como concluído",
+        "description": "Marca o lembrete como concluído e cria próxima ocorrência se for recorrente",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {"description": "Lembrete concluído"}
+        }
+      }
     }
   },
   "components": {
@@ -1185,6 +1395,63 @@
             "example": 1
           },
           "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      },
+      "Reminder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"
+          },
+          "pet_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Ração manhã"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "150g de ração premium"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-07T08:00:00.000000Z"
+          },
+          "repeat_rule": {
+            "type": "string",
+            "enum": ["none", "daily", "weekly", "custom"],
+            "nullable": true,
+            "example": "daily",
+            "description": "none: não repete | daily: todos os dias | weekly: toda semana | custom: RRULE personalizada"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "done"],
+            "example": "active",
+            "description": "active: ativo | paused: pausado | done: concluído"
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["in-app", "email", "push"],
+            "example": "in-app",
+            "description": "Canal de notificação"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "updated_at": {
             "type": "string",
             "format": "date-time",
             "example": "2025-10-06T10:30:00.000000Z"

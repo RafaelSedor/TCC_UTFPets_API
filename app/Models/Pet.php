@@ -54,6 +54,11 @@ class Pet extends Model
         return $this->hasMany(SharedPet::class);
     }
 
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(Reminder::class);
+    }
+
     /**
      * Retorna todos os participantes (incluindo compartilhamentos aceitos)
      */

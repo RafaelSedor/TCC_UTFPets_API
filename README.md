@@ -38,6 +38,7 @@ A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferec
   - **Editor**: Pode criar e editar refeições
   - **Viewer**: Apenas visualização
 - 🔔 **Sistema de Eventos**: Eventos para notificações futuras (convites, mudanças de papel, etc.)
+- ⏰ **Lembretes Inteligentes**: Agendamento de refeições/medicações com recorrência e timezone ⭐ NOVO
 
 ### Público-Alvo
 
@@ -163,7 +164,7 @@ O projeto agora suporta **dois ambientes distintos**:
 - **🧪 Testes**: PostgreSQL local via Docker (porta 5433)
 - **🚀 Produção**: Supabase (PostgreSQL gerenciado)
 
-**📚 Documentação completa**: Veja [DATABASE_SETUP.md](DATABASE_SETUP.md) para detalhes.
+**📚 Documentação completa**: Veja [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) para detalhes.
 
 ## 🛠️ Scripts Utilitários
 
@@ -220,6 +221,15 @@ A API oferece os seguintes endpoints principais:
 - `PATCH /api/v1/pets/{pet}/share/{user}` - Altera papel do participante
 - `DELETE /api/v1/pets/{pet}/share/{user}` - Revoga acesso
 
+### ⏰ Lembretes ⭐ NOVO
+- `GET /api/v1/pets/{pet}/reminders` - Lista lembretes (com filtros)
+- `POST /api/v1/pets/{pet}/reminders` - Cria lembrete
+- `GET /api/v1/reminders/{id}` - Visualiza lembrete
+- `PATCH /api/v1/reminders/{id}` - Atualiza lembrete
+- `DELETE /api/v1/reminders/{id}` - Deleta lembrete
+- `POST /api/v1/reminders/{id}/snooze` - Adia lembrete
+- `POST /api/v1/reminders/{id}/complete` - Marca como concluído
+
 ## 🔐 Sistema de Permissões
 
 ### Papéis de Acesso
@@ -274,9 +284,10 @@ docker-compose exec app php artisan test
 - ✅ **AuthTest**: 5 testes (registro, login, logout, perfil)
 - ✅ **PetTest**: 6 testes (CRUD completo de pets)
 - ✅ **MealTest**: 6 testes (CRUD completo de refeições)
+- ✅ **ReminderTest**: 14 testes (lembretes, agendamento, recorrência) ⭐ NOVO
 - ✅ **SharedPetTest**: 14 testes (compartilhamento e permissões)
 
-**Total: 31 testes | 154 assertions | 100% passando** ✅
+**Total: 45 testes | 186 assertions | 100% passando** ✅
 
 ## Troubleshooting
 
@@ -376,36 +387,45 @@ O arquivo JSON da documentação está disponível em:
 
 ### 📖 Módulos Implementados
 
-- **Módulo 1**: [Compartilhamento de Pets](MODULO_1_COMPARTILHAMENTO.md) - Sistema completo de colaboração com papéis
+- **[📚 Índice de Documentação](docs/INDEX.md)** - Navegue por toda a documentação
+- **Módulo 1**: [Compartilhamento de Pets](docs/MODULO_1_COMPARTILHAMENTO.md) - Sistema de colaboração com papéis
+- **Módulo 2**: [Lembretes com Agendamento](docs/MODULO_2_LEMBRETES.md) - Lembretes recorrentes com timezone ⭐ NOVO
 
 ## 📁 Estrutura do Projeto
 
 ```
 TCC_UTFPets_API/
 ├── app/
-│   ├── Enums/              # PHP 8.2 Enums (Species, SharedPetRole, InvitationStatus)
-│   ├── Events/             # Eventos do sistema (SharedPet*)
+│   ├── Enums/              # PHP 8.2 Enums (6 enums)
+│   ├── Events/             # Eventos do sistema (4 eventos)
 │   ├── Http/
-│   │   ├── Controllers/    # Controllers da API
+│   │   ├── Controllers/    # Controllers da API (5 controllers)
 │   │   ├── Middleware/     # CORS, Security Headers
-│   │   └── Requests/       # Form Requests para validação
-│   ├── Models/             # Eloquent Models (User, Pet, Meal, SharedPet)
-│   ├── Policies/           # Authorization Policies (PetPolicy, MealPolicy)
-│   └── Services/           # Service Layer (AccessService, PetService)
+│   │   └── Requests/       # Form Requests para validação (7 requests)
+│   ├── Jobs/               # Background Jobs (SendReminderJob)
+│   ├── Models/             # Eloquent Models (5 models)
+│   ├── Policies/           # Authorization Policies (2 policies)
+│   └── Services/           # Service Layer (2 services)
 ├── database/
-│   ├── migrations/         # Migrations do banco
-│   ├── factories/          # Factories para testes
+│   ├── migrations/         # Migrations do banco (8 migrations)
+│   ├── factories/          # Factories para testes (5 factories)
 │   └── seeders/            # Seeders
+├── docs/                   # 📚 Documentação dos módulos
+│   ├── INDEX.md            # Índice de toda documentação
+│   ├── DATABASE_SETUP.md   # Setup de banco de dados
+│   ├── MODULO_1_COMPARTILHAMENTO.md
+│   └── MODULO_2_LEMBRETES.md
 ├── routes/
-│   └── api.php             # Definição de rotas da API
+│   ├── api.php             # Definição de rotas da API (25 rotas)
+│   └── console.php         # Scheduler e comandos Artisan
 ├── tests/
-│   └── Feature/            # Testes de feature (31 testes)
+│   └── Feature/            # Testes de feature (45 testes)
 ├── public/
-│   └── api-docs.json       # Documentação OpenAPI
+│   └── api-docs.json       # Documentação OpenAPI completa
 ├── scripts/
 │   ├── db-setup.ps1        # Script Windows para setup
 │   └── db-setup.sh         # Script Linux/Mac para setup
-├── docker-compose.yml      # Orquestração de containers
+├── docker-compose.yml      # Orquestração de containers (4 serviços)
 ├── Dockerfile              # Imagem da aplicação
 └── README.md               # Este arquivo
 ```
@@ -435,6 +455,14 @@ TCC_UTFPets_API/
 - 3 papéis: owner, editor, viewer
 - Gerenciamento de permissões granular
 - Eventos para notificações futuras
+
+### 5. Lembretes Inteligentes ⭐ NOVO
+- Lembretes únicos e recorrentes (diário, semanal)
+- Agendamento com timezone do usuário
+- Processamento em background com Jobs
+- Snooze (adiar) e Complete (concluir)
+- Filtros por status e intervalo de datas
+- Tolerância de 5 minutos para evitar perda
 
 ## Demonstração em Vídeo
 
@@ -471,8 +499,11 @@ Disponível em: [Link do YouTube / Google Drive]
 Para dúvidas ou problemas:
 1. Verifique a [documentação do Swagger](http://localhost:8081/swagger)
 2. Consulte o [guia de troubleshooting](#troubleshooting) acima
-3. Veja a [documentação de compartilhamento](MODULO_1_COMPARTILHAMENTO.md)
-4. Revise o [setup de banco de dados](DATABASE_SETUP.md)
+3. Navegue pelo [índice de documentação](docs/INDEX.md)
+4. Veja documentação dos módulos:
+   - [Módulo 1 - Compartilhamento](docs/MODULO_1_COMPARTILHAMENTO.md)
+   - [Módulo 2 - Lembretes](docs/MODULO_2_LEMBRETES.md)
+   - [Setup de Banco de Dados](docs/DATABASE_SETUP.md)
 
 ## Autor e Disciplina
 

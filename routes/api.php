@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\SharedPetController;
+use App\Http\Controllers\ReminderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,5 +47,16 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
         Route::post('share/{user}/accept', [SharedPetController::class, 'accept']);
         Route::patch('share/{user}', [SharedPetController::class, 'update']);
         Route::delete('share/{user}', [SharedPetController::class, 'destroy']);
+        
+        // Rotas de lembretes aninhadas com pets
+        Route::get('reminders', [ReminderController::class, 'index']);
+        Route::post('reminders', [ReminderController::class, 'store']);
     });
+    
+    // Rotas de lembretes (não aninhadas)
+    Route::get('reminders/{reminder}', [ReminderController::class, 'show']);
+    Route::patch('reminders/{reminder}', [ReminderController::class, 'update']);
+    Route::delete('reminders/{reminder}', [ReminderController::class, 'destroy']);
+    Route::post('reminders/{reminder}/snooze', [ReminderController::class, 'snooze']);
+    Route::post('reminders/{reminder}/complete', [ReminderController::class, 'complete']);
 });
