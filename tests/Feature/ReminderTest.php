@@ -80,7 +80,7 @@ class ReminderTest extends TestCase
             'description' => '150g de ração premium',
             'scheduled_at' => now()->addHours(2)->format('Y-m-d H:i:s'),
             'repeat_rule' => 'daily',
-            'channel' => 'in-app',
+            'channel' => 'db',
         ]);
 
         $response->assertStatus(201)

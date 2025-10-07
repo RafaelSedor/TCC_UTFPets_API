@@ -6,6 +6,7 @@ use App\Http\Controllers\PetController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\SharedPetController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,4 +60,10 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::delete('reminders/{reminder}', [ReminderController::class, 'destroy']);
     Route::post('reminders/{reminder}/snooze', [ReminderController::class, 'snooze']);
     Route::post('reminders/{reminder}/complete', [ReminderController::class, 'complete']);
+    
+    // Rotas de notificações
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
 });

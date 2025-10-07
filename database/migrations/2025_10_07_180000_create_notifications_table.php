@@ -11,21 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('reminders', function (Blueprint $table) {
+        Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('pet_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('title');
-            $table->text('description')->nullable();
-            $table->timestamp('scheduled_at');
-            $table->string('repeat_rule')->nullable(); // none|daily|weekly|custom:RRULE
-            $table->enum('status', ['active', 'paused', 'done'])->default('active');
+            $table->text('body');
+            $table->json('data')->nullable();
             $table->enum('channel', ['db', 'email', 'push'])->default('db');
+            $table->enum('status', ['queued', 'sent', 'failed', 'read'])->default('queued');
             $table->timestamps();
 
             // Índices para performance
-            $table->index('pet_id');
-            $table->index('scheduled_at');
+            $table->index('user_id');
             $table->index('status');
+            $table->index('created_at');
+            $table->index(['user_id', 'status']);
         });
     }
 
@@ -34,7 +34,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('reminders');
+        Schema::dropIfExists('notifications');
     }
 };
 

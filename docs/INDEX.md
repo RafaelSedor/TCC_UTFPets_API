@@ -40,12 +40,28 @@ Sistema de lembretes com agendamento inteligente e processamento em background.
 
 ---
 
+#### **Módulo 3 - Notificações**
+📄 **[MODULO_3_NOTIFICACOES.md](MODULO_3_NOTIFICACOES.md)**
+
+Sistema completo de notificações com histórico e controle de leitura.
+
+**Recursos:**
+- 🔔 Notificações automáticas (lembretes, convites, mudanças)
+- 📚 Histórico completo com paginação
+- ✅ Controle de leitura (individual e em lote)
+- 🔗 Integração total com módulos existentes
+- 📊 Filtros por status e período
+
+**Endpoints**: 4 | **Testes**: 9 | **Status**: ✅ 100% passando
+
+---
+
 ## 📊 Estatísticas Gerais
 
 ### Cobertura de Testes
 ```
-Total: 45 testes | 186 assertions | 100% passando
-Tempo de execução: ~48s
+Total: 54 testes | 240 assertions | 100% passando
+Tempo de execução: ~58s
 ```
 
 **Distribuição por módulo:**
@@ -54,23 +70,24 @@ Tempo de execução: ~48s
 - ✅ PetTest: 6 testes (gerenciamento de pets)
 - ✅ ReminderTest: 14 testes (lembretes e agendamento)
 - ✅ SharedPetTest: 14 testes (compartilhamento de pets)
+- ✅ NotificationTest: 9 testes (sistema de notificações)
 
 ### Arquitetura
 
-**Models**: 5
-- User, Pet, Meal, SharedPet, Reminder
+**Models**: 6
+- User, Pet, Meal, SharedPet, Reminder, Notification
 
-**Controllers**: 5
-- AuthController, PetController, MealController, SharedPetController, ReminderController
+**Controllers**: 6
+- AuthController, PetController, MealController, SharedPetController, ReminderController, NotificationController
 
-**Enums**: 6
-- Species, SharedPetRole, InvitationStatus, ReminderStatus, RepeatRule, NotificationChannel
+**Enums**: 7
+- Species, SharedPetRole, InvitationStatus, ReminderStatus, RepeatRule, NotificationChannel, NotificationStatus
 
-**Services**: 2
-- AccessService, PetService
+**Services**: 3
+- AccessService, PetService, NotificationService
 
-**Jobs**: 1
-- SendReminderJob
+**Jobs**: 2
+- SendReminderJob, DeliverNotificationJob
 
 **Events**: 4
 - SharedPetInvited, SharedPetAccepted, SharedPetRoleChanged, SharedPetRemoved
@@ -97,10 +114,10 @@ Tempo de execução: ~48s
 ## 🎯 Roadmap de Módulos Futuros
 
 ### Em Planejamento
-- [ ] **Módulo 3 - Notificações** (Email, Push, In-App)
 - [ ] **Módulo 4 - Dashboard** (Estatísticas e gráficos)
 - [ ] **Módulo 5 - Auditoria** (Log de ações e histórico)
 - [ ] **Módulo 6 - Relatórios** (Exportação PDF/Excel)
+- [ ] **Módulo 7 - Chat** (Comunicação entre usuários)
 
 ---
 

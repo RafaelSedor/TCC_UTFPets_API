@@ -35,7 +35,7 @@ class ReminderFactory extends Factory
             'scheduled_at' => fake()->dateTimeBetween('now', '+30 days'),
             'repeat_rule' => fake()->randomElement(RepeatRule::cases()),
             'status' => fake()->randomElement(ReminderStatus::cases()),
-            'channel' => fake()->randomElement(NotificationChannel::cases()),
+            'channel' => NotificationChannel::DB,
         ];
     }
 

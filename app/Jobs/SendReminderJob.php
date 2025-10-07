@@ -9,9 +9,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Log;
-use App\Notifications\ReminderNotification;
+use App\Services\NotificationService;
 
 class SendReminderJob implements ShouldQueue
 {
@@ -61,17 +60,27 @@ class SendReminderJob implements ShouldQueue
             $users = $users->unique('id');
 
             // Envia notificação para cada usuário
+            $notificationService = app(NotificationService::class);
+            
             foreach ($users as $user) {
-                // Por enquanto, apenas log (notificação in-app será implementada no módulo de notificações)
-                Log::info("Lembrete enviado", [
+                $notificationService->queue(
+                    user: $user,
+                    title: "🔔 Lembrete: {$this->reminder->title}",
+                    body: $this->reminder->description ?? "Lembrete agendado para {$this->reminder->scheduled_at->format('d/m/Y H:i')}",
+                    data: [
+                        'type' => 'reminder_due',
+                        'reminder_id' => $this->reminder->id,
+                        'pet_id' => $this->reminder->pet_id,
+                        'scheduled_at' => $this->reminder->scheduled_at->toIso8601String(),
+                    ],
+                    channel: $this->reminder->channel
+                );
+                
+                Log::info("Notificação de lembrete criada", [
                     'reminder_id' => $this->reminder->id,
                     'user_id' => $user->id,
                     'title' => $this->reminder->title,
-                    'scheduled_at' => $this->reminder->scheduled_at,
                 ]);
-
-                // TODO: Quando implementar módulo de notificações, descomentar:
-                // $user->notify(new ReminderNotification($this->reminder));
             }
 
             // Se for recorrente e não está concluído, cria próxima ocorrência

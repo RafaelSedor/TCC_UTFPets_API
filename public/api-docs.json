@@ -35,6 +35,10 @@
     {
       "name": "Reminders",
       "description": "Lembretes de refeições/medicações com agendamento e recorrência"
+    },
+    {
+      "name": "Notifications",
+      "description": "Sistema de notificações para eventos do sistema (lembretes, convites, mudanças de papel)"
     }
   ],
   "paths": {
@@ -1244,6 +1248,160 @@
           "200": {"description": "Lembrete concluído"}
         }
       }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Listar notificações do usuário",
+        "description": "Retorna lista paginada de notificações do usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status da notificação",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["queued", "sent", "failed", "read"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 20}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de notificações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {"$ref": "#/components/schemas/Notification"}
+                    },
+                    "meta": {"$ref": "#/components/schemas/PaginationMeta"}
+                  }
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+                      "user_id": 1,
+                      "title": "🔔 Lembrete: Ração manhã",
+                      "body": "É hora de dar ração para o Buddy!",
+                      "data": {"pet_id": 1, "reminder_id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd", "type": "reminder_due"},
+                      "channel": "db",
+                      "status": "sent",
+                      "created_at": "2025-10-06T10:30:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 1,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "last_page": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Contar notificações não lidas",
+        "description": "Retorna o número de notificações não lidas do usuário",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Contagem de notificações não lidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "unread_count": {"type": "integer", "example": 3}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{notification}/read": {
+      "patch": {
+        "tags": ["Notifications"],
+        "summary": "Marcar notificação como lida",
+        "description": "Marca uma notificação específica como lida",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "notification",
+            "in": "path",
+            "required": true,
+            "description": "ID da notificação",
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificação marcada como lida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {"type": "string", "example": "Notificação marcada como lida"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "Notificação não encontrada"},
+          "403": {"description": "Não autorizado a acessar esta notificação"}
+        }
+      }
+    },
+    "/notifications/mark-all-read": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Marcar todas as notificações como lidas",
+        "description": "Marca todas as notificações do usuário como lidas",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Todas as notificações marcadas como lidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {"type": "string", "example": "Todas as notificações foram marcadas como lidas"},
+                    "updated_count": {"type": "integer", "example": 5}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1445,6 +1603,59 @@
             "enum": ["in-app", "email", "push"],
             "example": "in-app",
             "description": "Canal de notificação"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "🔔 Lembrete: Ração manhã"
+          },
+          "body": {
+            "type": "string",
+            "example": "É hora de dar ração para o Buddy!"
+          },
+          "data": {
+            "type": "object",
+            "nullable": true,
+            "example": {
+              "pet_id": 1,
+              "reminder_id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+              "type": "reminder_due"
+            }
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["db", "email", "push"],
+            "example": "db",
+            "description": "Canal de notificação"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "sent", "failed", "read"],
+            "example": "sent",
+            "description": "queued: na fila | sent: enviada | failed: falhou | read: lida"
           },
           "created_at": {
             "type": "string",

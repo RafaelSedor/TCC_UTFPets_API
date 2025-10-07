@@ -2,8 +2,8 @@
 
 > API RESTful para gerenciamento colaborativo de pets e suas refeições
 
-[![Tests](https://img.shields.io/badge/tests-31%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/assertions-154-blue)]()
+[![Tests](https://img.shields.io/badge/tests-54%20passing-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/assertions-240-blue)]()
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red)]()
 [![PHP](https://img.shields.io/badge/PHP-8.2-purple)]()
 
@@ -38,7 +38,8 @@ A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferec
   - **Editor**: Pode criar e editar refeições
   - **Viewer**: Apenas visualização
 - 🔔 **Sistema de Eventos**: Eventos para notificações futuras (convites, mudanças de papel, etc.)
-- ⏰ **Lembretes Inteligentes**: Agendamento de refeições/medicações com recorrência e timezone ⭐ NOVO
+- ⏰ **Lembretes Inteligentes**: Agendamento de refeições/medicações com recorrência e timezone
+- 📱 **Sistema de Notificações**: Histórico completo com controle de leitura e integração automática ⭐ NOVO
 
 ### Público-Alvo
 
@@ -69,7 +70,7 @@ O projeto segue as melhores práticas do Laravel com:
 - **JWT (php-open-source-saver/jwt-auth)** - Autenticação stateless
 - **Cloudinary** - Armazenamento e manipulação de imagens
 - **Swagger UI** - Documentação interativa da API
-- **PHPUnit** - Testes automatizados (31 testes, 154 assertions)
+- **PHPUnit** - Testes automatizados (54 testes, 240 assertions)
 
 ## Módulos Aplicados da Disciplina
 
@@ -221,7 +222,7 @@ A API oferece os seguintes endpoints principais:
 - `PATCH /api/v1/pets/{pet}/share/{user}` - Altera papel do participante
 - `DELETE /api/v1/pets/{pet}/share/{user}` - Revoga acesso
 
-### ⏰ Lembretes ⭐ NOVO
+### ⏰ Lembretes
 - `GET /api/v1/pets/{pet}/reminders` - Lista lembretes (com filtros)
 - `POST /api/v1/pets/{pet}/reminders` - Cria lembrete
 - `GET /api/v1/reminders/{id}` - Visualiza lembrete
@@ -229,6 +230,12 @@ A API oferece os seguintes endpoints principais:
 - `DELETE /api/v1/reminders/{id}` - Deleta lembrete
 - `POST /api/v1/reminders/{id}/snooze` - Adia lembrete
 - `POST /api/v1/reminders/{id}/complete` - Marca como concluído
+
+### 📱 Notificações ⭐ NOVO
+- `GET /api/v1/notifications` - Lista notificações (com filtros e paginação)
+- `GET /api/v1/notifications/unread-count` - Conta notificações não lidas
+- `PATCH /api/v1/notifications/{id}/read` - Marca notificação como lida
+- `POST /api/v1/notifications/mark-all-read` - Marca todas como lidas
 
 ## 🔐 Sistema de Permissões
 
@@ -284,10 +291,11 @@ docker-compose exec app php artisan test
 - ✅ **AuthTest**: 5 testes (registro, login, logout, perfil)
 - ✅ **PetTest**: 6 testes (CRUD completo de pets)
 - ✅ **MealTest**: 6 testes (CRUD completo de refeições)
-- ✅ **ReminderTest**: 14 testes (lembretes, agendamento, recorrência) ⭐ NOVO
+- ✅ **ReminderTest**: 14 testes (lembretes, agendamento, recorrência)
 - ✅ **SharedPetTest**: 14 testes (compartilhamento e permissões)
+- ✅ **NotificationTest**: 9 testes (sistema de notificações) ⭐ NOVO
 
-**Total: 45 testes | 186 assertions | 100% passando** ✅
+**Total: 54 testes | 240 assertions | 100% passando** ✅
 
 ## Troubleshooting
 
@@ -389,37 +397,39 @@ O arquivo JSON da documentação está disponível em:
 
 - **[📚 Índice de Documentação](docs/INDEX.md)** - Navegue por toda a documentação
 - **Módulo 1**: [Compartilhamento de Pets](docs/MODULO_1_COMPARTILHAMENTO.md) - Sistema de colaboração com papéis
-- **Módulo 2**: [Lembretes com Agendamento](docs/MODULO_2_LEMBRETES.md) - Lembretes recorrentes com timezone ⭐ NOVO
+- **Módulo 2**: [Lembretes com Agendamento](docs/MODULO_2_LEMBRETES.md) - Lembretes recorrentes com timezone
+- **Módulo 3**: [Sistema de Notificações](docs/MODULO_3_NOTIFICACOES.md) - Histórico e controle de leitura ⭐ NOVO
 
 ## 📁 Estrutura do Projeto
 
 ```
 TCC_UTFPets_API/
 ├── app/
-│   ├── Enums/              # PHP 8.2 Enums (6 enums)
+│   ├── Enums/              # PHP 8.2 Enums (7 enums)
 │   ├── Events/             # Eventos do sistema (4 eventos)
 │   ├── Http/
-│   │   ├── Controllers/    # Controllers da API (5 controllers)
+│   │   ├── Controllers/    # Controllers da API (6 controllers)
 │   │   ├── Middleware/     # CORS, Security Headers
-│   │   └── Requests/       # Form Requests para validação (7 requests)
-│   ├── Jobs/               # Background Jobs (SendReminderJob)
-│   ├── Models/             # Eloquent Models (5 models)
+│   │   └── Requests/       # Form Requests para validação (8 requests)
+│   ├── Jobs/               # Background Jobs (2 jobs)
+│   ├── Models/             # Eloquent Models (6 models)
 │   ├── Policies/           # Authorization Policies (2 policies)
-│   └── Services/           # Service Layer (2 services)
+│   └── Services/           # Service Layer (3 services)
 ├── database/
-│   ├── migrations/         # Migrations do banco (8 migrations)
-│   ├── factories/          # Factories para testes (5 factories)
+│   ├── migrations/         # Migrations do banco (9 migrations)
+│   ├── factories/          # Factories para testes (6 factories)
 │   └── seeders/            # Seeders
 ├── docs/                   # 📚 Documentação dos módulos
 │   ├── INDEX.md            # Índice de toda documentação
 │   ├── DATABASE_SETUP.md   # Setup de banco de dados
 │   ├── MODULO_1_COMPARTILHAMENTO.md
-│   └── MODULO_2_LEMBRETES.md
+│   ├── MODULO_2_LEMBRETES.md
+│   └── MODULO_3_NOTIFICACOES.md
 ├── routes/
-│   ├── api.php             # Definição de rotas da API (25 rotas)
+│   ├── api.php             # Definição de rotas da API (29 rotas)
 │   └── console.php         # Scheduler e comandos Artisan
 ├── tests/
-│   └── Feature/            # Testes de feature (45 testes)
+│   └── Feature/            # Testes de feature (54 testes)
 ├── public/
 │   └── api-docs.json       # Documentação OpenAPI completa
 ├── scripts/
@@ -456,13 +466,21 @@ TCC_UTFPets_API/
 - Gerenciamento de permissões granular
 - Eventos para notificações futuras
 
-### 5. Lembretes Inteligentes ⭐ NOVO
+### 5. Lembretes Inteligentes
 - Lembretes únicos e recorrentes (diário, semanal)
 - Agendamento com timezone do usuário
 - Processamento em background com Jobs
 - Snooze (adiar) e Complete (concluir)
 - Filtros por status e intervalo de datas
 - Tolerância de 5 minutos para evitar perda
+
+### 6. Sistema de Notificações ⭐ NOVO
+- Histórico completo de notificações do usuário
+- Controle de leitura (individual e em lote)
+- Integração automática com lembretes e compartilhamento
+- Paginação e filtros por status
+- Contador de notificações não lidas
+- Dados estruturados para contexto (JSON)
 
 ## Demonstração em Vídeo
 
@@ -486,13 +504,11 @@ Disponível em: [Link do YouTube / Google Drive]
 
 ## 📋 Roadmap
 
-- [ ] Sistema de notificações (email/push)
+- [ ] Canais adicionais (email/push)
 - [ ] Histórico de auditoria
 - [ ] Exportação de relatórios
-- [ ] Lembretes de refeições
 - [ ] Dashboard de estatísticas
 - [ ] Integração com calendário
-- [ ] Suporte a múltiplos pets por usuário ✅ (implementado)
 
 ## 📞 Suporte
 

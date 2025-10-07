@@ -4,13 +4,18 @@ namespace App\Enums;
 
 enum NotificationChannel: string
 {
-    case IN_APP = 'in-app';
+    case DB = 'db';
     case EMAIL = 'email';
     case PUSH = 'push';
 
     public function isInApp(): bool
     {
-        return $this === self::IN_APP;
+        return $this === self::DB;
+    }
+
+    public function isDb(): bool
+    {
+        return $this === self::DB;
     }
 
     public function isEmail(): bool
@@ -23,4 +28,3 @@ enum NotificationChannel: string
         return $this === self::PUSH;
     }
 }
-
