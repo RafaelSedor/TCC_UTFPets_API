@@ -8,6 +8,7 @@ use App\Http\Controllers\SharedPetController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,6 +32,13 @@ Route::prefix('auth')->group(function () {
 
 // Rotas protegidas que requerem autenticação
 Route::prefix('v1')->middleware('jwt.auth')->group(function () {
+    // Rotas de locations
+    Route::get('locations', [LocationController::class, 'index']);
+    Route::post('locations', [LocationController::class, 'store']);
+    Route::get('locations/{location}', [LocationController::class, 'show']);
+    Route::put('locations/{location}', [LocationController::class, 'update']);
+    Route::delete('locations/{location}', [LocationController::class, 'destroy']);
+    
     // Rotas de pets
     Route::get('pets', [PetController::class, 'index']);
     Route::post('pets', [PetController::class, 'store']);

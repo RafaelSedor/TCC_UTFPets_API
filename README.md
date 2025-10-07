@@ -2,8 +2,8 @@
 
 > API RESTful para gerenciamento colaborativo de pets e suas refeições
 
-[![Tests](https://img.shields.io/badge/tests-67%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/assertions-391-blue)]()
+[![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/assertions-422-blue)]()
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red)]()
 [![PHP](https://img.shields.io/badge/PHP-8.2-purple)]()
 
@@ -71,7 +71,7 @@ O projeto segue as melhores práticas do Laravel com:
 - **JWT (php-open-source-saver/jwt-auth)** - Autenticação stateless
 - **Cloudinary** - Armazenamento e manipulação de imagens
 - **Swagger UI** - Documentação interativa da API
-- **PHPUnit** - Testes automatizados (67 testes, 391 assertions)
+- **PHPUnit** - Testes automatizados (81 testes, 422 assertions)
 
 ## Módulos Aplicados da Disciplina
 
@@ -238,7 +238,14 @@ A API oferece os seguintes endpoints principais:
 - `PATCH /api/v1/notifications/{id}/read` - Marca notificação como lida
 - `POST /api/v1/notifications/mark-all-read` - Marca todas como lidas
 
-### 👑 Admin ⭐ NOVO
+### 📍 Locations ⭐ NOVO
+- `GET /api/v1/locations` - Lista locais do usuário
+- `POST /api/v1/locations` - Cria novo local
+- `GET /api/v1/locations/{id}` - Visualiza local
+- `PUT /api/v1/locations/{id}` - Atualiza local
+- `DELETE /api/v1/locations/{id}` - Remove local (soft delete)
+
+### 👑 Admin
 - `GET /api/v1/admin/users` - Lista usuários (filtros: email, data)
 - `PATCH /api/v1/admin/users/{id}` - Atualiza status de admin
 - `GET /api/v1/admin/pets` - Lista pets (filtro: owner_id)
@@ -301,9 +308,10 @@ docker-compose exec app php artisan test
 - ✅ **ReminderTest**: 14 testes (lembretes, agendamento, recorrência)
 - ✅ **SharedPetTest**: 14 testes (compartilhamento e permissões)
 - ✅ **NotificationTest**: 9 testes (sistema de notificações)
-- ✅ **AdminTest**: 13 testes (painel administrativo) ⭐ NOVO
+- ✅ **AdminTest**: 13 testes (painel administrativo)
+- ✅ **LocationTest**: 14 testes (gestão de locais) ⭐ NOVO
 
-**Total: 67 testes | 391 assertions | 100% passando** ✅
+**Total: 81 testes | 422 assertions | 100% passando** ✅
 
 ## Troubleshooting
 
@@ -408,8 +416,9 @@ O arquivo JSON da documentação está disponível em:
 - **Módulo 2**: [Lembretes com Agendamento](docs/MODULO_2_LEMBRETES.md) - Lembretes recorrentes com timezone
 - **Módulo 3**: [Sistema de Notificações](docs/MODULO_3_NOTIFICACOES.md) - Histórico e controle de leitura
 - **Módulo 4**: [Painel Admin](docs/MODULO_4_ADMIN.md) - Gestão e auditoria completa
-- **Módulo 5**: [Auditoria Avançada](docs/MODULO_5_AUDITORIA.md) - Observabilidade e compliance ⭐ NOVO
-- **Módulo 6**: [Migração UUID](docs/MODULO_6_UUID.md) - Transição gradual para UUID ⭐ NOVO
+- **Módulo 5**: [Auditoria Avançada](docs/MODULO_5_AUDITORIA.md) - Observabilidade e compliance
+- **Módulo 6**: [Migração UUID](docs/MODULO_6_UUID.md) - Transição gradual para UUID
+- **Módulo 7**: [Locations](docs/MODULO_7_LOCATIONS.md) - Hierarquia espacial (User → Location → Pet) ⭐ NOVO
 
 ## 📁 Estrutura do Projeto
 
@@ -419,16 +428,16 @@ TCC_UTFPets_API/
 │   ├── Enums/              # PHP 8.2 Enums (7 enums)
 │   ├── Events/             # Eventos do sistema (4 eventos)
 │   ├── Http/
-│   │   ├── Controllers/    # Controllers da API (7 controllers)
+│   │   ├── Controllers/    # Controllers da API (8 controllers)
 │   │   ├── Middleware/     # CORS, Security Headers, IsAdmin
-│   │   └── Requests/       # Form Requests para validação (8 requests)
+│   │   └── Requests/       # Form Requests para validação (10 requests)
 │   ├── Jobs/               # Background Jobs (2 jobs)
-│   ├── Models/             # Eloquent Models (8 models)
-│   ├── Policies/           # Authorization Policies (2 policies)
+│   ├── Models/             # Eloquent Models (9 models)
+│   ├── Policies/           # Authorization Policies (3 policies)
 │   └── Services/           # Service Layer (4 services)
 ├── database/
-│   ├── migrations/         # Migrations do banco (12 migrations)
-│   ├── factories/          # Factories para testes (7 factories)
+│   ├── migrations/         # Migrations do banco (14 migrations)
+│   ├── factories/          # Factories para testes (8 factories)
 │   └── seeders/            # Seeders
 ├── docs/                   # 📚 Documentação dos módulos
 │   ├── INDEX.md            # Índice de toda documentação
@@ -438,12 +447,13 @@ TCC_UTFPets_API/
 │   ├── MODULO_3_NOTIFICACOES.md
 │   ├── MODULO_4_ADMIN.md
 │   ├── MODULO_5_AUDITORIA.md
-│   └── MODULO_6_UUID.md
+│   ├── MODULO_6_UUID.md
+│   └── MODULO_7_LOCATIONS.md
 ├── routes/
-│   ├── api.php             # Definição de rotas da API (33 rotas)
+│   ├── api.php             # Definição de rotas da API (38 rotas)
 │   └── console.php         # Scheduler e comandos Artisan
 ├── tests/
-│   └── Feature/            # Testes de feature (67 testes)
+│   └── Feature/            # Testes de feature (81 testes)
 ├── public/
 │   └── api-docs.json       # Documentação OpenAPI completa
 ├── scripts/
@@ -512,12 +522,20 @@ TCC_UTFPets_API/
 - Integração com Monolog
 - Suporte a compliance (LGPD)
 
-### 9. Migração UUID ⭐ NOVO
+### 9. Migração UUID
 - Estratégia de migração sem downtime
-- Tabelas novas já usam UUID (shared_pets, reminders, notifications, audits)
+- Tabelas novas já usam UUID (shared_pets, reminders, notifications, audits, locations)
 - Chaves paralelas para transição
 - Preparado para sistemas distribuídos
 - Segurança com IDs não previsíveis
+
+### 10. Locations (Hierarquia Espacial) ⭐ NOVO
+- Organização hierárquica: User → Location → Pet
+- Múltiplos locais por usuário (Casa, Fazenda, etc)
+- Timezone específico por local
+- Filtro de pets por location
+- Soft delete com validação
+- Unique constraint (user_id, name)
 
 ## Demonstração em Vídeo
 

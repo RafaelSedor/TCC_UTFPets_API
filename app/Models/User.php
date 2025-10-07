@@ -81,4 +81,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Pet::class);
     }
+
+    public function locations(): HasMany
+    {
+        return $this->hasMany(Location::class);
+    }
 }
+

@@ -29,7 +29,14 @@ class PetStoreRequest extends FormRequest
             'birth_date' => 'required|date',
             'weight' => 'required|numeric|min:0',
             'photo' => 'nullable|image|mimes:jpeg,jpg,png|max:2048',
-            'notes' => 'nullable|string'
+            'notes' => 'nullable|string',
+            'location_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('locations', 'id')->where(function ($query) {
+                    $query->where('user_id', auth()->id());
+                })
+            ]
         ];
     }
 
@@ -41,7 +48,9 @@ class PetStoreRequest extends FormRequest
             'weight.min' => 'O peso não pode ser negativo',
             'photo.image' => 'O arquivo deve ser uma imagem.',
             'photo.mimes' => 'A imagem deve ser do tipo: jpeg, png, jpg ou gif.',
-            'photo.max' => 'A imagem não pode ser maior que 2MB.'
+            'photo.max' => 'A imagem não pode ser maior que 2MB.',
+            'location_id.uuid' => 'O ID do local deve ser um UUID válido',
+            'location_id.exists' => 'O local especificado não existe ou não pertence a você'
         ];
     }
 } 

@@ -18,9 +18,16 @@ class PetController extends Controller
     /**
      * Lista todos os pets do usuário autenticado
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $pets = Pet::where('user_id', Auth::id())
+        $query = Pet::where('user_id', Auth::id());
+
+        // Filtro por location_id
+        if ($request->has('location_id')) {
+            $query->where('location_id', $request->location_id);
+        }
+
+        $pets = $query->with('location:id,name')
             ->orderBy('created_at', 'desc')
             ->get();
 

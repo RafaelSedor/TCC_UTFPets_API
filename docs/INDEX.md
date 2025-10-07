@@ -105,12 +105,29 @@ Migração gradual e compatível para UUID em todas as tabelas.
 
 ---
 
+#### **Módulo 7 - Locations (Hierarquia Espacial)**
+📄 **[MODULO_7_LOCATIONS.md](MODULO_7_LOCATIONS.md)**
+
+Sistema de organização hierárquica: Usuário → Location → Pet.
+
+**Recursos:**
+- 📍 Locais físicos (Casa, Fazenda, Apartamento, etc)
+- 🏗️ Hierarquia: User → Location → Pet
+- 🌍 Timezone por local
+- 🔗 Relacionamentos completos
+- 🔐 Policies de acesso
+- 🔍 Filtro de pets por location
+
+**Endpoints**: 5 | **Testes**: 14 | **Status**: ✅ 100% passando
+
+---
+
 ## 📊 Estatísticas Gerais
 
 ### Cobertura de Testes
 ```
-Total: 67 testes | 391 assertions | 100% passando
-Tempo de execução: ~66s
+Total: 81 testes | 422 assertions | 100% passando
+Tempo de execução: ~78s
 ```
 
 **Distribuição por módulo:**
@@ -121,14 +138,18 @@ Tempo de execução: ~66s
 - ✅ SharedPetTest: 14 testes (compartilhamento de pets)
 - ✅ NotificationTest: 9 testes (sistema de notificações)
 - ✅ AdminTest: 13 testes (painel administrativo)
+- ✅ LocationTest: 14 testes (gestão de locais)
 
 ### Arquitetura
 
-**Models**: 8
-- User, Pet, Meal, SharedPet, Reminder, Notification, AuditLog, Audit
+**Models**: 9
+- User, Pet, Meal, SharedPet, Reminder, Notification, AuditLog, Audit, Location
 
-**Controllers**: 7
-- AuthController, PetController, MealController, SharedPetController, ReminderController, NotificationController, AdminController
+**Controllers**: 8
+- AuthController, PetController, MealController, SharedPetController, ReminderController, NotificationController, AdminController, LocationController
+
+**Policies**: 3
+- PetPolicy, MealPolicy, LocationPolicy
 
 **Enums**: 7
 - Species, SharedPetRole, InvitationStatus, ReminderStatus, RepeatRule, NotificationChannel, NotificationStatus

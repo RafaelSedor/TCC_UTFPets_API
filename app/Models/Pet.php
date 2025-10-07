@@ -29,7 +29,8 @@ class Pet extends Model
         'weight',
         'photo',
         'notes',
-        'user_id'
+        'user_id',
+        'location_id'
     ];
 
     protected $casts = [
@@ -40,6 +41,11 @@ class Pet extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
     }
 
     public function meals(): HasMany
