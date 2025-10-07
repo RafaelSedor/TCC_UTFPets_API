@@ -29,7 +29,14 @@ class PetUpdateRequest extends FormRequest
             'birth_date' => 'sometimes|nullable|date',
             'weight' => 'sometimes|nullable|numeric|min:0',
             'photo' => 'sometimes|image|mimes:jpeg,jpg,png|max:2048',
-            'notes' => 'sometimes|nullable|string'
+            'notes' => 'sometimes|nullable|string',
+            'location_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('locations', 'id')->where(function ($query) {
+                    $query->where('user_id', auth()->id());
+                })
+            ]
         ];
     }
 
@@ -42,7 +49,9 @@ class PetUpdateRequest extends FormRequest
             'photo.required' => 'A foto é obrigatória.',
             'photo.image' => 'O arquivo deve ser uma imagem.',
             'photo.mimes' => 'A imagem deve ser do tipo: jpeg, png, jpg ou gif.',
-            'photo.max' => 'A imagem não pode ser maior que 2MB.'
+            'photo.max' => 'A imagem não pode ser maior que 2MB.',
+            'location_id.uuid' => 'O ID do local deve ser um UUID válido',
+            'location_id.exists' => 'O local especificado não existe ou não pertence a você'
         ];
     }
 }

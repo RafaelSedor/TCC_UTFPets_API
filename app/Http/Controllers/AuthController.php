@@ -17,12 +17,6 @@ use Illuminate\Routing\Controller as BaseController;
 | utilizando JWT para autenticação.
 */
 
-/**
- * @OA\Tag(
- *     name="Auth",
- *     description="Autenticação de usuários via JWT"
- * )
- */
 
 class AuthController extends BaseController
 {
@@ -33,50 +27,7 @@ class AuthController extends BaseController
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/register",
-     *     tags={"Auth"},
-     *     summary="Registra um novo usuário",
-     *     description="Cria uma nova conta de usuário e retorna o token JWT",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name","email","password","password_confirmation"},
-     *             @OA\Property(property="name", type="string", example="John Doe", description="Nome completo do usuário"),
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com", description="Email único do usuário"),
-     *             @OA\Property(property="password", type="string", format="password", example="Password@123", description="Senha com mínimo de 8 caracteres"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password", example="Password@123", description="Confirmação da senha")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Usuário registrado com sucesso",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Registro realizado com sucesso"),
-     *             @OA\Property(property="user", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="John Doe"),
-     *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2024-03-20T10:00:00Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2024-03-20T10:00:00Z")
-     *             ),
-     *             @OA\Property(property="authorization", type="object",
-     *                 @OA\Property(property="token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."),
-     *                 @OA\Property(property="type", type="string", example="bearer")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Erros de validação",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="errors", type="object",
-     *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="O email já está em uso")),
-     *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="A senha deve ter pelo menos 8 caracteres"))
-     *             )
-     *         )
-     *     )
-     * )
+     * Registra um novo usuário
      */
     public function register(Request $request): JsonResponse
     {
@@ -118,55 +69,7 @@ class AuthController extends BaseController
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/login",
-     *     tags={"Auth"},
-     *     summary="Realiza login do usuário",
-     *     description="Autentica o usuário e retorna o token JWT",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com", description="Email do usuário"),
-     *             @OA\Property(property="password", type="string", format="password", example="Password@123", description="Senha do usuário")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Login realizado com sucesso",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Login realizado com sucesso"),
-     *             @OA\Property(property="user", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="John Doe"),
-     *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2024-03-20T10:00:00Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2024-03-20T10:00:00Z")
-     *             ),
-     *             @OA\Property(property="authorization", type="object",
-     *                 @OA\Property(property="token", type="string", example="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."),
-     *                 @OA\Property(property="type", type="string", example="bearer")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Credenciais inválidas",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="E-mail ou senha inválidos")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Erros de validação",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="errors", type="object",
-     *                 @OA\Property(property="email", type="array", @OA\Items(type="string", example="O campo email é obrigatório")),
-     *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="O campo senha é obrigatório"))
-     *             )
-     *         )
-     *     )
-     * )
+     * Realiza login do usuário
      */
     public function login(Request $request): JsonResponse
     {
@@ -207,27 +110,7 @@ class AuthController extends BaseController
     }
 
     /**
-     * @OA\Post(
-     *     path="/api/auth/logout",
-     *     tags={"Auth"},
-     *     summary="Realiza logout do usuário",
-     *     description="Invalida o token JWT atual",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Logout realizado com sucesso",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Logout realizado com sucesso")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Não autorizado",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Token inválido ou expirado")
-     *         )
-     *     )
-     * )
+     * Realiza logout do usuário
      */
     public function logout(): JsonResponse
     {
@@ -238,30 +121,7 @@ class AuthController extends BaseController
     }
 
     /**
-     * @OA\Get(
-     *     path="/api/auth/me",
-     *     tags={"Auth"},
-     *     summary="Retorna os dados do usuário autenticado",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Dados do usuário autenticado",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="name", type="string", example="John Doe"),
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="created_at", type="string", format="date-time"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Não autorizado",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Token inválido ou expirado")
-     *         )
-     *     )
-     * )
+     * Retorna os dados do usuário autenticado
      */
     public function me(): JsonResponse
     {

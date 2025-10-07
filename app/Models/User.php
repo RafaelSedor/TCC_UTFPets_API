@@ -32,6 +32,8 @@ class User extends Authenticatable implements JWTSubject
         'name',
         'email',
         'password',
+        'timezone',
+        'is_admin',
     ];
 
     /**
@@ -52,6 +54,7 @@ class User extends Authenticatable implements JWTSubject
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_admin' => 'boolean',
     ];
 
     /**
@@ -78,4 +81,10 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Pet::class);
     }
+
+    public function locations(): HasMany
+    {
+        return $this->hasMany(Location::class);
+    }
 }
+

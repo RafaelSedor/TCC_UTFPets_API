@@ -1,0 +1,1958 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "UTFPets API",
+    "description": "API para gerenciamento de pets e suas refeições com sistema de compartilhamento",
+    "version": "1.0.0",
+    "contact": {
+      "name": "UTFPets Team",
+      "email": "contato@utfpets.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/api",
+      "description": "Servidor de desenvolvimento"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Endpoints de autenticação e gerenciamento de usuários"
+    },
+    {
+      "name": "Pets",
+      "description": "Gerenciamento de pets"
+    },
+    {
+      "name": "Meals",
+      "description": "Gerenciamento de refeições dos pets"
+    },
+    {
+      "name": "Pet Sharing",
+      "description": "Compartilhamento de pets com sistema de papéis (owner/editor/viewer)"
+    },
+    {
+      "name": "Reminders",
+      "description": "Lembretes de refeições/medicações com agendamento e recorrência"
+    },
+    {
+      "name": "Notifications",
+      "description": "Sistema de notificações para eventos do sistema (lembretes, convites, mudanças de papel)"
+    },
+    {
+      "name": "Admin",
+      "description": "Painel administrativo para gestão de usuários, pets e auditoria (requer permissão de admin)"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Registrar novo usuário",
+        "description": "Cria uma nova conta de usuário no sistema",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "joao.silva@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 8,
+                    "description": "Mínimo 8 caracteres, deve conter: maiúscula, minúscula, número e caractere especial (@$!%*#?&)",
+                    "example": "Senha@123"
+                  },
+                  "password_confirmation": {
+                    "type": "string",
+                    "minLength": 8,
+                    "description": "Deve ser igual ao campo password",
+                    "example": "Senha@123"
+                  }
+                },
+                "required": ["name", "email", "password", "password_confirmation"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Usuário criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {"type": "integer", "example": 1},
+                        "name": {"type": "string", "example": "João Silva"},
+                        "email": {"type": "string", "example": "joao.silva@example.com"}
+                      }
+                    },
+                    "token": {
+                      "type": "string",
+                      "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Fazer login",
+        "description": "Autentica um usuário e retorna o token JWT",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "joao.silva@example.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Senha@123"
+                  }
+                },
+                "required": ["email", "password"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login realizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string",
+                      "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Credenciais inválidas"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Authentication"],
+        "summary": "Fazer logout",
+        "description": "Invalida o token JWT do usuário",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Logout realizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Logout realizado com sucesso"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Authentication"],
+        "summary": "Obter perfil do usuário",
+        "description": "Retorna os dados do usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Dados do usuário",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {"type": "integer", "example": 1},
+                    "name": {"type": "string", "example": "João Silva"},
+                    "email": {"type": "string", "example": "joao.silva@example.com"}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pets": {
+      "get": {
+        "tags": ["Pets"],
+        "summary": "Listar pets do usuário",
+        "description": "Retorna todos os pets do usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Lista de pets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Pet"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Pets"],
+        "summary": "Criar novo pet",
+        "description": "Cria um novo pet para o usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Rex"
+                  },
+                  "species": {
+                    "type": "string",
+                    "enum": ["Cachorro", "Gato", "Pássaro", "Peixe", "Réptil", "Roedor", "Outro"],
+                    "example": "Cachorro"
+                  },
+                  "breed": {
+                    "type": "string",
+                    "example": "Labrador"
+                  },
+                  "birth_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2020-01-15"
+                  },
+                  "weight": {
+                    "type": "number",
+                    "example": 25.5
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Imagem do pet (opcional)"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "example": "Cachorro muito dócil e brincalhão"
+                  }
+                },
+                "required": ["name", "species", "breed", "birth_date", "weight"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pet criado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pet": {
+                      "$ref": "#/components/schemas/Pet"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação"
+          }
+        }
+      }
+    },
+    "/v1/pets/{id}": {
+      "get": {
+        "tags": ["Pets"],
+        "summary": "Exibir pet específico",
+        "description": "Retorna os detalhes de um pet específico",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do pet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pet não encontrado"
+          },
+          "403": {
+            "description": "Sem permissão para visualizar este pet"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Pets"],
+        "summary": "Atualizar pet",
+        "description": "Atualiza os dados de um pet (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Rex Atualizado"
+                  },
+                  "species": {
+                    "type": "string",
+                    "enum": ["Cachorro", "Gato", "Pássaro", "Peixe", "Réptil", "Roedor", "Outro"],
+                    "example": "Cachorro"
+                  },
+                  "breed": {
+                    "type": "string",
+                    "example": "Golden Retriever"
+                  },
+                  "birth_date": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2020-01-15"
+                  },
+                  "weight": {
+                    "type": "number",
+                    "example": 30.0
+                  },
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "example": "Cachorro muito brincalhão"
+                  }
+                },
+                "required": ["name", "species", "breed", "birth_date", "weight"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pet atualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pet": {
+                      "$ref": "#/components/schemas/Pet"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Pet não encontrado"
+          },
+          "403": {
+            "description": "Sem permissão para editar este pet"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Pets"],
+        "summary": "Remover pet",
+        "description": "Remove um pet (soft delete - apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Pet removido com sucesso"
+          },
+          "404": {
+            "description": "Pet não encontrado"
+          },
+          "403": {
+            "description": "Sem permissão para deletar este pet"
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/meals": {
+      "get": {
+        "tags": ["Meals"],
+        "summary": "Listar refeições do pet",
+        "description": "Retorna todas as refeições de um pet específico",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de refeições",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Meal"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Meals"],
+        "summary": "Criar nova refeição",
+        "description": "Cria uma nova refeição para o pet (owner e editor)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "food_type": {
+                    "type": "string",
+                    "example": "Ração Premium"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "example": 100
+                  },
+                  "unit": {
+                    "type": "string",
+                    "example": "g"
+                  },
+                  "scheduled_for": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-10-07 08:00:00"
+                  }
+                },
+                "required": ["food_type", "quantity", "unit", "scheduled_for"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Refeição criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação"
+          },
+          "403": {
+            "description": "Sem permissão para criar refeições (apenas owner e editor)"
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/meals/{id}": {
+      "get": {
+        "tags": ["Meals"],
+        "summary": "Exibir refeição específica",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes da refeição",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meal"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Meals"],
+        "summary": "Atualizar refeição",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "food_type": {
+                    "type": "string",
+                    "example": "Ração Super Premium"
+                  },
+                  "quantity": {
+                    "type": "number",
+                    "example": 150
+                  },
+                  "unit": {
+                    "type": "string",
+                    "example": "g"
+                  },
+                  "scheduled_for": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-10-07 12:00:00"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Refeição atualizada"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Meals"],
+        "summary": "Remover refeição",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Refeição removida"
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/meals/{id}/consume": {
+      "post": {
+        "tags": ["Meals"],
+        "summary": "Marcar refeição como consumida",
+        "description": "Marca uma refeição como consumida (owner e editor)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Refeição marcada como consumida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Refeição marcada como consumida"
+                    },
+                    "meal": {
+                      "$ref": "#/components/schemas/Meal"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/share": {
+      "get": {
+        "tags": ["Pet Sharing"],
+        "summary": "Listar participantes do pet",
+        "description": "Lista todos os usuários que têm acesso ao pet e seus papéis",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de participantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SharedPet"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "example": 2
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Pet Sharing"],
+        "summary": "Compartilhar pet",
+        "description": "Envia um convite para outro usuário acessar o pet (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "integer",
+                    "example": 2,
+                    "description": "ID do usuário (usar user_id OU email)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "maria.souza@example.com",
+                    "description": "Email do usuário (usar user_id OU email)"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["editor", "viewer"],
+                    "example": "editor",
+                    "description": "editor: pode criar/editar refeições | viewer: apenas visualização"
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Convite enviado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Convite enviado com sucesso."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {"type": "integer", "example": 2},
+                        "role": {"type": "string", "example": "editor"},
+                        "invitation_status": {"type": "string", "example": "pending"},
+                        "invited_by": {"type": "integer", "example": 1}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação ou usuário já tem acesso"
+          },
+          "403": {
+            "description": "Apenas o owner pode compartilhar o pet"
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/share/{user}/accept": {
+      "post": {
+        "tags": ["Pet Sharing"],
+        "summary": "Aceitar convite de compartilhamento",
+        "description": "O usuário convidado aceita o convite para acessar o pet",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            },
+            "description": "ID do usuário que foi convidado"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Convite aceito com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Convite aceito com sucesso."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {"type": "integer", "example": 2},
+                        "role": {"type": "string", "example": "editor"},
+                        "invitation_status": {"type": "string", "example": "accepted"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Convite não encontrado"
+          },
+          "403": {
+            "description": "Apenas o usuário convidado pode aceitar"
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/share/{user}": {
+      "patch": {
+        "tags": ["Pet Sharing"],
+        "summary": "Alterar papel do participante",
+        "description": "Altera o papel de um participante (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": ["editor", "viewer"],
+                    "example": "viewer"
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Papel atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Papel atualizado com sucesso."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {"type": "integer", "example": 2},
+                        "role": {"type": "string", "example": "viewer"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Apenas o owner pode alterar papéis"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Pet Sharing"],
+        "summary": "Revogar acesso do participante",
+        "description": "Remove o acesso de um participante ao pet (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 1
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acesso revogado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Acesso revogado com sucesso."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Apenas o owner pode revogar acessos"
+          }
+        }
+      }
+    },
+    "/v1/pets/{pet}/reminders": {
+      "get": {
+        "tags": ["Reminders"],
+        "summary": "Listar lembretes do pet",
+        "description": "Retorna todos os lembretes de um pet com filtros opcionais",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer", "example": 1}
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {"type": "string", "enum": ["active", "paused", "done"], "example": "active"}
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time", "example": "2025-10-07 00:00:00"}
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {"type": "string", "format": "date-time", "example": "2025-10-14 23:59:59"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de lembretes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {"$ref": "#/components/schemas/Reminder"}
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Criar novo lembrete",
+        "description": "Cria um novo lembrete para o pet (owner e editor)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer", "example": 1}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {"type": "string", "example": "Ração manhã"},
+                  "description": {"type": "string", "example": "150g de ração premium"},
+                  "scheduled_at": {"type": "string", "format": "date-time", "example": "2025-10-07 08:00:00"},
+                  "repeat_rule": {"type": "string", "enum": ["none", "daily", "weekly", "custom"], "example": "daily"},
+                  "channel": {"type": "string", "enum": ["in-app", "email", "push"], "example": "in-app"}
+                },
+                "required": ["title", "scheduled_at"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Lembrete criado"},
+          "403": {"description": "Sem permissão (apenas owner e editor)"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}": {
+      "get": {
+        "tags": ["Reminders"],
+        "summary": "Visualizar lembrete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do lembrete",
+            "content": {
+              "application/json": {
+                "schema": {"$ref": "#/components/schemas/Reminder"}
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Reminders"],
+        "summary": "Atualizar lembrete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {"type": "string", "example": "Ração atualizada"},
+                  "description": {"type": "string"},
+                  "scheduled_at": {"type": "string", "format": "date-time"},
+                  "repeat_rule": {"type": "string", "enum": ["none", "daily", "weekly", "custom"]},
+                  "status": {"type": "string", "enum": ["active", "paused", "done"]},
+                  "channel": {"type": "string", "enum": ["in-app", "email", "push"]}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Lembrete atualizado"}
+        }
+      },
+      "delete": {
+        "tags": ["Reminders"],
+        "summary": "Deletar lembrete",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {"description": "Lembrete removido"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}/snooze": {
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Adiar lembrete",
+        "description": "Adia o lembrete por X minutos",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "minutes": {"type": "integer", "minimum": 1, "maximum": 1440, "example": 30}
+                },
+                "required": ["minutes"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Lembrete adiado"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}/complete": {
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Marcar lembrete como concluído",
+        "description": "Marca o lembrete como concluído e cria próxima ocorrência se for recorrente",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {"description": "Lembrete concluído"}
+        }
+      }
+    },
+    "/notifications": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Listar notificações do usuário",
+        "description": "Retorna lista paginada de notificações do usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filtrar por status da notificação",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["queued", "sent", "failed", "read"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 20}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de notificações",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {"$ref": "#/components/schemas/Notification"}
+                    },
+                    "meta": {"$ref": "#/components/schemas/PaginationMeta"}
+                  }
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+                      "user_id": 1,
+                      "title": "🔔 Lembrete: Ração manhã",
+                      "body": "É hora de dar ração para o Buddy!",
+                      "data": {"pet_id": 1, "reminder_id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd", "type": "reminder_due"},
+                      "channel": "db",
+                      "status": "sent",
+                      "created_at": "2025-10-06T10:30:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 1,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "last_page": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/unread-count": {
+      "get": {
+        "tags": ["Notifications"],
+        "summary": "Contar notificações não lidas",
+        "description": "Retorna o número de notificações não lidas do usuário",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Contagem de notificações não lidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "unread_count": {"type": "integer", "example": 3}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/notifications/{notification}/read": {
+      "patch": {
+        "tags": ["Notifications"],
+        "summary": "Marcar notificação como lida",
+        "description": "Marca uma notificação específica como lida",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "notification",
+            "in": "path",
+            "required": true,
+            "description": "ID da notificação",
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notificação marcada como lida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {"type": "string", "example": "Notificação marcada como lida"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "Notificação não encontrada"},
+          "403": {"description": "Não autorizado a acessar esta notificação"}
+        }
+      }
+    },
+    "/notifications/mark-all-read": {
+      "post": {
+        "tags": ["Notifications"],
+        "summary": "Marcar todas as notificações como lidas",
+        "description": "Marca todas as notificações do usuário como lidas",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Todas as notificações marcadas como lidas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {"type": "string", "example": "Todas as notificações foram marcadas como lidas"},
+                    "updated_count": {"type": "integer", "example": 5}
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Listar usuários (Admin)",
+        "description": "Lista todos os usuários com filtros e paginação. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Filtrar por email (busca parcial)",
+            "required": false,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "description": "Filtrar por data de criação (início)",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "description": "Filtrar por data de criação (fim)",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 20, "maximum": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuários",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "João Silva",
+                      "email": "joao@example.com",
+                      "is_admin": false,
+                      "created_at": "2025-10-01T10:00:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 100,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "last_page": 5
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado - Requer permissão de admin"}
+        }
+      }
+    },
+    "/v1/admin/users/{id}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Atualizar status de admin (Admin)",
+        "description": "Altera permissão de admin de um usuário. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do usuário",
+            "schema": {"type": "integer"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_admin": {"type": "boolean", "example": true}
+                },
+                "required": ["is_admin"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permissões atualizadas",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Permissões de admin atualizadas com sucesso",
+                  "user": {
+                    "id": 1,
+                    "name": "João Silva",
+                    "email": "joao@example.com",
+                    "is_admin": true
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"},
+          "422": {"description": "Não pode remover próprio acesso de admin"}
+        }
+      }
+    },
+    "/v1/admin/pets": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Listar pets (Admin)",
+        "description": "Lista todos os pets com filtros e paginação. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "query",
+            "description": "Filtrar por dono do pet",
+            "required": false,
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 20, "maximum": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pets",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "Buddy",
+                      "species": "dog",
+                      "breed": "Golden Retriever",
+                      "user": {
+                        "id": 1,
+                        "name": "João Silva",
+                        "email": "joao@example.com"
+                      },
+                      "created_at": "2025-10-01T10:00:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 50,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "last_page": 3
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"}
+        }
+      }
+    },
+    "/v1/admin/audit-logs": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Listar logs de auditoria (Admin)",
+        "description": "Lista logs de auditoria com filtros e paginação. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Filtrar por ação",
+            "required": false,
+            "schema": {"type": "string", "enum": ["created", "updated", "deleted", "accessed", "login", "logout", "list_users", "list_pets"]}
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "description": "Filtrar por tipo de entidade",
+            "required": false,
+            "schema": {"type": "string", "enum": ["User", "Pet", "Meal", "Reminder", "Notification"]}
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Filtrar por usuário",
+            "required": false,
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Data inicial",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Data final",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 50, "maximum": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de logs de auditoria",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+                      "action": "updated",
+                      "entity_type": "User",
+                      "entity_id": "1",
+                      "old_values": {"is_admin": false},
+                      "new_values": {"is_admin": true},
+                      "user": {
+                        "id": 2,
+                        "name": "Admin",
+                        "email": "admin@utfpets.com"
+                      },
+                      "ip_address": "127.0.0.1",
+                      "created_at": "2025-10-07T20:00:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 200,
+                    "per_page": 50,
+                    "current_page": 1,
+                    "last_page": 4
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"}
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token JWT obtido através do login"
+      }
+    },
+    "schemas": {
+      "Pet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "name": {
+            "type": "string",
+            "example": "Rex"
+          },
+          "species": {
+            "type": "string",
+            "enum": ["Cachorro", "Gato", "Pássaro", "Peixe", "Réptil", "Roedor", "Outro"],
+            "example": "Cachorro"
+          },
+          "breed": {
+            "type": "string",
+            "example": "Labrador"
+          },
+          "birth_date": {
+            "type": "string",
+            "format": "date",
+            "example": "2020-01-15"
+          },
+          "weight": {
+            "type": "number",
+            "format": "float",
+            "example": 25.5
+          },
+          "photo": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://res.cloudinary.com/demo/image/upload/sample.jpg"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "example": "Cachorro muito dócil e brincalhão"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "deleted_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          }
+        }
+      },
+      "Meal": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "pet_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "food_type": {
+            "type": "string",
+            "example": "Ração Premium"
+          },
+          "quantity": {
+            "type": "number",
+            "example": 100
+          },
+          "unit": {
+            "type": "string",
+            "example": "g"
+          },
+          "scheduled_for": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-07T08:00:00.000000Z"
+          },
+          "consumed_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": null
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      },
+      "SharedPet": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "name": {
+            "type": "string",
+            "example": "Maria Souza"
+          },
+          "email": {
+            "type": "string",
+            "example": "maria.souza@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["owner", "editor", "viewer"],
+            "example": "editor",
+            "description": "owner: controle total | editor: pode criar/editar refeições | viewer: apenas visualização"
+          },
+          "invitation_status": {
+            "type": "string",
+            "enum": ["pending", "accepted", "revoked"],
+            "example": "accepted"
+          },
+          "invited_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      },
+      "Reminder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"
+          },
+          "pet_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "Ração manhã"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "150g de ração premium"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-07T08:00:00.000000Z"
+          },
+          "repeat_rule": {
+            "type": "string",
+            "enum": ["none", "daily", "weekly", "custom"],
+            "nullable": true,
+            "example": "daily",
+            "description": "none: não repete | daily: todos os dias | weekly: toda semana | custom: RRULE personalizada"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "paused", "done"],
+            "example": "active",
+            "description": "active: ativo | paused: pausado | done: concluído"
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["in-app", "email", "push"],
+            "example": "in-app",
+            "description": "Canal de notificação"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"
+          },
+          "user_id": {
+            "type": "integer",
+            "example": 1
+          },
+          "title": {
+            "type": "string",
+            "example": "🔔 Lembrete: Ração manhã"
+          },
+          "body": {
+            "type": "string",
+            "example": "É hora de dar ração para o Buddy!"
+          },
+          "data": {
+            "type": "object",
+            "nullable": true,
+            "example": {
+              "pet_id": 1,
+              "reminder_id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+              "type": "reminder_due"
+            }
+          },
+          "channel": {
+            "type": "string",
+            "enum": ["db", "email", "push"],
+            "example": "db",
+            "description": "Canal de notificação"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["queued", "sent", "failed", "read"],
+            "example": "sent",
+            "description": "queued: na fila | sent: enviada | failed: falhou | read: lida"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      }
+    }
+  }
+}

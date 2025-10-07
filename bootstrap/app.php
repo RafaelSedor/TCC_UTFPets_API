@@ -14,7 +14,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // se necessário
+        $middleware->api(prepend: [
+            \App\Http\Middleware\CorsMiddleware::class,
+        ]);
+        
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (AuthenticationException $e, Request $request) {

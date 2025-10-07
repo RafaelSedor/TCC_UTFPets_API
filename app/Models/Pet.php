@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\SharedPetRole;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -17,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pet extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes; // , Auditable;
 
     protected $fillable = [
         'name',
@@ -27,7 +29,8 @@ class Pet extends Model
         'weight',
         'photo',
         'notes',
-        'user_id'
+        'user_id',
+        'location_id'
     ];
 
     protected $casts = [
@@ -40,9 +43,65 @@ class Pet extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class);
+    }
+
     public function meals(): HasMany
     {
         return $this->hasMany(Meal::class);
+    }
+
+    /**
+     * Relacionamento com compartilhamentos
+     */
+    public function sharedWith(): HasMany
+    {
+        return $this->hasMany(SharedPet::class);
+    }
+
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(Reminder::class);
+    }
+
+    /**
+     * Retorna todos os participantes (incluindo compartilhamentos aceitos)
+     */
+    public function participants()
+    {
+        return $this->sharedWith()->accepted();
+    }
+
+    /**
+     * Verifica se o pet é compartilhado com o usuário
+     */
+    public function isSharedWith(User $user): bool
+    {
+        return $this->sharedWith()
+            ->where('user_id', $user->id)
+            ->accepted()
+            ->exists();
+    }
+
+    /**
+     * Retorna o papel do usuário no pet
+     */
+    public function getUserRole(User $user): ?SharedPetRole
+    {
+        // Se é o dono original
+        if ($this->user_id === $user->id) {
+            return SharedPetRole::OWNER;
+        }
+
+        // Se é compartilhado
+        $shared = $this->sharedWith()
+            ->where('user_id', $user->id)
+            ->accepted()
+            ->first();
+
+        return $shared ? $shared->role : null;
     }
 
     /**
