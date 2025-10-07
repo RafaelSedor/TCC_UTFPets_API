@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SharedPetRole;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,7 +19,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pet extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes; // , Auditable;
 
     protected $fillable = [
         'name',

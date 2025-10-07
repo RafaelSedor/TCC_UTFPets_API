@@ -7,6 +7,7 @@ use App\Http\Controllers\MealController;
 use App\Http\Controllers\SharedPetController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,4 +67,12 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    
+    // Rotas administrativas (requerem admin)
+    Route::prefix('admin')->middleware('admin')->group(function () {
+        Route::get('users', [AdminController::class, 'listUsers']);
+        Route::patch('users/{id}', [AdminController::class, 'updateUser']);
+        Route::get('pets', [AdminController::class, 'listPets']);
+        Route::get('audit-logs', [AdminController::class, 'listAuditLogs']);
+    });
 });

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\NotificationChannel;
 use App\Enums\ReminderStatus;
 use App\Enums\RepeatRule;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

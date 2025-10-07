@@ -287,7 +287,7 @@
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'cipher' => 'AES-256-CBC',
-    'key' => 'base64:LIjjrCjXYVJK520i9ZB+MKWP/2ceJdrg1rUJ/EPzlAM=',
+    'key' => 'base64:MF4k9jCAfZX2U69Mqkre7LL7ml3owUgtzohSlF3+o+Q=',
     'previous_keys' => 
     array (
     ),
@@ -673,7 +673,7 @@
   ),
   'jwt' => 
   array (
-    'secret' => 'QvUl7mOmVbJLUGCxs0dOzwtSrHKE7KsjWpPIo5H4DWENWU90CjxLDFvr6OeKpfiG',
+    'secret' => '6xDjvmxucs8r7BvuBvMtwSS5G78RL7sZkzL7BpHe43UBsdt2qDqvshYZvbGw14vt',
     'keys' => 
     array (
       'public' => NULL,
@@ -804,6 +804,22 @@
       'emergency' => 
       array (
         'path' => '/var/www/storage/logs/laravel.log',
+      ),
+      'audit' => 
+      array (
+        'driver' => 'daily',
+        'path' => '/var/www/storage/logs/audit.log',
+        'level' => 'info',
+        'days' => 90,
+        'replace_placeholders' => true,
+      ),
+      'jobs' => 
+      array (
+        'driver' => 'daily',
+        'path' => '/var/www/storage/logs/jobs.log',
+        'level' => 'info',
+        'days' => 30,
+        'replace_placeholders' => true,
       ),
     ),
   ),

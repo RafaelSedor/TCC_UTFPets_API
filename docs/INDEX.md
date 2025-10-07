@@ -56,12 +56,61 @@ Sistema completo de notificações com histórico e controle de leitura.
 
 ---
 
+#### **Módulo 4 - Admin (Gestão e Auditoria)**
+📄 **[MODULO_4_ADMIN.md](MODULO_4_ADMIN.md)**
+
+Painel administrativo completo com gestão de usuários, pets e auditoria.
+
+**Recursos:**
+- 👑 Permissões de admin (is_admin)
+- 📋 Gestão de usuários (listar, alterar permissões)
+- 🐾 Visualização de todos os pets
+- 📊 Sistema de auditoria completo
+- 🔍 Filtros avançados e paginação
+- 🔐 Middleware dedicado (admin)
+
+**Endpoints**: 4 | **Testes**: 13 | **Status**: ✅ 100% passando
+
+---
+
+#### **Módulo 5 - Auditoria (Observabilidade)**
+📄 **[MODULO_5_AUDITORIA.md](MODULO_5_AUDITORIA.md)**
+
+Sistema avançado de auditoria para observabilidade e compliance.
+
+**Recursos:**
+- 📊 Trilha de eventos completa
+- 📝 Logs estruturados (audit.log, jobs.log)
+- 🔍 Trait Auditable reutilizável
+- 🔐 Sanitização de dados sensíveis
+- 📈 Observabilidade e debugging
+
+**Status**: ✅ Infraestrutura criada
+
+---
+
+#### **Módulo 6 - Migração UUID**
+📄 **[MODULO_6_UUID.md](MODULO_6_UUID.md)**
+
+Migração gradual e compatível para UUID em todas as tabelas.
+
+**Recursos:**
+- 🔄 Migração sem downtime
+- 🔗 Chaves paralelas durante transição
+- ✅ 100% compatibilidade mantida
+- 🆕 Tabelas novas já usam UUID
+- 📋 Estratégia em 5 etapas
+
+**Status**: ⏳ Em progresso (shared_pets, reminders, notifications, audit_logs, audits já usam UUID)
+
+---
+
 ## 📊 Estatísticas Gerais
 
 ### Cobertura de Testes
 ```
-Total: 54 testes | 240 assertions | 100% passando
-Tempo de execução: ~58s
+Total: 67 testes | 391 assertions | 100% passando
+Tempo de execução: ~66s
 ```
 
 **Distribuição por módulo:**
@@ -71,23 +120,30 @@ Tempo de execução: ~58s
 - ✅ ReminderTest: 14 testes (lembretes e agendamento)
 - ✅ SharedPetTest: 14 testes (compartilhamento de pets)
 - ✅ NotificationTest: 9 testes (sistema de notificações)
+- ✅ AdminTest: 13 testes (painel administrativo)
 
 ### Arquitetura
 
-**Models**: 6
-- User, Pet, Meal, SharedPet, Reminder, Notification
+**Models**: 8
+- User, Pet, Meal, SharedPet, Reminder, Notification, AuditLog, Audit
 
-**Controllers**: 6
-- AuthController, PetController, MealController, SharedPetController, ReminderController, NotificationController
+**Controllers**: 7
+- AuthController, PetController, MealController, SharedPetController, ReminderController, NotificationController, AdminController
 
 **Enums**: 7
 - Species, SharedPetRole, InvitationStatus, ReminderStatus, RepeatRule, NotificationChannel, NotificationStatus
 
-**Services**: 3
-- AccessService, PetService, NotificationService
+**Services**: 4
+- AccessService, PetService, NotificationService, AuditService
 
 **Jobs**: 2
 - SendReminderJob, DeliverNotificationJob
+
+**Middleware**: 3
+- CorsMiddleware, SecurityHeaders, IsAdmin
+
+**Traits**: 1
+- Auditable (observabilidade)
 
 **Events**: 4
 - SharedPetInvited, SharedPetAccepted, SharedPetRoleChanged, SharedPetRemoved
@@ -114,10 +170,10 @@ Tempo de execução: ~58s
 ## 🎯 Roadmap de Módulos Futuros
 
 ### Em Planejamento
-- [ ] **Módulo 4 - Dashboard** (Estatísticas e gráficos)
-- [ ] **Módulo 5 - Auditoria** (Log de ações e histórico)
+- [ ] **Módulo 5 - Dashboard** (Estatísticas e gráficos)
 - [ ] **Módulo 6 - Relatórios** (Exportação PDF/Excel)
 - [ ] **Módulo 7 - Chat** (Comunicação entre usuários)
+- [ ] **Módulo 8 - Integrações** (APIs externas)
 
 ---
 

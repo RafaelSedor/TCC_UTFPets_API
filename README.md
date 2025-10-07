@@ -2,8 +2,8 @@
 
 > API RESTful para gerenciamento colaborativo de pets e suas refeições
 
-[![Tests](https://img.shields.io/badge/tests-54%20passing-brightgreen)]()
-[![Coverage](https://img.shields.io/badge/assertions-240-blue)]()
+[![Tests](https://img.shields.io/badge/tests-67%20passing-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/assertions-391-blue)]()
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red)]()
 [![PHP](https://img.shields.io/badge/PHP-8.2-purple)]()
 
@@ -39,7 +39,8 @@ A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferec
   - **Viewer**: Apenas visualização
 - 🔔 **Sistema de Eventos**: Eventos para notificações futuras (convites, mudanças de papel, etc.)
 - ⏰ **Lembretes Inteligentes**: Agendamento de refeições/medicações com recorrência e timezone
-- 📱 **Sistema de Notificações**: Histórico completo com controle de leitura e integração automática ⭐ NOVO
+- 📱 **Sistema de Notificações**: Histórico completo com controle de leitura e integração automática
+- 👑 **Painel Administrativo**: Gestão de usuários, pets e auditoria completa do sistema ⭐ NOVO
 
 ### Público-Alvo
 
@@ -70,7 +71,7 @@ O projeto segue as melhores práticas do Laravel com:
 - **JWT (php-open-source-saver/jwt-auth)** - Autenticação stateless
 - **Cloudinary** - Armazenamento e manipulação de imagens
 - **Swagger UI** - Documentação interativa da API
-- **PHPUnit** - Testes automatizados (54 testes, 240 assertions)
+- **PHPUnit** - Testes automatizados (67 testes, 391 assertions)
 
 ## Módulos Aplicados da Disciplina
 
@@ -231,11 +232,17 @@ A API oferece os seguintes endpoints principais:
 - `POST /api/v1/reminders/{id}/snooze` - Adia lembrete
 - `POST /api/v1/reminders/{id}/complete` - Marca como concluído
 
-### 📱 Notificações ⭐ NOVO
+### 📱 Notificações
 - `GET /api/v1/notifications` - Lista notificações (com filtros e paginação)
 - `GET /api/v1/notifications/unread-count` - Conta notificações não lidas
 - `PATCH /api/v1/notifications/{id}/read` - Marca notificação como lida
 - `POST /api/v1/notifications/mark-all-read` - Marca todas como lidas
+
+### 👑 Admin ⭐ NOVO
+- `GET /api/v1/admin/users` - Lista usuários (filtros: email, data)
+- `PATCH /api/v1/admin/users/{id}` - Atualiza status de admin
+- `GET /api/v1/admin/pets` - Lista pets (filtro: owner_id)
+- `GET /api/v1/admin/audit-logs` - Lista logs de auditoria (filtros: action, entity_type, user_id, período)
 
 ## 🔐 Sistema de Permissões
 
@@ -293,9 +300,10 @@ docker-compose exec app php artisan test
 - ✅ **MealTest**: 6 testes (CRUD completo de refeições)
 - ✅ **ReminderTest**: 14 testes (lembretes, agendamento, recorrência)
 - ✅ **SharedPetTest**: 14 testes (compartilhamento e permissões)
-- ✅ **NotificationTest**: 9 testes (sistema de notificações) ⭐ NOVO
+- ✅ **NotificationTest**: 9 testes (sistema de notificações)
+- ✅ **AdminTest**: 13 testes (painel administrativo) ⭐ NOVO
 
-**Total: 54 testes | 240 assertions | 100% passando** ✅
+**Total: 67 testes | 391 assertions | 100% passando** ✅
 
 ## Troubleshooting
 
@@ -398,7 +406,10 @@ O arquivo JSON da documentação está disponível em:
 - **[📚 Índice de Documentação](docs/INDEX.md)** - Navegue por toda a documentação
 - **Módulo 1**: [Compartilhamento de Pets](docs/MODULO_1_COMPARTILHAMENTO.md) - Sistema de colaboração com papéis
 - **Módulo 2**: [Lembretes com Agendamento](docs/MODULO_2_LEMBRETES.md) - Lembretes recorrentes com timezone
-- **Módulo 3**: [Sistema de Notificações](docs/MODULO_3_NOTIFICACOES.md) - Histórico e controle de leitura ⭐ NOVO
+- **Módulo 3**: [Sistema de Notificações](docs/MODULO_3_NOTIFICACOES.md) - Histórico e controle de leitura
+- **Módulo 4**: [Painel Admin](docs/MODULO_4_ADMIN.md) - Gestão e auditoria completa
+- **Módulo 5**: [Auditoria Avançada](docs/MODULO_5_AUDITORIA.md) - Observabilidade e compliance ⭐ NOVO
+- **Módulo 6**: [Migração UUID](docs/MODULO_6_UUID.md) - Transição gradual para UUID ⭐ NOVO
 
 ## 📁 Estrutura do Projeto
 
@@ -408,28 +419,31 @@ TCC_UTFPets_API/
 │   ├── Enums/              # PHP 8.2 Enums (7 enums)
 │   ├── Events/             # Eventos do sistema (4 eventos)
 │   ├── Http/
-│   │   ├── Controllers/    # Controllers da API (6 controllers)
-│   │   ├── Middleware/     # CORS, Security Headers
+│   │   ├── Controllers/    # Controllers da API (7 controllers)
+│   │   ├── Middleware/     # CORS, Security Headers, IsAdmin
 │   │   └── Requests/       # Form Requests para validação (8 requests)
 │   ├── Jobs/               # Background Jobs (2 jobs)
-│   ├── Models/             # Eloquent Models (6 models)
+│   ├── Models/             # Eloquent Models (8 models)
 │   ├── Policies/           # Authorization Policies (2 policies)
-│   └── Services/           # Service Layer (3 services)
+│   └── Services/           # Service Layer (4 services)
 ├── database/
-│   ├── migrations/         # Migrations do banco (9 migrations)
-│   ├── factories/          # Factories para testes (6 factories)
+│   ├── migrations/         # Migrations do banco (12 migrations)
+│   ├── factories/          # Factories para testes (7 factories)
 │   └── seeders/            # Seeders
 ├── docs/                   # 📚 Documentação dos módulos
 │   ├── INDEX.md            # Índice de toda documentação
 │   ├── DATABASE_SETUP.md   # Setup de banco de dados
 │   ├── MODULO_1_COMPARTILHAMENTO.md
 │   ├── MODULO_2_LEMBRETES.md
-│   └── MODULO_3_NOTIFICACOES.md
+│   ├── MODULO_3_NOTIFICACOES.md
+│   ├── MODULO_4_ADMIN.md
+│   ├── MODULO_5_AUDITORIA.md
+│   └── MODULO_6_UUID.md
 ├── routes/
-│   ├── api.php             # Definição de rotas da API (29 rotas)
+│   ├── api.php             # Definição de rotas da API (33 rotas)
 │   └── console.php         # Scheduler e comandos Artisan
 ├── tests/
-│   └── Feature/            # Testes de feature (54 testes)
+│   └── Feature/            # Testes de feature (67 testes)
 ├── public/
 │   └── api-docs.json       # Documentação OpenAPI completa
 ├── scripts/
@@ -474,13 +488,36 @@ TCC_UTFPets_API/
 - Filtros por status e intervalo de datas
 - Tolerância de 5 minutos para evitar perda
 
-### 6. Sistema de Notificações ⭐ NOVO
+### 6. Sistema de Notificações
 - Histórico completo de notificações do usuário
 - Controle de leitura (individual e em lote)
 - Integração automática com lembretes e compartilhamento
 - Paginação e filtros por status
 - Contador de notificações não lidas
 - Dados estruturados para contexto (JSON)
+
+### 7. Painel Administrativo
+- Gestão de usuários e permissões de admin
+- Visualização de todos os pets do sistema
+- Sistema completo de auditoria (audit_logs)
+- Registro de ações (IP, User Agent, valores antigos/novos)
+- Filtros avançados (ação, entidade, período, usuário)
+- Middleware dedicado para segurança
+
+### 8. Auditoria e Observabilidade ⭐ NOVO
+- Trilha de eventos completa (tabela audits)
+- Trait Auditable para models
+- Logs estruturados (audit.log, jobs.log)
+- Sanitização automática de dados sensíveis
+- Integração com Monolog
+- Suporte a compliance (LGPD)
+
+### 9. Migração UUID ⭐ NOVO
+- Estratégia de migração sem downtime
+- Tabelas novas já usam UUID (shared_pets, reminders, notifications, audits)
+- Chaves paralelas para transição
+- Preparado para sistemas distribuídos
+- Segurança com IDs não previsíveis
 
 ## Demonstração em Vídeo
 

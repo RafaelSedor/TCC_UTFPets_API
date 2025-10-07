@@ -39,6 +39,10 @@
     {
       "name": "Notifications",
       "description": "Sistema de notificações para eventos do sistema (lembretes, convites, mudanças de papel)"
+    },
+    {
+      "name": "Admin",
+      "description": "Painel administrativo para gestão de usuários, pets e auditoria (requer permissão de admin)"
     }
   ],
   "paths": {
@@ -1400,6 +1404,286 @@
               }
             }
           }
+        }
+      }
+    },
+    "/v1/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Listar usuários (Admin)",
+        "description": "Lista todos os usuários com filtros e paginação. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "email",
+            "in": "query",
+            "description": "Filtrar por email (busca parcial)",
+            "required": false,
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "created_from",
+            "in": "query",
+            "description": "Filtrar por data de criação (início)",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "created_to",
+            "in": "query",
+            "description": "Filtrar por data de criação (fim)",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 20, "maximum": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de usuários",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "João Silva",
+                      "email": "joao@example.com",
+                      "is_admin": false,
+                      "created_at": "2025-10-01T10:00:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 100,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "last_page": 5
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado - Requer permissão de admin"}
+        }
+      }
+    },
+    "/v1/admin/users/{id}": {
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Atualizar status de admin (Admin)",
+        "description": "Altera permissão de admin de um usuário. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID do usuário",
+            "schema": {"type": "integer"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "is_admin": {"type": "boolean", "example": true}
+                },
+                "required": ["is_admin"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permissões atualizadas",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Permissões de admin atualizadas com sucesso",
+                  "user": {
+                    "id": 1,
+                    "name": "João Silva",
+                    "email": "joao@example.com",
+                    "is_admin": true
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"},
+          "422": {"description": "Não pode remover próprio acesso de admin"}
+        }
+      }
+    },
+    "/v1/admin/pets": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Listar pets (Admin)",
+        "description": "Lista todos os pets com filtros e paginação. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "owner_id",
+            "in": "query",
+            "description": "Filtrar por dono do pet",
+            "required": false,
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 20, "maximum": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pets",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": 1,
+                      "name": "Buddy",
+                      "species": "dog",
+                      "breed": "Golden Retriever",
+                      "user": {
+                        "id": 1,
+                        "name": "João Silva",
+                        "email": "joao@example.com"
+                      },
+                      "created_at": "2025-10-01T10:00:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 50,
+                    "per_page": 20,
+                    "current_page": 1,
+                    "last_page": 3
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"}
+        }
+      }
+    },
+    "/v1/admin/audit-logs": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Listar logs de auditoria (Admin)",
+        "description": "Lista logs de auditoria com filtros e paginação. Requer permissão de admin.",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "description": "Filtrar por ação",
+            "required": false,
+            "schema": {"type": "string", "enum": ["created", "updated", "deleted", "accessed", "login", "logout", "list_users", "list_pets"]}
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "description": "Filtrar por tipo de entidade",
+            "required": false,
+            "schema": {"type": "string", "enum": ["User", "Pet", "Meal", "Reminder", "Notification"]}
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "description": "Filtrar por usuário",
+            "required": false,
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Data inicial",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Data final",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página",
+            "required": false,
+            "schema": {"type": "integer", "default": 50, "maximum": 100}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de logs de auditoria",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+                      "action": "updated",
+                      "entity_type": "User",
+                      "entity_id": "1",
+                      "old_values": {"is_admin": false},
+                      "new_values": {"is_admin": true},
+                      "user": {
+                        "id": 2,
+                        "name": "Admin",
+                        "email": "admin@utfpets.com"
+                      },
+                      "ip_address": "127.0.0.1",
+                      "created_at": "2025-10-07T20:00:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 200,
+                    "per_page": 50,
+                    "current_page": 1,
+                    "last_page": 4
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"}
         }
       }
     }

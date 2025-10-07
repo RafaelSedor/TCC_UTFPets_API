@@ -38,6 +38,12 @@ class SendReminderJob implements ShouldQueue
      */
     public function handle(): void
     {
+        Log::channel('jobs')->info('SendReminderJob started', [
+            'reminder_id' => $this->reminder->id,
+            'pet_id' => $this->reminder->pet_id,
+            'scheduled_at' => $this->reminder->scheduled_at,
+        ]);
+
         try {
             // Busca todos os usuários que têm acesso ao pet
             $pet = $this->reminder->pet;
@@ -91,15 +97,16 @@ class SendReminderJob implements ShouldQueue
                 $this->reminder->calculateNextOccurrence();
             }
 
-            Log::info("Lembrete processado com sucesso", [
+            Log::channel('jobs')->info("SendReminderJob completed successfully", [
                 'reminder_id' => $this->reminder->id,
                 'users_notified' => $users->count(),
             ]);
 
         } catch (\Exception $e) {
-            Log::error("Erro ao enviar lembrete", [
+            Log::channel('jobs')->error("SendReminderJob failed", [
                 'reminder_id' => $this->reminder->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
             // Re-lança a exceção para que o job seja reprocessado
@@ -112,9 +119,10 @@ class SendReminderJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        Log::error("Falha permanente ao enviar lembrete", [
+        Log::channel('jobs')->error("SendReminderJob permanent failure", [
             'reminder_id' => $this->reminder->id,
             'error' => $exception->getMessage(),
+            'trace' => $exception->getTraceAsString(),
         ]);
 
         // TODO: Mover para dead-letter queue ou tabela de falhas

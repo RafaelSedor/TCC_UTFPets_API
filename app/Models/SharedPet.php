@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvitationStatus;
 use App\Enums\SharedPetRole;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
