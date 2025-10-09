@@ -2,130 +2,96 @@
 
 namespace App\Jobs;
 
+use App\Events\ReminderDue;
 use App\Models\Reminder;
-use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
-use App\Services\NotificationService;
 
 class SendReminderJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $uniqueFor = 3600; // 1 hora de idempotência
+    public $tries = 5;
+    public $backoff = [60, 300, 900, 3600]; // 1min, 5min, 15min, 1h
+    public $timeout = 120;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(
-        public Reminder $reminder
+        public string $reminderId,
+        public string $jobId
     ) {}
 
-    /**
-     * Get the unique ID for the job (idempotência).
-     */
-    public function uniqueId(): string
+    public function handle(NotificationService $notificationService): void
     {
-        return 'reminder-' . $this->reminder->id . '-' . $this->reminder->scheduled_at->timestamp;
-    }
+        $reminder = Reminder::with('pet.user')->find($this->reminderId);
+        
+        if (!$reminder) {
+            Log::warning('Lembrete não encontrado para envio', [
+                'reminder_id' => $this->reminderId,
+                'job_id' => $this->jobId
+            ]);
+            return;
+        }
 
-    /**
-     * Execute the job.
-     */
-    public function handle(): void
-    {
-        Log::channel('jobs')->info('SendReminderJob started', [
-            'reminder_id' => $this->reminder->id,
-            'pet_id' => $this->reminder->pet_id,
-            'scheduled_at' => $this->reminder->scheduled_at,
-        ]);
+        // Verifica se o lembrete ainda está ativo
+        if ($reminder->status !== 'active' || $reminder->scheduled_at->isPast()) {
+            Log::info('Lembrete não está mais ativo', [
+                'reminder_id' => $this->reminderId,
+                'status' => $reminder->status,
+                'scheduled_at' => $reminder->scheduled_at
+            ]);
+            return;
+        }
+
+        $title = "🔔 Lembrete: {$reminder->title}";
+        $body = "{$reminder->pet->name}: {$reminder->description}";
 
         try {
-            // Busca todos os usuários que têm acesso ao pet
-            $pet = $this->reminder->pet;
-            $users = collect();
+            // Dispara evento que aciona o push notification
+            event(new ReminderDue($reminder));
 
-            // Adiciona o owner
-            $users->push($pet->user);
-
-            // Adiciona todos os participantes aceitos (editores e viewers)
-            $participants = $pet->sharedWith()
-                ->accepted()
-                ->with('user')
-                ->get();
-
-            foreach ($participants as $sharedPet) {
-                $users->push($sharedPet->user);
-            }
-
-            // Remove duplicados
-            $users = $users->unique('id');
-
-            // Envia notificação para cada usuário
-            $notificationService = app(NotificationService::class);
-            
-            foreach ($users as $user) {
-                $notificationService->queue(
-                    user: $user,
-                    title: "🔔 Lembrete: {$this->reminder->title}",
-                    body: $this->reminder->description ?? "Lembrete agendado para {$this->reminder->scheduled_at->format('d/m/Y H:i')}",
-                    data: [
-                        'type' => 'reminder_due',
-                        'reminder_id' => $this->reminder->id,
-                        'pet_id' => $this->reminder->pet_id,
-                        'scheduled_at' => $this->reminder->scheduled_at->toIso8601String(),
-                    ],
-                    channel: $this->reminder->channel
-                );
-                
-                Log::info("Notificação de lembrete criada", [
-                    'reminder_id' => $this->reminder->id,
-                    'user_id' => $user->id,
-                    'title' => $this->reminder->title,
-                ]);
-            }
-
-            // Se for recorrente e não está concluído, cria próxima ocorrência
-            if ($this->reminder->status->isActive() && 
-                $this->reminder->repeat_rule && 
-                $this->reminder->repeat_rule->isRecurring()) {
-                
-                $this->reminder->calculateNextOccurrence();
-            }
-
-            Log::channel('jobs')->info("SendReminderJob completed successfully", [
-                'reminder_id' => $this->reminder->id,
-                'users_notified' => $users->count(),
+            Log::info('Lembrete enviado com sucesso', [
+                'reminder_id' => $this->reminderId,
+                'pet_name' => $reminder->pet->name,
+                'user_id' => $reminder->pet->user_id,
             ]);
 
-        } catch (\Exception $e) {
-            Log::channel('jobs')->error("SendReminderJob failed", [
-                'reminder_id' => $this->reminder->id,
+            // Marca o lembrete como enviado
+            $reminder->update([
+                'status' => 'sent',
+                'sent_at' => now()
+            ]);
+
+        } catch (\Throwable $e) {
+            Log::error('Erro ao enviar lembrete', [
+                'reminder_id' => $this->reminderId,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'trace' => $e->getTraceAsString()
             ]);
 
-            // Re-lança a exceção para que o job seja reprocessado
-            throw $e;
+            throw $e; // Re-throw para que o job seja marcado como failed
         }
     }
 
-    /**
-     * Handle a job failure.
-     */
     public function failed(\Throwable $exception): void
     {
-        Log::channel('jobs')->error("SendReminderJob permanent failure", [
-            'reminder_id' => $this->reminder->id,
-            'error' => $exception->getMessage(),
-            'trace' => $exception->getTraceAsString(),
+        Log::error('SendReminderJob falhou definitivamente', [
+            'reminder_id' => $this->reminderId,
+            'job_id' => $this->jobId,
+            'error' => $exception->getMessage()
         ]);
 
-        // TODO: Mover para dead-letter queue ou tabela de falhas
+        // Opcional: marcar o lembrete como failed
+        $reminder = Reminder::find($this->reminderId);
+        if ($reminder) {
+            $reminder->update([
+                'status' => 'failed',
+                'failed_at' => now()
+            ]);
+        }
     }
 }
-

@@ -34,8 +34,13 @@ class ReminderFactory extends Factory
             'description' => fake()->optional()->sentence(),
             'scheduled_at' => fake()->dateTimeBetween('now', '+30 days'),
             'repeat_rule' => fake()->randomElement(RepeatRule::cases()),
-            'status' => fake()->randomElement(ReminderStatus::cases()),
-            'channel' => NotificationChannel::DB,
+            'status' => ReminderStatus::ACTIVE, // Sempre começa como active
+            'channel' => fake()->randomElement([NotificationChannel::PUSH, NotificationChannel::EMAIL]),
+            'days_of_week' => null, // Default null para evitar problemas
+            'timezone_override' => null,
+            'snooze_minutes_default' => 0,
+            'active_window_start' => null,
+            'active_window_end' => null,
         ];
     }
 
@@ -68,6 +73,14 @@ class ReminderFactory extends Factory
             'status' => ReminderStatus::DONE,
         ]);
     }
+    
+    /**
+     * Indicate that the reminder is completed (alias for done).
+     */
+    public function completed(): static
+    {
+        return $this->done();
+    }
 
     /**
      * Indicate that the reminder repeats daily.
@@ -96,6 +109,47 @@ class ReminderFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'repeat_rule' => RepeatRule::NONE,
+        ]);
+    }
+    
+    /**
+     * Reminder with specific days of week (weekdays).
+     */
+    public function weekdays(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'days_of_week' => ['MON', 'TUE', 'WED', 'THU', 'FRI'],
+        ]);
+    }
+    
+    /**
+     * Reminder with active window (business hours).
+     */
+    public function businessHours(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'active_window_start' => '08:00',
+            'active_window_end' => '18:00',
+        ]);
+    }
+    
+    /**
+     * Reminder with push channel.
+     */
+    public function push(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'channel' => NotificationChannel::PUSH,
+        ]);
+    }
+    
+    /**
+     * Reminder with email channel.
+     */
+    public function email(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'channel' => NotificationChannel::EMAIL,
         ]);
     }
 }

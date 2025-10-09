@@ -24,6 +24,12 @@ class Reminder extends Model
         'repeat_rule',
         'status',
         'channel',
+        'job_id',
+        'days_of_week',
+        'timezone_override',
+        'snooze_minutes_default',
+        'active_window_start',
+        'active_window_end',
     ];
 
     protected $casts = [
@@ -31,6 +37,8 @@ class Reminder extends Model
         'status' => ReminderStatus::class,
         'repeat_rule' => RepeatRule::class,
         'channel' => NotificationChannel::class,
+        'days_of_week' => 'array',
+        'snooze_minutes_default' => 'integer',
     ];
 
     /**
@@ -79,9 +87,55 @@ class Reminder extends Model
      */
     public function snooze(int $minutes): bool
     {
+        // Valida o limite máximo de snooze (1440 minutos = 24 horas)
+        if ($minutes > 1440) {
+            return false;
+        }
+
         return $this->update([
             'scheduled_at' => $this->scheduled_at->addMinutes($minutes),
         ]);
+    }
+    
+    /**
+     * Retorna o timezone efetivo (override ou do usuário)
+     */
+    public function getEffectiveTimezone(): string
+    {
+        if ($this->timezone_override) {
+            return $this->timezone_override;
+        }
+        
+        // Fallback: usar timezone do usuário através do pet
+        return $this->pet->user->timezone ?? config('app.timezone');
+    }
+    
+    /**
+     * Verifica se um horário está dentro da janela ativa
+     */
+    public function isWithinActiveWindow(\DateTimeInterface $datetime): bool
+    {
+        // Se não há janela definida, sempre retorna true
+        if (!$this->active_window_start || !$this->active_window_end) {
+            return true;
+        }
+        
+        $time = $datetime->format('H:i:s');
+        return $time >= $this->active_window_start && $time <= $this->active_window_end;
+    }
+    
+    /**
+     * Verifica se um dia da semana está permitido
+     */
+    public function isDayOfWeekAllowed(\DateTimeInterface $datetime): bool
+    {
+        // Se não há restrição de dias, sempre retorna true
+        if (!$this->days_of_week || empty($this->days_of_week)) {
+            return true;
+        }
+        
+        $dayOfWeek = strtoupper($datetime->format('D')); // MON, TUE, WED, etc
+        return in_array($dayOfWeek, $this->days_of_week);
     }
 
     /**

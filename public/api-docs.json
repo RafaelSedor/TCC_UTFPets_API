@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "UTFPets API",
-    "description": "API para gerenciamento de pets e suas refeições com sistema de compartilhamento",
+    "description": "API completa para gerenciamento de pets com refeições, lembretes, notificações push, controle de peso, integração de calendário e sistema de compartilhamento colaborativo",
     "version": "1.0.0",
     "contact": {
       "name": "UTFPets Team",
@@ -43,6 +43,38 @@
     {
       "name": "Admin",
       "description": "Painel administrativo para gestão de usuários, pets e auditoria (requer permissão de admin)"
+    },
+    {
+      "name": "Locations",
+      "description": "Gerenciamento de localizações dos pets"
+    },
+    {
+      "name": "Pet Weights",
+      "description": "Controle de peso dos pets com histórico e tendências"
+    },
+    {
+      "name": "User Devices",
+      "description": "Registro de dispositivos para notificações push"
+    },
+    {
+      "name": "Calendar",
+      "description": "Integração de calendário (.ics) para lembretes"
+    },
+    {
+      "name": "GraphQL",
+      "description": "Proxy para API GraphQL"
+    },
+    {
+      "name": "Educational Articles",
+      "description": "Artigos educacionais sobre nutrição e segurança alimentar de pets (endpoints públicos)"
+    },
+    {
+      "name": "Educational Articles - Admin",
+      "description": "Gerenciamento de artigos educacionais (requer permissão de admin)"
+    },
+    {
+      "name": "Nutrition",
+      "description": "Resumo nutricional e alertas de saúde dos pets"
     }
   ],
   "paths": {
@@ -1253,7 +1285,7 @@
         }
       }
     },
-    "/notifications": {
+    "/v1/notifications": {
       "get": {
         "tags": ["Notifications"],
         "summary": "Listar notificações do usuário",
@@ -1326,7 +1358,7 @@
         }
       }
     },
-    "/notifications/unread-count": {
+    "/v1/notifications/unread-count": {
       "get": {
         "tags": ["Notifications"],
         "summary": "Contar notificações não lidas",
@@ -1349,7 +1381,7 @@
         }
       }
     },
-    "/notifications/{notification}/read": {
+    "/v1/notifications/{notification}/read": {
       "patch": {
         "tags": ["Notifications"],
         "summary": "Marcar notificação como lida",
@@ -1383,7 +1415,7 @@
         }
       }
     },
-    "/notifications/mark-all-read": {
+    "/v1/notifications/mark-all-read": {
       "post": {
         "tags": ["Notifications"],
         "summary": "Marcar todas as notificações como lidas",
@@ -1686,6 +1718,1225 @@
           "403": {"description": "Acesso negado"}
         }
       }
+    },
+    "/v1/pets/{petId}/weights": {
+      "get": {
+        "tags": ["Pet Weights"],
+        "summary": "Listar pesos de um pet",
+        "description": "Lista histórico de pesos de um pet com filtros opcionais",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Data inicial (YYYY-MM-DD)",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Data final (YYYY-MM-DD)",
+            "required": false,
+            "schema": {"type": "string", "format": "date"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de pesos do pet",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+                      "pet_id": 1,
+                      "weight_kg": 12.5,
+                      "measured_at": "2025-10-08T10:30:00.000000Z",
+                      "notes": "Peso após consulta veterinária",
+                      "created_at": "2025-10-08T10:30:00.000000Z"
+                    }
+                  ],
+                  "meta": {
+                    "total": 10,
+                    "trend": "increasing",
+                    "average_weight": 12.3,
+                    "min_weight": 11.5,
+                    "max_weight": 12.5
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Pet Weights"],
+        "summary": "Registrar novo peso",
+        "description": "Registra um novo peso para o pet",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["weight_kg"],
+                "properties": {
+                  "weight_kg": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 0.1,
+                    "example": 12.5
+                  },
+                  "measured_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "example": "2025-10-08T10:30:00Z"
+                  },
+                  "notes": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "Peso após consulta"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Peso registrado com sucesso"
+          }
+        }
+      }
+    },
+    "/v1/pets/{petId}/weights/{weightId}": {
+      "delete": {
+        "tags": ["Pet Weights"],
+        "summary": "Deletar registro de peso",
+        "description": "Remove um registro de peso do histórico",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "petId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer"}
+          },
+          {
+            "name": "weightId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Peso deletado com sucesso"
+          }
+        }
+      }
+    },
+    "/v1/devices/register": {
+      "post": {
+        "tags": ["User Devices"],
+        "summary": "Registrar dispositivo para push notifications",
+        "description": "Registra ou atualiza um dispositivo para receber notificações push via FCM",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fcm_token", "platform"],
+                "properties": {
+                  "fcm_token": {
+                    "type": "string",
+                    "example": "dXRmcGV0czp0b2tlbjoxMjM0NTY3ODkw..."
+                  },
+                  "platform": {
+                    "type": "string",
+                    "enum": ["android", "ios", "web"],
+                    "example": "android"
+                  },
+                  "device_name": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "Galaxy S21"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dispositivo registrado com sucesso"
+          },
+          "200": {
+            "description": "Dispositivo atualizado (token já existia)"
+          }
+        }
+      }
+    },
+    "/v1/devices": {
+      "get": {
+        "tags": ["User Devices"],
+        "summary": "Listar dispositivos do usuário",
+        "description": "Lista todos os dispositivos registrados do usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Lista de dispositivos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
+                      "platform": "android",
+                      "device_name": "Galaxy S21",
+                      "last_seen_at": "2025-10-08T10:30:00.000000Z",
+                      "created_at": "2025-10-08T10:30:00.000000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/devices/{deviceId}": {
+      "delete": {
+        "tags": ["User Devices"],
+        "summary": "Remover dispositivo",
+        "description": "Remove um dispositivo da lista de dispositivos registrados",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dispositivo removido com sucesso"
+          }
+        }
+      }
+    },
+    "/v1/calendar": {
+      "get": {
+        "tags": ["Calendar"],
+        "summary": "Obter URL do calendário",
+        "description": "Retorna a URL do calendário .ics do usuário para sincronização com aplicativos de calendário",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "URL do calendário",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "calendar_token": "550e8400-e29b-41d4-a716-446655440000",
+                    "calendar_url": "http://localhost:8080/calendar/550e8400-e29b-41d4-a716-446655440000.ics",
+                    "instructions": "Use esta URL em seu aplicativo de calendário favorito (Google Calendar, Apple Calendar, Outlook, etc.) para sincronizar seus lembretes."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/calendar/rotate-token": {
+      "post": {
+        "tags": ["Calendar"],
+        "summary": "Rotacionar token do calendário",
+        "description": "Gera um novo token de calendário, invalidando o anterior. Útil para segurança caso a URL seja compartilhada indevidamente.",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Novo token gerado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "calendar_token": "650e8400-e29b-41d4-a716-446655440001",
+                    "calendar_url": "http://localhost:8080/calendar/650e8400-e29b-41d4-a716-446655440001.ics"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/locations": {
+      "get": {
+        "tags": ["Locations"],
+        "summary": "Listar localizações do usuário",
+        "description": "Retorna todas as localizações do usuário autenticado",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Lista de localizações",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "uuid",
+                      "user_id": 1,
+                      "name": "Casa Principal",
+                      "address": "Rua das Flores, 123",
+                      "city": "Curitiba",
+                      "state": "PR",
+                      "country": "Brasil",
+                      "timezone": "America/Sao_Paulo",
+                      "pets_count": 2,
+                      "created_at": "2025-10-01T10:00:00.000000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Locations"],
+        "summary": "Criar nova localização",
+        "description": "Cria uma nova localização para o usuário",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {"type": "string", "example": "Casa Principal"},
+                  "address": {"type": "string", "example": "Rua das Flores, 123"},
+                  "city": {"type": "string", "example": "Curitiba"},
+                  "state": {"type": "string", "example": "PR"},
+                  "country": {"type": "string", "example": "Brasil"},
+                  "timezone": {"type": "string", "example": "America/Sao_Paulo"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {"description": "Localização criada"},
+          "422": {"description": "Nome duplicado ou validação falhou"}
+        }
+      }
+    },
+    "/v1/locations/{location}": {
+      "get": {
+        "tags": ["Locations"],
+        "summary": "Exibir localização específica",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {"description": "Detalhes da localização"},
+          "403": {"description": "Sem permissão"},
+          "404": {"description": "Localização não encontrada"}
+        }
+      },
+      "put": {
+        "tags": ["Locations"],
+        "summary": "Atualizar localização",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {"type": "string"},
+                  "address": {"type": "string"},
+                  "city": {"type": "string"},
+                  "state": {"type": "string"},
+                  "country": {"type": "string"},
+                  "timezone": {"type": "string"}
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {"description": "Localização atualizada"},
+          "403": {"description": "Sem permissão"},
+          "404": {"description": "Localização não encontrada"}
+        }
+      },
+      "delete": {
+        "tags": ["Locations"],
+        "summary": "Deletar localização",
+        "description": "Remove localização (apenas se não tiver pets associados)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "200": {"description": "Localização removida"},
+          "422": {"description": "Não pode deletar - existem pets associados"},
+          "403": {"description": "Sem permissão"},
+          "404": {"description": "Localização não encontrada"}
+        }
+      }
+    },
+    "/v1/graphql/read": {
+      "post": {
+        "tags": ["GraphQL"],
+        "summary": "Proxy para API GraphQL (Read-only)",
+        "description": "Endpoint proxy para consultas GraphQL read-only. Mutations são bloqueadas.",
+        "security": [{"bearerAuth": []}],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query"],
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "example": "{ pets { id name species } }"
+                  },
+                  "variables": {
+                    "type": "object",
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resposta da consulta GraphQL",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": {
+                    "pets": [
+                      {
+                        "id": "1",
+                        "name": "Buddy",
+                        "species": "dog"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/educational-articles": {
+      "get": {
+        "tags": ["Educational Articles"],
+        "summary": "Lista artigos educacionais publicados",
+        "description": "Endpoint público que retorna lista paginada de artigos publicados, com opções de busca e filtro por tags",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Busca por termo no título, resumo ou conteúdo",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "nutrição"
+            }
+          },
+          {
+            "name": "tags[]",
+            "in": "query",
+            "description": "Filtra por tags específicas (pode passar múltiplas)",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["Cães", "Nutrição"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número da página",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "example": 1
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "description": "Itens por página (máximo: 50)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 15,
+              "maximum": 50,
+              "example": 15
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de artigos publicados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "slug": {
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "string"
+                          },
+                          "tags": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "published_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "links": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object"
+                    }
+                  }
+                },
+                "example": {
+                  "data": [
+                    {
+                      "id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                      "title": "Alimentos Proibidos para Cães: O Que Você Precisa Saber",
+                      "slug": "alimentos-proibidos-para-caes-o-que-voce-precisa-saber",
+                      "summary": "Descubra quais alimentos são tóxicos para cães e como prevenir intoxicações alimentares em seu pet.",
+                      "tags": ["Cães", "Segurança Alimentar", "Alimentos Proibidos", "Prevenção"],
+                      "published_at": "2025-10-05T14:30:00.000000Z",
+                      "created_at": "2025-10-05T10:00:00.000000Z"
+                    }
+                  ],
+                  "links": {
+                    "first": "http://localhost/educational-articles?page=1",
+                    "last": "http://localhost/educational-articles?page=3",
+                    "prev": null,
+                    "next": "http://localhost/educational-articles?page=2"
+                  },
+                  "meta": {
+                    "current_page": 1,
+                    "from": 1,
+                    "last_page": 3,
+                    "per_page": 15,
+                    "to": 15,
+                    "total": 45
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/educational-articles/{slug}": {
+      "get": {
+        "tags": ["Educational Articles"],
+        "summary": "Exibe detalhes de um artigo educacional",
+        "description": "Endpoint público que retorna detalhes completos de um artigo publicado pelo slug",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "description": "Slug único do artigo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "alimentos-proibidos-para-caes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhes do artigo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "string",
+                      "description": "Conteúdo HTML do artigo"
+                    },
+                    "tags": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "published_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "created_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "updated_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "creator": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                  "title": "Alimentos Proibidos para Cães: O Que Você Precisa Saber",
+                  "slug": "alimentos-proibidos-para-caes-o-que-voce-precisa-saber",
+                  "summary": "Descubra quais alimentos são tóxicos para cães...",
+                  "body": "<h2>Introdução</h2><p>Muitos tutores não sabem...</p>",
+                  "tags": ["Cães", "Segurança Alimentar"],
+                  "published_at": "2025-10-05T14:30:00.000000Z",
+                  "created_at": "2025-10-05T10:00:00.000000Z",
+                  "updated_at": "2025-10-05T10:00:00.000000Z",
+                  "creator": {
+                    "id": "1a2b3c4d-5e6f-7g8h-9i0j-1k2l3m4n5o6p",
+                    "name": "Admin User",
+                    "email": "admin@utfpets.com"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Artigo não encontrado ou não publicado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Artigo não encontrado."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/educational-articles": {
+      "post": {
+        "tags": ["Educational Articles - Admin"],
+        "summary": "Cria um novo artigo educacional",
+        "description": "Endpoint admin para criar artigos. Gera slug automaticamente a partir do título.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["title", "summary", "body"],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 120,
+                    "description": "Título do artigo (único)",
+                    "example": "Nutrição Balanceada para Gatos"
+                  },
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 300,
+                    "description": "Resumo do artigo",
+                    "example": "Aprenda sobre as necessidades nutricionais específicas dos gatos."
+                  },
+                  "body": {
+                    "type": "string",
+                    "description": "Conteúdo HTML do artigo (tags script bloqueadas)",
+                    "example": "<h2>Introdução</h2><p>Gatos são carnívoros obrigatórios...</p>"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string",
+                      "maxLength": 50
+                    },
+                    "description": "Tags do artigo (máximo 10)",
+                    "example": ["Gatos", "Nutrição", "Saúde"]
+                  },
+                  "published_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true,
+                    "description": "Data de publicação (null = rascunho)",
+                    "example": "2025-10-08T10:00:00Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Artigo criado com sucesso",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Artigo educacional criado com sucesso.",
+                  "data": {
+                    "id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                    "title": "Nutrição Balanceada para Gatos",
+                    "slug": "nutricao-balanceada-para-gatos",
+                    "summary": "Aprenda sobre as necessidades nutricionais...",
+                    "body": "<h2>Introdução</h2><p>Gatos são carnívoros...</p>",
+                    "tags": ["Gatos", "Nutrição", "Saúde"],
+                    "published_at": "2025-10-08T10:00:00.000000Z",
+                    "created_by": "1a2b3c4d",
+                    "created_at": "2025-10-08T09:00:00.000000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado (não é admin)"
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "O título é obrigatório.",
+                  "errors": {
+                    "title": ["O título é obrigatório."]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/educational-articles/{id}": {
+      "patch": {
+        "tags": ["Educational Articles - Admin"],
+        "summary": "Atualiza um artigo educacional",
+        "description": "Atualiza artigo existente. Slug só é regenerado se regenerate_slug=true",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID do artigo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "minLength": 8,
+                    "maxLength": 120
+                  },
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 300
+                  },
+                  "body": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "published_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true
+                  },
+                  "regenerate_slug": {
+                    "type": "boolean",
+                    "description": "Se true, regenera slug a partir do título",
+                    "example": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Artigo atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Artigo educacional atualizado com sucesso.",
+                  "data": {
+                    "id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                    "title": "Título Atualizado",
+                    "slug": "titulo-original",
+                    "summary": "Novo resumo..."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado"
+          },
+          "404": {
+            "description": "Artigo não encontrado"
+          },
+          "422": {
+            "description": "Erro de validação"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Educational Articles - Admin"],
+        "summary": "Remove um artigo educacional",
+        "description": "Soft delete do artigo",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID do artigo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artigo removido com sucesso",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Artigo educacional removido com sucesso."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado"
+          },
+          "404": {
+            "description": "Artigo não encontrado"
+          }
+        }
+      }
+    },
+    "/v1/admin/educational-articles/{id}/publish": {
+      "post": {
+        "tags": ["Educational Articles - Admin"],
+        "summary": "Publica um artigo educacional",
+        "description": "Define published_at para agora, tornando o artigo público",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID do artigo",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Artigo publicado com sucesso",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Artigo publicado com sucesso.",
+                  "data": {
+                    "id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                    "title": "Título do Artigo",
+                    "published_at": "2025-10-08T15:30:00.000000Z"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Não autenticado"
+          },
+          "403": {
+            "description": "Acesso negado"
+          },
+          "404": {
+            "description": "Artigo não encontrado"
+          }
+        }
+      }
+    },
+    "/v1/admin/educational-articles/drafts": {
+      "get": {
+        "tags": ["Educational Articles - Admin"],
+        "summary": "Lista artigos rascunhos",
+        "description": "Lista artigos não publicados (published_at null ou futuro)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "integer", "default": 1}
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {"type": "integer", "default": 15, "maximum": 50}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de rascunhos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "data": [
+                    {
+                      "id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                      "title": "Artigo em Rascunho",
+                      "slug": "artigo-em-rascunho",
+                      "summary": "Resumo do artigo...",
+                      "tags": ["Tag1"],
+                      "published_at": null,
+                      "created_at": "2025-10-08T10:00:00.000000Z",
+                      "updated_at": "2025-10-08T12:00:00.000000Z",
+                      "creator": {
+                        "id": "1a2b3c4d",
+                        "name": "Admin User",
+                        "email": "admin@utfpets.com"
+                      }
+                    }
+                  ],
+                  "meta": {"total": 5, "per_page": 15}
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"}
+        }
+      }
+    },
+    "/v1/admin/educational-articles/{id}/duplicate": {
+      "post": {
+        "tags": ["Educational Articles - Admin"],
+        "summary": "Duplica um artigo educacional",
+        "description": "Cria uma cópia do artigo como rascunho com novo slug",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid"}
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Artigo duplicado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Artigo duplicado com sucesso.",
+                  "data": {
+                    "id": "new-uuid",
+                    "title": "Título Original (Cópia)",
+                    "slug": "titulo-original-copia",
+                    "published_at": null
+                  }
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"},
+          "404": {"description": "Artigo não encontrado"}
+        }
+      }
+    },
+    "/v1/admin/stats/overview": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Estatísticas gerais da plataforma",
+        "description": "Retorna contadores em tempo real de users, pets, reminders e artigos",
+        "security": [{"bearerAuth": []}],
+        "responses": {
+          "200": {
+            "description": "Estatísticas gerais",
+            "content": {
+              "application/json": {
+                "example": {
+                  "users": {"total": 1250, "admins": 3},
+                  "pets": {"total": 2890},
+                  "reminders": {"active": 567},
+                  "educational_articles": {"published": 45, "drafts": 12}
+                }
+              }
+            }
+          },
+          "403": {"description": "Acesso negado"}
+        }
+      }
+    },
+    "/v1/pets/{pet}/nutrition/summary": {
+      "get": {
+        "tags": ["Nutrition"],
+        "summary": "Resumo nutricional do pet",
+        "description": "Retorna agregações de refeições, evolução de peso e alertas heurísticos",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "pet",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "integer", "example": 1}
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Data inicial (YYYY-MM-DD). Default: 30 dias atrás",
+            "required": false,
+            "schema": {"type": "string", "format": "date", "example": "2025-09-01"}
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Data final (YYYY-MM-DD). Default: hoje",
+            "required": false,
+            "schema": {"type": "string", "format": "date", "example": "2025-09-30"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumo nutricional",
+            "content": {
+              "application/json": {
+                "example": {
+                  "pet_id": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b",
+                  "range": {"from": "2025-09-01", "to": "2025-09-30"},
+                  "meals": {
+                    "total": 45,
+                    "per_day": [
+                      {"date": "2025-09-01", "count": 2},
+                      {"date": "2025-09-02", "count": 1}
+                    ],
+                    "avg_food_amount": 130.5
+                  },
+                  "weight": {
+                    "first": {"date": "2025-09-01", "kg": 7.2},
+                    "last": {"date": "2025-09-30", "kg": 7.5},
+                    "delta_kg": 0.3
+                  },
+                  "alerts": [
+                    {
+                      "code": "LOW_MEAL_FREQUENCY",
+                      "severity": "medium",
+                      "message": "Queda de 30% na frequência de refeições nos últimos 7 dias."
+                    },
+                    {
+                      "code": "FAST_WEIGHT_GAIN",
+                      "severity": "low",
+                      "message": "Ganho de 5.2% em 14 dias (0.30 kg)."
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "403": {"description": "Sem permissão"},
+          "404": {"description": "Pet não encontrado"},
+          "422": {"description": "Range inválido (máximo 180 dias)"}
+        }
+      }
+    },
+    "/v1/reminders/{reminder}/test": {
+      "post": {
+        "tags": ["Reminders"],
+        "summary": "Testar lembrete",
+        "description": "Envia notificação de teste imediatamente (fila low priority)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "reminder",
+            "in": "path",
+            "required": true,
+            "schema": {"type": "string", "format": "uuid", "example": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd"}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Teste enfileirado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Teste de lembrete enfileirado com sucesso.",
+                  "delivery_id": "uuid-notificacao",
+                  "status": "queued",
+                  "channel": "push"
+                }
+              }
+            }
+          },
+          "403": {"description": "Sem permissão"},
+          "404": {"description": "Lembrete não encontrado"}
+        }
+      }
     }
   },
   "components": {
@@ -1888,6 +3139,43 @@
             "example": "in-app",
             "description": "Canal de notificação"
           },
+          "days_of_week": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+            },
+            "nullable": true,
+            "example": ["MON", "WED", "FRI"],
+            "description": "Dias da semana permitidos (null = todos os dias)"
+          },
+          "timezone_override": {
+            "type": "string",
+            "nullable": true,
+            "example": "America/Sao_Paulo",
+            "description": "Timezone IANA (null = usa timezone do usuário)"
+          },
+          "snooze_minutes_default": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1440,
+            "example": 15,
+            "description": "Minutos padrão para snooze (0-1440)"
+          },
+          "active_window_start": {
+            "type": "string",
+            "format": "time",
+            "nullable": true,
+            "example": "08:00",
+            "description": "Horário de início da janela ativa (H:i)"
+          },
+          "active_window_end": {
+            "type": "string",
+            "format": "time",
+            "nullable": true,
+            "example": "20:00",
+            "description": "Horário de fim da janela ativa (H:i)"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -1951,6 +3239,118 @@
             "format": "date-time",
             "example": "2025-10-06T10:30:00.000000Z"
           }
+        }
+      },
+      "EducationalArticle": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b"
+          },
+          "title": {
+            "type": "string",
+            "example": "Alimentos Proibidos para Cães"
+          },
+          "slug": {
+            "type": "string",
+            "example": "alimentos-proibidos-para-caes"
+          },
+          "summary": {
+            "type": "string",
+            "example": "Descubra quais alimentos são tóxicos para cães..."
+          },
+          "body": {
+            "type": "string",
+            "example": "<h2>Introdução</h2><p>Conteúdo do artigo...</p>"
+          },
+          "tags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "nullable": true,
+            "example": ["Cães", "Segurança Alimentar"]
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2025-10-05T14:30:00.000000Z"
+          },
+          "created_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "creator": {
+            "type": "object",
+            "properties": {
+              "id": {"type": "integer", "example": 1},
+              "name": {"type": "string", "example": "Admin User"},
+              "email": {"type": "string", "example": "admin@utfpets.com"}
+            }
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-05T10:00:00.000000Z"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-05T10:00:00.000000Z"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "total": {"type": "integer", "example": 100},
+          "per_page": {"type": "integer", "example": 15},
+          "current_page": {"type": "integer", "example": 1},
+          "last_page": {"type": "integer", "example": 7},
+          "from": {"type": "integer", "example": 1},
+          "to": {"type": "integer", "example": 15}
+        }
+      },
+      "Location": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid", "example": "uuid-location"},
+          "user_id": {"type": "integer", "example": 1},
+          "name": {"type": "string", "example": "Casa Principal"},
+          "address": {"type": "string", "nullable": true, "example": "Rua das Flores, 123"},
+          "city": {"type": "string", "nullable": true, "example": "Curitiba"},
+          "state": {"type": "string", "nullable": true, "example": "PR"},
+          "country": {"type": "string", "nullable": true, "example": "Brasil"},
+          "timezone": {"type": "string", "example": "America/Sao_Paulo"},
+          "pets_count": {"type": "integer", "example": 2, "description": "Número de pets nesta localização"},
+          "created_at": {"type": "string", "format": "date-time", "example": "2025-10-01T10:00:00.000000Z"},
+          "updated_at": {"type": "string", "format": "date-time", "example": "2025-10-01T10:00:00.000000Z"}
+        }
+      },
+      "PetWeight": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid", "example": "uuid-weight"},
+          "pet_id": {"type": "integer", "example": 1},
+          "weight_kg": {"type": "number", "format": "float", "example": 12.5},
+          "weighed_at": {"type": "string", "format": "date-time", "example": "2025-10-08T10:30:00.000000Z"},
+          "notes": {"type": "string", "nullable": true, "example": "Peso após consulta veterinária"},
+          "created_at": {"type": "string", "format": "date-time", "example": "2025-10-08T10:30:00.000000Z"},
+          "updated_at": {"type": "string", "format": "date-time", "example": "2025-10-08T10:30:00.000000Z"}
+        }
+      },
+      "UserDevice": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "string", "format": "uuid", "example": "uuid-device"},
+          "user_id": {"type": "integer", "example": 1},
+          "platform": {"type": "string", "enum": ["android", "ios", "web"], "example": "android"},
+          "device_name": {"type": "string", "nullable": true, "example": "Galaxy S21"},
+          "fcm_token": {"type": "string", "example": "encrypted-token"},
+          "last_seen_at": {"type": "string", "format": "date-time", "example": "2025-10-08T10:30:00.000000Z"},
+          "created_at": {"type": "string", "format": "date-time", "example": "2025-10-08T10:30:00.000000Z"},
+          "updated_at": {"type": "string", "format": "date-time", "example": "2025-10-08T10:30:00.000000Z"}
         }
       }
     }

@@ -7,9 +7,12 @@ use App\Models\Reminder;
 use App\Enums\ReminderStatus;
 use App\Http\Requests\ReminderRequest;
 use App\Http\Requests\UpdateReminderRequest;
+use App\Jobs\DeliverNotificationJob;
+use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ReminderController extends Controller
 {
@@ -153,17 +156,27 @@ class ReminderController extends Controller
         $this->authorize('view', $reminder->pet);
 
         $request->validate([
-            'minutes' => 'required|integer|min:1|max:1440', // Máximo 24 horas
+            'minutes' => 'nullable|integer|in:5,10,15,30,60',
         ]);
 
         DB::beginTransaction();
         try {
-            $reminder->snooze($request->minutes);
+            // Usa o valor fornecido ou o padrão do lembrete
+            $minutes = $request->input('minutes', $reminder->snooze_minutes_default ?: 15);
+            
+            // Valida limite máximo
+            if ($minutes > 1440) {
+                return response()->json([
+                    'message' => 'Os minutos não podem exceder 1440 (24 horas).',
+                ], 422);
+            }
+
+            $reminder->snooze($minutes);
 
             DB::commit();
 
             return response()->json([
-                'message' => "Lembrete adiado por {$request->minutes} minutos.",
+                'message' => "Lembrete adiado por {$minutes} minutos.",
                 'data' => $reminder->fresh()
             ]);
 
@@ -171,6 +184,50 @@ class ReminderController extends Controller
             DB::rollBack();
             return response()->json([
                 'message' => 'Erro ao adiar lembrete.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+    
+    /**
+     * Envia um teste de lembrete imediatamente
+     */
+    public function test(Reminder $reminder): JsonResponse
+    {
+        // Verifica se o usuário tem permissão para testar o lembrete
+        $accessService = app(\App\Services\AccessService::class);
+        if (!$accessService->canEditMeals(auth()->user(), $reminder->pet)) {
+            abort(403, 'Você não tem permissão para testar este lembrete.');
+        }
+
+        try {
+            // Cria uma notificação de teste
+            $notification = Notification::create([
+                'user_id' => auth()->id(),
+                'title' => '🔔 [TESTE] ' . $reminder->title,
+                'body' => $reminder->description ?: 'Este é um teste de lembrete.',
+                'data' => [
+                    'reminder_id' => $reminder->id,
+                    'pet_id' => $reminder->pet_id,
+                    'type' => 'reminder_test'
+                ],
+                'channel' => $reminder->channel->value,
+                'status' => 'queued',
+            ]);
+
+            // Enfileira para entrega na fila "low" priority
+            DeliverNotificationJob::dispatch($notification)->onQueue('low');
+
+            return response()->json([
+                'message' => 'Teste de lembrete enfileirado com sucesso.',
+                'delivery_id' => $notification->id,
+                'status' => 'queued',
+                'channel' => $reminder->channel->value,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao enviar teste de lembrete.',
                 'error' => $e->getMessage(),
             ], 500);
         }

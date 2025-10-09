@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\EducationalArticle;
 use App\Models\Pet;
+use App\Models\Reminder;
 use App\Models\User;
 use App\Services\AuditService;
 use Illuminate\Http\Request;
@@ -202,6 +204,68 @@ class AdminController extends Controller
                 'last_page' => $logs->lastPage(),
             ]
         ]);
+    }
+
+    /**
+     * Visão geral de estatísticas da plataforma
+     * 
+     * GET /api/v1/admin/stats/overview
+     * 
+     * @OA\Get(
+     *     path="/v1/admin/stats/overview",
+     *     summary="Estatísticas gerais da plataforma",
+     *     tags={"Admin"},
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Estatísticas gerais",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="users", type="object",
+     *                 @OA\Property(property="total", type="integer"),
+     *                 @OA\Property(property="admins", type="integer")
+     *             ),
+     *             @OA\Property(property="pets", type="object",
+     *                 @OA\Property(property="total", type="integer")
+     *             ),
+     *             @OA\Property(property="reminders", type="object",
+     *                 @OA\Property(property="active", type="integer")
+     *             ),
+     *             @OA\Property(property="educational_articles", type="object",
+     *                 @OA\Property(property="published", type="integer"),
+     *                 @OA\Property(property="drafts", type="integer")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
+    public function overview(): JsonResponse
+    {
+        $stats = [
+            'users' => [
+                'total' => User::count(),
+                'admins' => User::where('is_admin', true)->count(),
+            ],
+            'pets' => [
+                'total' => Pet::count(),
+            ],
+            'reminders' => [
+                'active' => Reminder::where('status', 'active')->count(),
+            ],
+            'educational_articles' => [
+                'published' => EducationalArticle::whereNotNull('published_at')
+                    ->where('published_at', '<=', now())
+                    ->count(),
+                'drafts' => EducationalArticle::whereNull('published_at')
+                    ->orWhere('published_at', '>', now())
+                    ->count(),
+            ],
+        ];
+
+        // Log do acesso às estatísticas
+        AuditService::log('view_overview_stats', 'Admin', null, null, $stats);
+
+        return response()->json($stats);
     }
 }
 
