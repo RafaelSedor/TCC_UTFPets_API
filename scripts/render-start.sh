@@ -4,6 +4,17 @@ set -e
 
 echo "🚀 Iniciando aplicação no Render..."
 
+# Aguarda o banco de dados estar pronto (máximo 60 segundos)
+echo "🔄 Aguardando banco de dados..."
+for i in {1..60}; do
+    if php artisan db:show 2>/dev/null; then
+        echo "✅ Banco de dados conectado!"
+        break
+    fi
+    echo "⏳ Tentativa $i/60..."
+    sleep 1
+done
+
 # Gera a chave da aplicação se não existir
 if [ -z "$APP_KEY" ]; then
     echo "⚠️  APP_KEY não definida, gerando..."
@@ -18,10 +29,10 @@ fi
 
 # Limpa e otimiza caches
 echo "🧹 Limpando caches..."
-php artisan config:clear
-php artisan cache:clear
-php artisan route:clear
-php artisan view:clear
+php artisan config:clear || true
+php artisan cache:clear || true
+php artisan route:clear || true
+php artisan view:clear || true
 
 # Executa as migrações
 echo "📊 Executando migrações do banco de dados..."
