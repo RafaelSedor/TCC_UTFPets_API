@@ -1,0 +1,82 @@
+# Dockerfile otimizado para Render
+FROM php:8.2-fpm-alpine
+
+# Instala dependências do sistema
+RUN apk add --no-cache \
+    git \
+    unzip \
+    curl \
+    nano \
+    postgresql-dev \
+    libzip-dev \
+    zip \
+    oniguruma-dev \
+    libxml2-dev \
+    netcat-openbsd \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    nginx \
+    supervisor \
+    bash \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_pgsql zip opcache
+
+# Instala extensões PHP para otimização
+RUN docker-php-ext-install pcntl bcmath
+
+# Configuração do OPcache para produção
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=256" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=16" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=10000" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.validate_timestamps=0" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.save_comments=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# Instala o Composer
+COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
+
+# Configura o Composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV COMPOSER_NO_INTERACTION=1
+
+WORKDIR /var/www
+
+# Copia apenas os arquivos necessários para o Composer
+COPY composer.json composer.lock ./
+
+# Instala dependências do Composer (apenas produção)
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-autoloader
+
+# Copia o restante da aplicação
+COPY . .
+
+# Finaliza a instalação do Composer
+RUN composer dump-autoload --optimize
+
+# Configura permissões
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage \
+    && chmod -R 755 /var/www/bootstrap/cache
+
+# Copia e configura scripts
+COPY scripts/render-start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# Configura Nginx
+COPY nginx/render.conf /etc/nginx/http.d/default.conf
+
+# Configura Supervisor
+COPY nginx/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Expõe a porta que o Render espera
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Comando de inicialização
+CMD ["/usr/local/bin/start.sh"]
+

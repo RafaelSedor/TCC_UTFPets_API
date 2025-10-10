@@ -27,6 +27,14 @@ cd TCC_UTFPets_API
 http://localhost:8081/swagger
 ```
 
+### ☁️ Deploy em Produção (Render)
+
+Quer fazer deploy rapidamente em **menos de 10 minutos**?
+
+- 📖 **[Guia Completo](docs/DEPLOY_RENDER.md)** - Documentação detalhada
+
+[![Deploy no Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
 ## Sobre o Projeto
 
 A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferece uma solução completa para o gerenciamento de pets e suas refeições com **sistema de compartilhamento colaborativo**. Esta API foi desenvolvida como parte do Trabalho de Conclusão de Curso (TCC) e tem como objetivo auxiliar tutores de pets a manterem um controle adequado da alimentação de seus animais de estimação, permitindo colaboração entre múltiplos usuários.
@@ -115,6 +123,7 @@ Policies serão utilizadas para restringir ações como editar/remover apenas ao
 - Git
 - Conta Cloudinary (para upload de imagens)
 - Conta Supabase (para banco de produção - opcional)
+- Conta Render (para deploy em produção - opcional)
 
 ## Configuração e Execução
 
@@ -965,6 +974,7 @@ docker-compose exec app php artisan test --filter=test_name
 - 📦 [Postman Collection](http://localhost:8080/dev/postman)
 - 📖 [OpenAPI JSON](http://localhost:8080/api-docs.json)
 - 🗄️ [Database Setup](docs/DATABASE_SETUP.md)
+- ☁️ [Deploy no Render](docs/DEPLOY_RENDER.md) ⭐ NOVO
 - 📊 [Módulo 14 - Artigos Educacionais](docs/MODULO_14_EDUCATIONAL_ARTICLES.md)
 - 🎯 [Módulo 15 - Personalização de Lembretes](docs/MODULO_15_REMINDER_CUSTOMIZATION.md)
 - 📈 [Módulo 16 - Resumo Nutricional](docs/MODULO_16_NUTRITION_SUMMARY.md)

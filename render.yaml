@@ -1,0 +1,93 @@
+services:
+  # Web Service - API Laravel
+  - type: web
+    name: utfpets-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: APP_NAME
+        value: UTFPets API
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_URL
+        sync: false
+      - key: APP_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      
+      # Database (PostgreSQL do Render)
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: utfpets-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: utfpets-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: utfpets-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: utfpets-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: utfpets-db
+          property: password
+      - key: DB_SSLMODE
+        value: require
+      
+      # Cloudinary (configurar manualmente)
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_URL
+        sync: false
+      
+      # Firebase Cloud Messaging (configurar manualmente)
+      - key: FIREBASE_CREDENTIALS
+        sync: false
+      
+      # Queue Driver
+      - key: QUEUE_CONNECTION
+        value: database
+      
+      # Cache Driver
+      - key: CACHE_STORE
+        value: database
+      
+      # Session Driver
+      - key: SESSION_DRIVER
+        value: database
+      
+      # Log Channel
+      - key: LOG_CHANNEL
+        value: stack
+      - key: LOG_LEVEL
+        value: error
+    
+    healthCheckPath: /api/health
+    
+    # Comandos de inicialização
+    buildCommand: composer install --no-dev --optimize-autoloader
+    startCommand: ./scripts/render-start.sh
+
+databases:
+  # PostgreSQL Database
+  - name: utfpets-db
+    databaseName: utfpets_production
+    plan: free
+    ipAllowList: []
+

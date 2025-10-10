@@ -1,0 +1,17 @@
+# Ignorar arquivos desnecessários no deploy do Render
+.git
+.gitignore
+.env.example
+.env.testing
+tests/
+docs/
+scripts/db-setup.ps1
+scripts/db-setup.sh
+docker-compose.yml
+Dockerfile
+nginx/default.conf
+storage/logs/*
+bootstrap/cache/*
+README.md
+phpunit.xml
+

@@ -25,6 +25,23 @@ use App\Http\Controllers\NutritionSummaryController;
 | para melhor organização e segurança.
 */
 
+// Health Check - Para monitoramento (Render, Docker, etc)
+Route::get('/health', function () {
+    try {
+        $dbStatus = \DB::connection()->getPdo() ? 'connected' : 'disconnected';
+    } catch (\Exception $e) {
+        $dbStatus = 'error: ' . $e->getMessage();
+    }
+    
+    return response()->json([
+        'status' => 'ok',
+        'app' => config('app.name'),
+        'version' => '1.0.0',
+        'environment' => config('app.env'),
+        'timestamp' => now()->toIso8601String(),
+        'database' => $dbStatus,
+    ]);
+});
 
 // Rotas públicas de autenticação
 Route::prefix('auth')->group(function () {

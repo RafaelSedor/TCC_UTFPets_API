@@ -6,6 +6,7 @@ Bem-vindo à documentação completa da UTFPets API!
 
 ### 🚀 Setup e Configuração
 - **[Database Setup](DATABASE_SETUP.md)** - Guia completo de configuração de banco de dados (teste + produção)
+- **[Deploy no Render](DEPLOY_RENDER.md)** ⭐ NOVO - Guia completo de deploy em produção no Render
 
 ### 🎯 Módulos Implementados
 
