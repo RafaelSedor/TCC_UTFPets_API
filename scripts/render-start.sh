@@ -68,7 +68,4 @@ php artisan storage:link || true
 
 echo "✅ Aplicação pronta!"
 
-# Inicia Supervisor para gerenciar PHP-FPM, Nginx e Queue Workers
-echo "🚀 Iniciando Supervisor..."
-exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 
