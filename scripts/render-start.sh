@@ -4,16 +4,27 @@ set -e
 
 echo "🚀 Iniciando aplicação no Render..."
 
-# Aguarda o banco de dados estar pronto (máximo 60 segundos)
-echo "🔄 Aguardando banco de dados..."
-for i in {1..60}; do
-    if php artisan db:show 2>/dev/null; then
-        echo "✅ Banco de dados conectado!"
-        break
+# Resolve IPv4 do host do banco (evita problemas com IPv6)
+if [ -n "$DB_HOST" ] && [[ ! "$DB_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "🔍 Resolvendo host do banco: $DB_HOST"
+    
+    # Tenta obter IPv4 do host usando nslookup
+    IPV4=$(nslookup "$DB_HOST" 2>/dev/null | grep -A1 "Name:" | grep "Address" | head -n1 | awk '{print $2}' | grep -v ":" || echo "")
+    
+    if [ -n "$IPV4" ] && [[ "$IPV4" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        echo "✅ IPv4 resolvido: $IPV4"
+        echo "📝 Usando IP direto ao invés do hostname"
+        export DB_HOST="$IPV4"
+    else
+        echo "⚠️  Não foi possível resolver IPv4, usando host original"
     fi
-    echo "⏳ Tentativa $i/60..."
-    sleep 1
-done
+else
+    echo "ℹ️  Usando configuração de host atual: $DB_HOST"
+fi
+
+# Aguarda um pouco antes de tentar conectar
+echo "⏳ Aguardando 5 segundos..."
+sleep 5
 
 # Gera a chave da aplicação se não existir
 if [ -z "$APP_KEY" ]; then
