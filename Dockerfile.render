@@ -44,7 +44,7 @@ ENV COMPOSER_NO_INTERACTION=1
 WORKDIR /var/www
 
 # Copia apenas os arquivos necessários para o Composer
-COPY composer.json composer.lock ./
+COPY . .
 
 # Instala dependências do Composer (apenas produção)
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-autoloader
