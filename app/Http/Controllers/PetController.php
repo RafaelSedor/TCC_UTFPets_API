@@ -45,7 +45,8 @@ class PetController extends Controller
             // Upload da foto para o Cloudinary
             if ($request->hasFile('photo')) {
                 $uploadedFileUrl = Cloudinary::upload($request->file('photo')->getRealPath())->getSecurePath();
-                $validated['photo_url'] = $uploadedFileUrl;
+                // manter consistência com a coluna 'photo'
+                $validated['photo'] = $uploadedFileUrl;
             }
 
             $pet = Pet::create(array_merge($validated, [
@@ -96,21 +97,22 @@ class PetController extends Controller
             // Upload da nova foto se fornecida
             if ($request->hasFile('photo')) {
                 // Remove a foto antiga do Cloudinary se existir
-                if ($pet->photo_url) {
+                $publicId = $pet->getCloudinaryPublicId();
+                if ($publicId) {
                     try {
-                        $publicId = basename(parse_url($pet->photo_url, PHP_URL_PATH), '.jpg');
                         Cloudinary::destroy($publicId);
                     } catch (\Exception $e) {
                         Log::warning('Erro ao remover foto antiga do Cloudinary', [
                             'pet_id' => $pet->id,
-                            'photo_url' => $pet->photo_url,
+                            'photo_public_id' => $publicId,
                             'error' => $e->getMessage()
                         ]);
                     }
                 }
 
                 $uploadedFileUrl = Cloudinary::upload($request->file('photo')->getRealPath())->getSecurePath();
-                $validated['photo_url'] = $uploadedFileUrl;
+                // manter consistência com a coluna 'photo'
+                $validated['photo'] = $uploadedFileUrl;
             }
 
             $pet->update($validated);

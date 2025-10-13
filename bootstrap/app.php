@@ -14,10 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->api(prepend: [
-            \App\Http\Middleware\CorsMiddleware::class,
-        ]);
-        
+        // CORS é tratado pelo HandleCors padrão do Laravel via config/cors.php
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
         ]);

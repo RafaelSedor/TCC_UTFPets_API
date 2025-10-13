@@ -77,34 +77,6 @@
       ),
     ),
   ),
-  'cors' => 
-  array (
-    'paths' => 
-    array (
-      0 => 'api/*',
-      1 => 'sanctum/csrf-cookie',
-    ),
-    'allowed_methods' => 
-    array (
-      0 => '*',
-    ),
-    'allowed_origins' => 
-    array (
-      0 => '*',
-    ),
-    'allowed_origins_patterns' => 
-    array (
-    ),
-    'allowed_headers' => 
-    array (
-      0 => '*',
-    ),
-    'exposed_headers' => 
-    array (
-    ),
-    'max_age' => 0,
-    'supports_credentials' => false,
-  ),
   'concurrency' => 
   array (
     'default' => 'process',
@@ -253,7 +225,7 @@
   ),
   'session' => 
   array (
-    'driver' => 'file',
+    'driver' => 'database',
     'lifetime' => 120,
     'expire_on_close' => false,
     'encrypt' => false,
@@ -266,7 +238,7 @@
       0 => 2,
       1 => 100,
     ),
-    'cookie' => 'laravel_session',
+    'cookie' => 'utfpets_api_session',
     'path' => '/',
     'domain' => NULL,
     'secure' => NULL,
@@ -276,10 +248,10 @@
   ),
   'app' => 
   array (
-    'name' => 'Laravel',
-    'env' => 'production',
+    'name' => 'UTFPets API',
+    'env' => 'local',
     'debug' => true,
-    'url' => 'http://localhost',
+    'url' => 'http://localhost:8080',
     'frontend_url' => 'http://localhost:3000',
     'asset_url' => NULL,
     'timezone' => 'UTC',
@@ -287,7 +259,7 @@
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'cipher' => 'AES-256-CBC',
-    'key' => 'base64:8+pI+lUMMsEgOEyTq+oO0jstWdpwBtTgdUf8aqd/a64=',
+    'key' => 'base64:Uh7xkPs1k/Kzh4KuxSCX4ckSNbmiZsojPvPYTzvprIk=',
     'previous_keys' => 
     array (
     ),
@@ -486,15 +458,49 @@
         'driver' => 'octane',
       ),
     ),
-    'prefix' => 'laravel_cache_',
+    'prefix' => 'utfpets_api_cache_',
   ),
   'cloudinary' => 
   array (
-    'cloud_name' => 'dy9qbb3mi',
-    'api_key' => '669532265991617',
-    'api_secret' => 'eUHJPVSXxo4uoDYVppde8tZHjj4',
+    'cloud_name' => NULL,
+    'api_key' => NULL,
+    'api_secret' => NULL,
     'cloud_url' => 'cloudinary://669532265991617:eUHJPVSXxo4uoDYVppde8tZHjj4@dy9qbb3mi',
     'secure' => true,
+  ),
+  'cors' => 
+  array (
+    'paths' => 
+    array (
+      0 => 'api/*',
+      1 => 'sanctum/csrf-cookie',
+      2 => 'calendar/*',
+      3 => 'api-docs.json',
+    ),
+    'allowed_methods' => 
+    array (
+      0 => '*',
+    ),
+    'allowed_origins' => 
+    array (
+      0 => '*',
+    ),
+    'allowed_origins_patterns' => 
+    array (
+    ),
+    'allowed_headers' => 
+    array (
+      0 => 'Content-Type',
+      1 => 'Authorization',
+      2 => 'X-Requested-With',
+      3 => 'Accept',
+      4 => 'Origin',
+    ),
+    'exposed_headers' => 
+    array (
+    ),
+    'max_age' => 86400,
+    'supports_credentials' => false,
   ),
   'database' => 
   array (
@@ -555,17 +561,16 @@
       'pgsql' => 
       array (
         'driver' => 'pgsql',
-        'url' => NULL,
         'host' => 'aws-1-sa-east-1.pooler.supabase.com',
         'port' => '5432',
         'database' => 'postgres',
         'username' => 'postgres.vveezgdyqomxvcprtbla',
         'password' => 'fksZ6fAM7aerr2Od',
+        'pool_mode' => 'transaction',
         'charset' => 'utf8',
         'prefix' => '',
         'prefix_indexes' => true,
         'search_path' => 'public',
-        'sslmode' => 'prefer',
       ),
       'sqlsrv' => 
       array (
@@ -607,7 +612,7 @@
       'options' => 
       array (
         'cluster' => 'redis',
-        'prefix' => 'laravel_database_',
+        'prefix' => 'utfpets_api_database_',
         'persistent' => false,
       ),
       'default' => 
@@ -647,7 +652,7 @@
       array (
         'driver' => 'local',
         'root' => '/var/www/storage/app/public',
-        'url' => '/storage',
+        'url' => 'http://localhost:8080/storage',
         'visibility' => 'public',
         'throw' => false,
         'report' => false,
@@ -673,14 +678,14 @@
   ),
   'jwt' => 
   array (
-    'secret' => '4QzwLAUWNvDcPB4jvFh7JhFOLAL0CSSoIqPaexvYezyhpurHv82BgShiGOkPDgt4',
+    'secret' => 'byISDRLp7EZqyDGiAOJHS0D6LT3LZZ3TfkHP7rbsF4tRq6DKFd1PiRHFCDCFyOB8',
     'keys' => 
     array (
       'public' => NULL,
       'private' => NULL,
       'passphrase' => NULL,
     ),
-    'ttl' => 30,
+    'ttl' => '60',
     'refresh_ttl' => 10080,
     'algo' => 'HS256',
     'required_claims' => 
@@ -709,6 +714,7 @@
       'storage' => 'PHPOpenSourceSaver\\JWTAuth\\Providers\\Storage\\Illuminate',
     ),
   ),
+  'l5-swagger' => 1,
   'logging' => 
   array (
     'default' => 'stack',
@@ -857,7 +863,7 @@
       2 => '127.0.0.1',
       3 => '127.0.0.1:8000',
       4 => '::1',
-      5 => 'localhost',
+      5 => 'localhost:8080',
     ),
     'guard' => 
     array (

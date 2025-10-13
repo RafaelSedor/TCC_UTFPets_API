@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
-use App\Enums\NotificationStatus;
 use App\Enums\NotificationChannel;
+use App\Enums\NotificationStatus;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,18 +22,18 @@ class NotificationFactory extends Factory
         return [
             'user_id' => User::factory(),
             'title' => fake()->randomElement([
-                '🔔 Lembrete: Ração manhã',
-                '👋 Novo convite para compartilhar pet',
-                '✅ Convite aceito',
-                '🔄 Papel alterado',
-                '⏰ Hora da medicação',
+                'Lembrete: Racao manha',
+                'Novo convite para compartilhar pet',
+                'Convite aceito',
+                'Papel alterado',
+                'Hora da medicacao',
             ]),
             'body' => fake()->sentence(),
             'data' => [
                 'type' => fake()->randomElement(['reminder_due', 'shared_pet_invited', 'shared_pet_accepted']),
                 'pet_id' => fake()->numberBetween(1, 100),
             ],
-            'channel' => NotificationChannel::DB, // Por padrão, usa DB (in-app)
+            'channel' => NotificationChannel::DB, // Padrão: in-app
             'status' => fake()->randomElement(NotificationStatus::cases()),
         ];
     }
@@ -79,12 +79,12 @@ class NotificationFactory extends Factory
     }
 
     /**
-     * Indicate that the notification is in-app.
+     * Indicate that the notification is in-app (DB channel).
      */
     public function inApp(): static
     {
         return $this->state(fn (array $attributes) => [
-            'channel' => NotificationChannel::IN_APP,
+            'channel' => NotificationChannel::DB,
         ]);
     }
 }
