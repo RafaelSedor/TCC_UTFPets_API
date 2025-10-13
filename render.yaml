@@ -9,8 +9,14 @@ services:
   envVars:
   - key: RENDER
     value: true
+  - key: MIGRATE_ON_START
+    value: true
+  - key: APP_URL
+    value: https://tcc-utfpets-api.onrender.com
+  - key: API_PUBLIC_URL
+    value: https://tcc-utfpets-api.onrender.com
   - key: DB_SSLMODE
-    sync: false
+    value: require
   - key: DB_POOL_MODE
     sync: false
   - key: DB_HOST
@@ -22,7 +28,7 @@ services:
   - key: DB_USERNAME
     sync: false
   - key: DB_PORT
-    sync: false
+    value: "6543"
   - key: DB_PASSWORD
     sync: false
   - key: FEATURE_CALENDAR_EXPORT
