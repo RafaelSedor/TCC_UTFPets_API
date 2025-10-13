@@ -15,7 +15,8 @@ return [
     |
     */
 
-    'default' => env('CACHE_STORE', 'database'),
+    // Em produção, use 'file' por padrão para evitar dependência do DB em rotas críticas (ex.: throttle)
+    'default' => env('CACHE_STORE', env('APP_ENV') === 'production' ? 'file' : 'database'),
 
     /*
     |--------------------------------------------------------------------------
