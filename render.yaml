@@ -7,6 +7,8 @@ services:
   repo: https://github.com/RafaelSedor/TCC_UTFPets_API
   plan: free
   envVars:
+  - key: RENDER
+    value: true
   - key: DB_SSLMODE
     sync: false
   - key: DB_POOL_MODE

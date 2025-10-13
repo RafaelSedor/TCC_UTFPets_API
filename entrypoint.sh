@@ -77,6 +77,26 @@ fi
 
 echo "[entrypoint] Setup do Laravel concluido!"
 
-# Inicia o PHP-FPM em primeiro plano (usado pelo Nginx)
-exec php-fpm -F
+# Seleciona modo de execução conforme ambiente
+if [ "${RENDER:-false}" = "true" ]; then
+  echo "[entrypoint] Ambiente Render detectado; iniciando Nginx + PHP-FPM"
+  # Ajusta Nginx para escutar na PORT do Render e FastCGI local
+  if [ -f /etc/nginx/conf.d/default.conf ]; then
+    sed -ri "s/listen 80;/listen ${PORT:-8080};/" /etc/nginx/conf.d/default.conf || true
+    sed -ri "s/fastcgi_pass app:9000;/fastcgi_pass 127.0.0.1:9000;/" /etc/nginx/conf.d/default.conf || true
+  fi
 
+  # Inicia PHP-FPM em background
+  php-fpm -F &
+  PHP_FPM_PID=$!
+  echo "[entrypoint] PHP-FPM PID: ${PHP_FPM_PID}"
+
+  # Inicia Nginx em foreground (processo PID 1)
+  echo "[entrypoint] Iniciando Nginx em :${PORT:-8080}"
+  exec nginx -g 'daemon off;'
+else
+  echo "[entrypoint] Iniciando PHP-FPM (produção via Nginx externo)"
+  exec php-fpm -F
+fi
+
+exec php -d variables_order=EGPCS -S 0.0.0.0:${PORT:-8080} -t public public/index.php

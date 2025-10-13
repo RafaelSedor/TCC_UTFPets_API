@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     netcat-traditional \
+    nginx \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
@@ -29,6 +30,10 @@ WORKDIR /var/www
 COPY . .
 
 RUN chmod -R 775 storage bootstrap/cache && chown -R www-data:www-data .
+
+# Copia config do Nginx para uso em ambientes de 1 container (Render)
+RUN mkdir -p /etc/nginx/conf.d
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copia e configura o entrypoint
 COPY entrypoint.sh /usr/local/bin/
