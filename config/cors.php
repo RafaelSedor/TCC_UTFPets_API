@@ -6,6 +6,7 @@ return [
         'sanctum/csrf-cookie',
         'calendar/*',
         'api-docs.json',
+        'openapi.json',
     ],
 
     'allowed_methods' => ['*'],
@@ -25,4 +26,3 @@ return [
     // Não use credenciais com wildcard de origem. Ajuste via env quando necessário.
     'supports_credentials' => filter_var(env('CORS_ALLOW_CREDENTIALS', false), FILTER_VALIDATE_BOOL),
 ];
-
