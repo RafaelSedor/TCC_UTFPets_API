@@ -85,6 +85,7 @@ return [
         // Configuração para produção (Supabase)
         'pgsql' => [
             'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'forge'),
@@ -95,10 +96,11 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
-            'options' => extension_loaded('pdo_pgsql') ? [
+            'sslmode' => env('DB_SSLMODE', 'require'),
+            'options' => extension_loaded('pdo_pgsql') ? array_filter([
                 PDO::ATTR_EMULATE_PREPARES => true,
-            ] : [],
+                defined('PDO::ATTR_TIMEOUT') ? PDO::ATTR_TIMEOUT : null => (int) env('DB_CONNECT_TIMEOUT', 5),
+            ]) : [],
         ],
 
         // Configuração para testes (Docker local)
