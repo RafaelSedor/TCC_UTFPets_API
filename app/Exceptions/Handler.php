@@ -3,13 +3,13 @@
 namespace App\Exceptions;
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
 class Handler extends ExceptionHandler
 {
-
     /**
      * Handle unauthenticated requests.
      */
@@ -46,6 +46,20 @@ class Handler extends ExceptionHandler
             } elseif ($exception instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
                 $status = 405;
                 $message = 'Método não permitido';
+            } elseif ($exception instanceof QueryException || $exception instanceof \PDOException) {
+                // Erros de conexão com o banco (pooler indisponível, cold start, etc.) → 503
+                $sqlState = (string) ($exception->getCode() ?? '');
+                $msg = (string) $exception->getMessage();
+                $isConnectionIssue = str_contains($msg, 'SQLSTATE[08006]')
+                    || str_contains($msg, 'SQLSTATE[08001]')
+                    || str_contains($msg, 'connection refused')
+                    || str_contains($msg, 'SSL connection has been closed')
+                    || $sqlState === '7';
+
+                if ($isConnectionIssue) {
+                    $status = 503;
+                    $message = 'Banco de dados temporariamente indisponível';
+                }
             }
 
             return response()->json([
@@ -57,3 +71,4 @@ class Handler extends ExceptionHandler
         return parent::render($request, $exception);
     }
 }
+
