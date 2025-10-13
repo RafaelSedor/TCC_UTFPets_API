@@ -25,3 +25,16 @@ Route::get('/dev/postman', function () {
         'Content-Type' => 'application/json',
     ]);
 })->name('dev.postman');
+
+// Expor OpenAPI com CORS tratado pelo HandleCors (evita CORS em arquivo estático)
+Route::get('/openapi.json', function () {
+    $path = public_path('api-docs.json');
+    if (!file_exists($path)) {
+        return response()->json([
+            'message' => 'OpenAPI spec não encontrada.'
+        ], 404);
+    }
+    return response()->file($path, [
+        'Content-Type' => 'application/json',
+    ]);
+})->name('openapi.json');
