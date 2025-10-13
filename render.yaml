@@ -1,3 +1,4 @@
+# Exported from Render on 2025-10-13T15:24:49Z
 version: "1"
 services:
 - type: web
@@ -5,39 +6,66 @@ services:
   runtime: docker
   repo: https://github.com/RafaelSedor/TCC_UTFPets_API
   plan: free
-  buildCommand: |
-    composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
-    php artisan key:generate --force
-    php artisan config:cache
-  startCommand: php -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public public/index.php
-  autoDeploy: true
   envVars:
-    - key: APP_ENV
-      value: production
-    - key: APP_DEBUG
-      value: 'false'
-    - key: LOG_LEVEL
-      value: warning
-    - key: DB_CONNECTION
-      value: pgsql
-    # Configure abaixo de acordo com seu Supabase
-    - key: DB_HOST
-      sync: false
-    - key: DB_PORT
-      value: '5432'
-    - key: DB_DATABASE
-      sync: false
-    - key: DB_USERNAME
-      sync: false
-    - key: DB_PASSWORD
-      sync: false
-    - key: DB_SSLMODE
-      value: require
-    - key: JWT_SECRET
-      generateValue: true
-    - key: APP_KEY
-      generateValue: true
-    - key: CORS_ALLOWED_ORIGINS
-      value: '*' # ajuste para o domínio do seu frontend em produção
-  postDeployCommand: php artisan migrate --force
-
+  - key: DB_SSLMODE
+    sync: false
+  - key: DB_POOL_MODE
+    sync: false
+  - key: DB_HOST
+    sync: false
+  - key: DB_DATABASE
+    sync: false
+  - key: DB_CONNECTION
+    sync: false
+  - key: DB_USERNAME
+    sync: false
+  - key: DB_PORT
+    sync: false
+  - key: DB_PASSWORD
+    sync: false
+  - key: FEATURE_CALENDAR_EXPORT
+    sync: false
+  - key: FEATURE_WEIGHTS_TRACKING
+    sync: false
+  - key: FEATURE_PUSH_NOTIFICATIONS
+    sync: false
+  - key: CALENDAR_DOMAIN
+    sync: false
+  - key: WEIGHTS_MAX_VALUE
+    sync: false
+  - key: WEIGHTS_MIN_VALUE
+    sync: false
+  - key: QUEUE_MAX_TRIES
+    sync: false
+  - key: QUEUE_CONNECTION
+    sync: false
+  - key: FCM_PROJECT_ID
+    sync: false
+  - key: FCM_KEY
+    sync: false
+  - key: SUPABASE_ANON_KEY
+    sync: false
+  - key: SUPABASE_SERVICE_KEY
+    sync: false
+  - key: SUPABASE_URL
+    sync: false
+  - key: CLOUDINARY_URL
+    sync: false
+  - key: JWT_TTL
+    sync: false
+  - key: JWT_SECRET
+    sync: false
+  - key: APP_URL
+    sync: false
+  - key: APP_DEBUG
+    sync: false
+  - key: APP_KEY
+    sync: false
+  - key: APP_ENV
+    sync: false
+  - key: APP_NAME
+    sync: false
+  region: oregon
+  dockerContext: .
+  dockerfilePath: ./Dockerfile
+  autoDeployTrigger: commit
