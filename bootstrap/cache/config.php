@@ -249,8 +249,8 @@
   'app' => 
   array (
     'name' => 'UTFPets API',
-    'env' => 'local',
-    'debug' => true,
+    'env' => 'production',
+    'debug' => false,
     'url' => 'http://localhost:8080',
     'frontend_url' => 'http://localhost:3000',
     'asset_url' => NULL,
@@ -259,7 +259,7 @@
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'cipher' => 'AES-256-CBC',
-    'key' => 'base64:wNP0foBNS51P1EiMK5g/BX625Pl4HJqo78D1ZIAmdNc=',
+    'key' => 'base64:i5Lx/HLZQh1hGWtytgPsNyjpNW9Fs8R4JHzPnN5eMrE=',
     'previous_keys' => 
     array (
     ),
@@ -476,6 +476,7 @@
       1 => 'sanctum/csrf-cookie',
       2 => 'calendar/*',
       3 => 'api-docs.json',
+      4 => 'openapi.json',
     ),
     'allowed_methods' => 
     array (
@@ -566,11 +567,16 @@
         'database' => 'postgres',
         'username' => 'postgres.vveezgdyqomxvcprtbla',
         'password' => 'fksZ6fAM7aerr2Od',
-        'pool_mode' => 'transaction',
+        'pool_mode' => 'session',
         'charset' => 'utf8',
         'prefix' => '',
         'prefix_indexes' => true,
         'search_path' => 'public',
+        'sslmode' => 'prefer',
+        'options' => 
+        array (
+          20 => true,
+        ),
       ),
       'sqlsrv' => 
       array (
@@ -599,6 +605,10 @@
         'prefix_indexes' => true,
         'search_path' => 'public',
         'sslmode' => 'prefer',
+        'options' => 
+        array (
+          20 => true,
+        ),
       ),
     ),
     'migrations' => 
@@ -678,7 +688,7 @@
   ),
   'jwt' => 
   array (
-    'secret' => 'QqY2bvnt6vem9rY1iU18wnEmr7poTSmU4Jvvjh9ZVUJbO6W2nlDLBwXbJAyYklWt',
+    'secret' => 'pUjUL0AukRUvSIPWeC433z7hoTSdCd7P5tBLGbster8m0T6yr6MebKSIzEvz6Uwo',
     'keys' => 
     array (
       'public' => NULL,
