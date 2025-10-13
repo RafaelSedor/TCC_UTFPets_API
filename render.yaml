@@ -16,7 +16,7 @@ services:
   - key: API_PUBLIC_URL
     value: https://tcc-utfpets-api.onrender.com
   - key: DB_SSLMODE
-    value: require
+    sync: false
   - key: DB_POOL_MODE
     sync: false
   - key: DB_HOST
@@ -28,7 +28,7 @@ services:
   - key: DB_USERNAME
     sync: false
   - key: DB_PORT
-    value: "6543"
+    sync: false
   - key: DB_PASSWORD
     sync: false
   - key: FEATURE_CALENDAR_EXPORT
