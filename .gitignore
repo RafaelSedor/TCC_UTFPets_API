@@ -7,6 +7,8 @@
 /storage/pail
 /storage/keys/firebase-adminsdk.json
 /storage/app/public/postman/*.json
+/storage/framework/views/*.php
+/storage/logs/*.log
 /vendor
 .env
 .env.backup
@@ -23,3 +25,4 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+bootstrap/cache/*.php

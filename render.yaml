@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: utfpets-api
+    env: php
+    plan: starter
+    buildCommand: |
+      composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+      php artisan key:generate --force
+      php artisan config:cache
+    startCommand: php -d variables_order=EGPCS -S 0.0.0.0:$PORT -t public public/index.php
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: 'false'
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        value: pgsql
+      # Configure abaixo de acordo com seu Supabase
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: '5432'
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_KEY
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: '*' # ajuste para o domínio do seu frontend em produção
+    postDeployCommand: php artisan migrate --force
+
