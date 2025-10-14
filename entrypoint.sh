@@ -64,6 +64,11 @@ fi
 
 # Otimiza a aplicação
 echo "[entrypoint] Otimizando aplicacao..."
+# Limpa caches antes de otimizar (evita rotas/config antigas em prod)
+php artisan route:clear || true
+php artisan config:clear || true
+php artisan view:clear || true
+php artisan cache:clear || true
 php artisan optimize || true
 
 # Executa migrações automaticamente se habilitado por env
