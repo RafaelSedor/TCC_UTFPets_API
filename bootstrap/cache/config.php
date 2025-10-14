@@ -259,7 +259,7 @@
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'cipher' => 'AES-256-CBC',
-    'key' => 'base64:Zrr2sEMPw1TyhovNiorOcTtQVHpI9VyxN0Sq3sVp1vg=',
+    'key' => 'base64:Mwu51xS+/qxZENf9maim9sZxSHRW+zja78h/6+o7Vo4=',
     'previous_keys' => 
     array (
     ),
@@ -389,7 +389,7 @@
   ),
   'cache' => 
   array (
-    'default' => 'database',
+    'default' => 'file',
     'stores' => 
     array (
       'array' => 
@@ -562,6 +562,7 @@
       'pgsql' => 
       array (
         'driver' => 'pgsql',
+        'url' => 'postgresql://postgres.vveezgdyqomxvcprtbla:fksZ6fAM7aerr2Od@aws-1-sa-east-1.pooler.supabase.com:5432/postgres',
         'host' => 'aws-1-sa-east-1.pooler.supabase.com',
         'port' => '5432',
         'database' => 'postgres',
@@ -572,10 +573,11 @@
         'prefix' => '',
         'prefix_indexes' => true,
         'search_path' => 'public',
-        'sslmode' => 'prefer',
+        'sslmode' => 'require',
         'options' => 
         array (
           20 => true,
+          2 => 5,
         ),
       ),
       'sqlsrv' => 
@@ -594,7 +596,7 @@
       'pgsql_testing' => 
       array (
         'driver' => 'pgsql',
-        'url' => NULL,
+        'url' => 'postgresql://postgres.vveezgdyqomxvcprtbla:fksZ6fAM7aerr2Od@aws-1-sa-east-1.pooler.supabase.com:5432/postgres',
         'host' => 'test-db',
         'port' => '5432',
         'database' => 'utfpets_test',
@@ -688,7 +690,7 @@
   ),
   'jwt' => 
   array (
-    'secret' => 'ls5glDs337BNM8TU2IptXovIhbOouzGJ8Gvp8jiwVaiS0Hobd7JyOciRYByVZ9Qw',
+    'secret' => '47gCZsRUpglpLJiVUxa5Lx1VvEXBcjwzwaDkS9UyaagVD0SSjtTzNm5Byfnq19qB',
     'keys' => 
     array (
       'public' => NULL,

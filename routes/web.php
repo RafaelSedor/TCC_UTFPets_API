@@ -3,8 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CalendarController;
 
+// Página inicial: redireciona para a documentação Swagger estática
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/swagger');
 });
 
 // Rota pública para feed ICS (Módulo 13)
