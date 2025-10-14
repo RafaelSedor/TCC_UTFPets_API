@@ -8,7 +8,7 @@ Route::get('/', function () {
     return view('landing', [
         'appName'   => config('app.name', 'UTFPets API'),
         'baseUrl'   => rtrim(config('app.url', url('/')), '/'),
-        'docsUrl'   => url('/swagger'),
+        'docsUrl'   => 'https://petstore.swagger.io/?url=https://tcc-utfpets-api.onrender.com/api-docs.json',
         'healthUrl' => url('/api/health'),
     ]);
 });
