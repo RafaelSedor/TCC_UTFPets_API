@@ -14,9 +14,13 @@ fi
 echo "[entrypoint] Iniciando setup do Laravel..."
 
 # Verifica e configura o ambiente principal
-if [ ! -f .env ]; then
-  echo "[entrypoint] Criando arquivo .env a partir de .env.example"
-  cp .env.example .env
+if [ "${RENDER:-false}" = "true" ]; then
+  echo "[entrypoint] RENDER=true: nao criar .env local (usando variaveis de ambiente)"
+else
+  if [ ! -f .env ]; then
+    echo "[entrypoint] Criando arquivo .env a partir de .env.example"
+    cp .env.example .env
+  fi
 fi
 
 # Verifica e prepara .env.testing apenas quando em testes
@@ -103,5 +107,3 @@ else
   echo "[entrypoint] Iniciando PHP-FPM (produção via Nginx externo)"
   exec php-fpm -F
 fi
-
-exec php -d variables_order=EGPCS -S 0.0.0.0:${PORT:-8080} -t public public/index.php
