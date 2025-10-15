@@ -44,9 +44,21 @@ class PetController extends Controller
             
             // Upload da foto para o Cloudinary
             if ($request->hasFile('photo')) {
-                $uploadedFileUrl = Cloudinary::upload($request->file('photo')->getRealPath())->getSecurePath();
-                // manter consistência com a coluna 'photo'
-                $validated['photo'] = $uploadedFileUrl;
+                try {
+                    $uploadedFileUrl = Cloudinary::upload($request->file('photo')->getRealPath())->getSecurePath();
+                    $validated['photo'] = $uploadedFileUrl;
+                } catch (\Exception $cloudinaryError) {
+                    Log::error('Erro no upload do Cloudinary', [
+                        'user_id' => Auth::id(),
+                        'error' => $cloudinaryError->getMessage(),
+                        'trace' => $cloudinaryError->getTraceAsString()
+                    ]);
+                    
+                    return response()->json([
+                        'message' => 'Erro no upload da imagem',
+                        'error' => 'Falha ao fazer upload da foto do pet'
+                    ], 500);
+                }
             }
 
             $pet = Pet::create(array_merge($validated, [
@@ -64,7 +76,8 @@ class PetController extends Controller
             Log::error('Erro ao criar pet', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'validated_data' => $validated ?? null
             ]);
 
             return response()->json([
@@ -93,6 +106,15 @@ class PetController extends Controller
 
         try {
             $validated = $request->validated();
+
+            $isClearingPhoto = $request->has('photo') && !$request->hasFile('photo') && trim((string)$request->input('photo')) === '';
+            if ($isClearingPhoto) {
+                $publicId = $pet->getCloudinaryPublicId();
+                if ($publicId) {
+                    try { Cloudinary::destroy($publicId); } catch (\Exception $e) { /* ignore */ }
+                }
+                $validated['photo'] = null;
+            }
             
             // Upload da nova foto se fornecida
             if ($request->hasFile('photo')) {
@@ -116,6 +138,7 @@ class PetController extends Controller
             }
 
             $pet->update($validated);
+            $pet->refresh();
 
             Log::info('Pet atualizado com sucesso', ['pet_id' => $pet->id, 'user_id' => Auth::id()]);
 

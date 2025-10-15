@@ -28,7 +28,7 @@ class PetUpdateRequest extends FormRequest
             'breed' => 'sometimes|nullable|string|max:255',
             'birth_date' => 'sometimes|nullable|date',
             'weight' => 'sometimes|nullable|numeric|min:0',
-            'photo' => 'sometimes|image|mimes:jpeg,jpg,png|max:2048',
+            'photo' => 'sometimes|nullable|image|mimes:jpeg,jpg,png|max:2048',
             'notes' => 'sometimes|nullable|string',
             'location_id' => [
                 'nullable',
