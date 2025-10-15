@@ -381,7 +381,7 @@
           }
         }
       },
-      "put": {
+      "post": {
         "tags": ["Pets"],
         "summary": "Atualizar pet",
         "description": "Atualiza os dados de um pet (apenas owner)",
@@ -462,52 +462,6 @@
           "403": {
             "description": "Sem permissão para editar este pet"
           }
-        }
-      },
-      "post": {
-        "tags": ["Pets"],
-        "summary": "Atualizar pet (multipart)",
-        "description": "Atualiza os dados do pet aceitando multipart/form-data (use POST quando enviar foto). Para JSON, use PATCH.",
-        "security": [{"bearerAuth": []}],
-        "parameters": [
-          { "name": "id", "in": "path", "required": true, "schema": {"type": "integer", "example": 1} }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "name": {"type": "string"},
-                  "species": {"type": "string"},
-                  "breed": {"type": "string"},
-                  "birth_date": {"type": "string", "format": "date"},
-                  "weight": {"type": "number"},
-                  "photo": {"type": "string", "format": "binary", "description": "Nova foto do pet (opcional). Envie vazio para remover."},
-                  "notes": {"type": "string"}
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Pet atualizado",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {"type": "string"},
-                    "pet": {"$ref": "#/components/schemas/Pet"}
-                  }
-                }
-              }
-            }
-          },
-          "401": {"description": "Nao autenticado"},
-          "403": {"description": "Sem permissao"}
         }
       },
       "delete": {
