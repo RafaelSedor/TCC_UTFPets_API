@@ -73,6 +73,7 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::post('pets', [PetController::class, 'store']);
     Route::get('pets/{pet}', [PetController::class, 'show']);
     Route::put('pets/{pet}', [PetController::class, 'update']);
+    Route::post('pets/{pet}', [PetController::class, 'update']);
     Route::delete('pets/{pet}', [PetController::class, 'destroy']);
     
     // Rotas de refeições aninhadas com pets
