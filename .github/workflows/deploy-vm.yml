@@ -201,6 +201,23 @@ jobs:
           rm /tmp/.env
           echo "✅ .env file created on VM"
 
+      - name: Setup GCP service account
+        run: |
+          echo "🔐 Setting up GCP service account credentials..."
+
+          # Create the service account JSON on VM from secret
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              mkdir -p ${APP_DIR}/storage/keys
+              cat > ${APP_DIR}/storage/keys/gcp-service-account.json <<'GCPEOF'
+          ${{ secrets.GCP_SA_KEY }}
+          GCPEOF
+              chmod 600 ${APP_DIR}/storage/keys/gcp-service-account.json
+              echo '✅ Service account key configured'
+            "
+
       - name: Setup and start application
         run: |
           echo "⚙️  Setting up and starting application..."
@@ -242,9 +259,9 @@ jobs:
           MAX_ATTEMPTS=10
           ATTEMPT=0
 
-          while [ \$ATTEMPT -lt \$MAX_ATTEMPTS ]; do
-            ATTEMPT=\$((ATTEMPT + 1))
-            echo "Attempt \$ATTEMPT/\$MAX_ATTEMPTS..."
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
 
             if gcloud compute ssh ${VM_NAME} \
               --zone=${VM_ZONE} \
@@ -254,12 +271,12 @@ jobs:
               exit 0
             fi
 
-            if [ \$ATTEMPT -lt \$MAX_ATTEMPTS ]; then
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
               sleep 5
             fi
           done
 
-          echo "❌ Health check failed after \$MAX_ATTEMPTS attempts"
+          echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
           exit 1
 
       - name: Cleanup old backups
