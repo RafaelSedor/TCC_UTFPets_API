@@ -4,7 +4,7 @@
 # Deve ser executado manualmente na VM após o primeiro deploy
 
 DOMAIN="api.utfpets.online"
-EMAIL="seu-email@example.com" # ALTERAR para seu email
+EMAIL="rafaelsedor@gmail.com"
 
 echo "🔐 Iniciando configuração SSL para $DOMAIN"
 
