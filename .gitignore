@@ -29,3 +29,7 @@ yarn-error.log
 /.zed
 /.claude
 bootstrap/cache/*.php
+
+# Certificados SSL
+/certbot/conf
+/certbot/www
