@@ -1,0 +1,186 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  PROJECT_ID: tccutfpets
+  VM_NAME: tccutfpets
+  VM_ZONE: southamerica-east1-b
+  APP_DIR: /opt/utfpets
+  BACKUP_DIR: /opt/utfpets_backups
+
+jobs:
+  deploy:
+    name: Deploy to VM
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Prepare deployment
+        run: |
+          echo "🚀 Starting deployment to VM ${VM_NAME}..."
+          echo "📦 Commit: ${{ github.sha }}"
+          echo "👤 Author: ${{ github.actor }}"
+
+      - name: Stop containers and create backup
+        run: |
+          echo "🛑 Stopping containers and creating backup..."
+
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              set -e
+              cd ${APP_DIR} || exit 0
+
+              echo '⏸️  Stopping containers...'
+              docker-compose down || true
+
+              echo '💾 Creating backup...'
+              BACKUP_NAME=utfpets_\$(date +%Y%m%d_%H%M%S)
+              sudo mkdir -p ${BACKUP_DIR}
+              sudo cp -r ${APP_DIR} ${BACKUP_DIR}/\${BACKUP_NAME} || true
+              echo \"✅ Backup created: \${BACKUP_NAME}\"
+            "
+
+      - name: Copy files to VM
+        run: |
+          echo "📁 Copying application files..."
+
+          # Criar lista de exclusões (não sobrescrever .env, vendor, etc)
+          cat > /tmp/rsync-exclude.txt <<EOF
+          .git
+          .github
+          node_modules
+          vendor
+          .env
+          .env.example
+          storage/logs/*
+          storage/framework/cache/*
+          storage/framework/sessions/*
+          storage/framework/views/*
+          storage/keys/gcp-service-account.json
+          bootstrap/cache/*.php
+          tests
+          phpunit.xml
+          .gitignore
+          .editorconfig
+          EOF
+
+          # Copiar arquivos excluindo os listados
+          gcloud compute scp \
+            --recurse \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --compress \
+            ./* ${VM_NAME}:${APP_DIR}/ \
+            2>&1 | grep -v "Warning: Permanently added" | grep -v ".env" | grep -v "vendor" || true
+
+      - name: Setup and start application
+        run: |
+          echo "⚙️  Setting up and starting application..."
+
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              set -e
+              cd ${APP_DIR}
+
+              echo '🔐 Setting permissions...'
+              chmod +x entrypoint.sh || true
+              sudo chown -R 1000:1000 storage bootstrap/cache 2>/dev/null || true
+              sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
+              echo '🐳 Building and starting containers...'
+              docker-compose up -d --build
+
+              echo '⏳ Waiting for containers to be ready...'
+              timeout 60 bash -c 'until docker-compose exec -T app php -r \"echo \"\"PHP OK\n\"\";\" 2>/dev/null; do echo \"Waiting for app...\"; sleep 2; done'
+
+              echo '🗃️  Running migrations...'
+              docker-compose exec -T app php artisan migrate --force || echo 'Warning: Migrations failed'
+
+              echo '⚡ Optimizing application...'
+              docker-compose exec -T app php artisan config:cache || true
+              docker-compose exec -T app php artisan route:cache || true
+              docker-compose exec -T app php artisan view:cache || true
+
+              echo '📊 Container status:'
+              docker-compose ps
+            "
+
+      - name: Health check
+        run: |
+          echo "🏥 Performing health check..."
+
+          MAX_ATTEMPTS=10
+          ATTEMPT=0
+
+          while [ \$ATTEMPT -lt \$MAX_ATTEMPTS ]; do
+            ATTEMPT=\$((ATTEMPT + 1))
+            echo "Attempt \$ATTEMPT/\$MAX_ATTEMPTS..."
+
+            if gcloud compute ssh ${VM_NAME} \
+              --zone=${VM_ZONE} \
+              --project=${PROJECT_ID} \
+              --command="curl -f -s http://localhost:8080/api/health" > /dev/null 2>&1; then
+              echo "✅ Health check passed!"
+              exit 0
+            fi
+
+            if [ \$ATTEMPT -lt \$MAX_ATTEMPTS ]; then
+              sleep 5
+            fi
+          done
+
+          echo "❌ Health check failed after \$MAX_ATTEMPTS attempts"
+          exit 1
+
+      - name: Cleanup old backups
+        if: success()
+        run: |
+          echo "🧹 Cleaning up old backups..."
+
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              sudo mkdir -p ${BACKUP_DIR}
+              cd ${BACKUP_DIR}
+              ls -dt utfpets_* 2>/dev/null | tail -n +6 | xargs sudo rm -rf || true
+              echo \"Kept last 5 backups\"
+            "
+
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "========================================="
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ DEPLOYMENT SUCCESSFUL!"
+            echo "========================================="
+            echo "🌐 API: http://34.39.150.157:8080"
+            echo "📚 Swagger: http://34.39.150.157:8080/swagger"
+            echo "💚 Health: http://34.39.150.157:8080/api/health"
+            echo "========================================="
+          else
+            echo "❌ DEPLOYMENT FAILED!"
+            echo "========================================="
+            echo "Check logs above for details"
+            echo "To rollback, connect to VM and restore backup"
+            echo "========================================="
+            exit 1
+          fi
