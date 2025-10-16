@@ -35,25 +35,35 @@ jobs:
           echo "📦 Commit: ${{ github.sha }}"
           echo "👤 Author: ${{ github.actor }}"
 
-      - name: Stop containers and create backup
+      - name: Prepare VM and create backup
         run: |
-          echo "🛑 Stopping containers and creating backup..."
+          echo "🔧 Preparing VM and creating backup..."
 
           gcloud compute ssh ${VM_NAME} \
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID} \
             --command="
               set -e
-              cd ${APP_DIR} || exit 0
 
-              echo '⏸️  Stopping containers...'
-              docker-compose down || true
+              echo '📁 Creating application directory...'
+              sudo mkdir -p ${APP_DIR}
+              sudo chown \$USER:\$USER ${APP_DIR}
 
-              echo '💾 Creating backup...'
-              BACKUP_NAME=utfpets_\$(date +%Y%m%d_%H%M%S)
+              echo '📁 Creating backup directory...'
               sudo mkdir -p ${BACKUP_DIR}
-              sudo cp -r ${APP_DIR} ${BACKUP_DIR}/\${BACKUP_NAME} || true
-              echo \"✅ Backup created: \${BACKUP_NAME}\"
+
+              if [ -d ${APP_DIR} ] && [ \"\$(ls -A ${APP_DIR})\" ]; then
+                echo '⏸️  Stopping containers...'
+                cd ${APP_DIR}
+                docker-compose down || true
+
+                echo '💾 Creating backup...'
+                BACKUP_NAME=utfpets_\$(date +%Y%m%d_%H%M%S)
+                sudo cp -r ${APP_DIR} ${BACKUP_DIR}/\${BACKUP_NAME}
+                echo \"✅ Backup created: \${BACKUP_NAME}\"
+              else
+                echo 'ℹ️  First deployment - no backup needed'
+              fi
             "
 
       - name: Copy files to VM
@@ -99,6 +109,13 @@ jobs:
             --command="
               set -e
               cd ${APP_DIR}
+
+              echo '📝 Checking .env file...'
+              if [ ! -f .env ]; then
+                echo 'ℹ️  Creating .env from .env.example'
+                cp .env.example .env
+                echo '⚠️  WARNING: Configure .env with production credentials!'
+              fi
 
               echo '🔐 Setting permissions...'
               chmod +x entrypoint.sh || true
