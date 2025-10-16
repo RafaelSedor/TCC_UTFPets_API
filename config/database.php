@@ -88,7 +88,7 @@ return [
             ]) : [],
         ],
 
-        // Configuração para produção (Supabase)
+        // Configuração para produção (Google Cloud SQL com Cloud SQL Proxy)
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => $__pgsqlUrl,
@@ -102,10 +102,13 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'require'),
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'sslrootcert' => env('DB_SSLROOTCERT'),
+            'sslcert' => env('DB_SSLCERT'),
+            'sslkey' => env('DB_SSLKEY'),
             'options' => extension_loaded('pdo_pgsql') ? array_filter([
                 PDO::ATTR_EMULATE_PREPARES => true,
-                defined('PDO::ATTR_TIMEOUT') ? PDO::ATTR_TIMEOUT : null => (int) env('DB_CONNECT_TIMEOUT', 5),
+                defined('PDO::ATTR_TIMEOUT') ? PDO::ATTR_TIMEOUT : null => (int) env('DB_CONNECT_TIMEOUT', 30),
             ]) : [],
         ],
 
@@ -122,10 +125,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => 'prefer',
-            'options' => extension_loaded('pdo_pgsql') ? [
-                PDO::ATTR_EMULATE_PREPARES => true,
-            ] : [],
+            'sslmode' => 'require',
         ],
 
         'sqlsrv' => [

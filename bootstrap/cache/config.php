@@ -259,7 +259,7 @@
     'fallback_locale' => 'en',
     'faker_locale' => 'en_US',
     'cipher' => 'AES-256-CBC',
-    'key' => 'base64:Mwu51xS+/qxZENf9maim9sZxSHRW+zja78h/6+o7Vo4=',
+    'key' => 'base64:k9/ZN9J4U86VepdkpHDFDqzdLeqOQbPHWHiN8sEC1GM=',
     'previous_keys' => 
     array (
     ),
@@ -523,11 +523,11 @@
       array (
         'driver' => 'mysql',
         'url' => NULL,
-        'host' => 'aws-1-sa-east-1.pooler.supabase.com',
+        'host' => 'cloud-sql-proxy',
         'port' => '5432',
         'database' => 'postgres',
-        'username' => 'postgres.vveezgdyqomxvcprtbla',
-        'password' => 'fksZ6fAM7aerr2Od',
+        'username' => 'RafaelSedor',
+        'password' => ')q2D(7B<Ul,Y48V',
         'unix_socket' => '',
         'charset' => 'utf8mb4',
         'collation' => 'utf8mb4_unicode_ci',
@@ -543,11 +543,11 @@
       array (
         'driver' => 'mariadb',
         'url' => NULL,
-        'host' => 'aws-1-sa-east-1.pooler.supabase.com',
+        'host' => 'cloud-sql-proxy',
         'port' => '5432',
         'database' => 'postgres',
-        'username' => 'postgres.vveezgdyqomxvcprtbla',
-        'password' => 'fksZ6fAM7aerr2Od',
+        'username' => 'RafaelSedor',
+        'password' => ')q2D(7B<Ul,Y48V',
         'unix_socket' => '',
         'charset' => 'utf8mb4',
         'collation' => 'utf8mb4_unicode_ci',
@@ -562,33 +562,36 @@
       'pgsql' => 
       array (
         'driver' => 'pgsql',
-        'url' => 'postgresql://postgres.vveezgdyqomxvcprtbla:fksZ6fAM7aerr2Od@aws-1-sa-east-1.pooler.supabase.com:5432/postgres',
-        'host' => 'aws-1-sa-east-1.pooler.supabase.com',
+        'url' => NULL,
+        'host' => 'cloud-sql-proxy',
         'port' => '5432',
         'database' => 'postgres',
-        'username' => 'postgres.vveezgdyqomxvcprtbla',
-        'password' => 'fksZ6fAM7aerr2Od',
-        'pool_mode' => 'session',
+        'username' => 'RafaelSedor',
+        'password' => ')q2D(7B<Ul,Y48V',
+        'pool_mode' => 'transaction',
         'charset' => 'utf8',
         'prefix' => '',
         'prefix_indexes' => true,
         'search_path' => 'public',
-        'sslmode' => 'require',
+        'sslmode' => 'prefer',
+        'sslrootcert' => NULL,
+        'sslcert' => NULL,
+        'sslkey' => NULL,
         'options' => 
         array (
           20 => true,
-          2 => 5,
+          2 => 30,
         ),
       ),
       'sqlsrv' => 
       array (
         'driver' => 'sqlsrv',
         'url' => NULL,
-        'host' => 'aws-1-sa-east-1.pooler.supabase.com',
+        'host' => 'cloud-sql-proxy',
         'port' => '5432',
         'database' => 'postgres',
-        'username' => 'postgres.vveezgdyqomxvcprtbla',
-        'password' => 'fksZ6fAM7aerr2Od',
+        'username' => 'RafaelSedor',
+        'password' => ')q2D(7B<Ul,Y48V',
         'charset' => 'utf8',
         'prefix' => '',
         'prefix_indexes' => true,
@@ -596,7 +599,7 @@
       'pgsql_testing' => 
       array (
         'driver' => 'pgsql',
-        'url' => 'postgresql://postgres.vveezgdyqomxvcprtbla:fksZ6fAM7aerr2Od@aws-1-sa-east-1.pooler.supabase.com:5432/postgres',
+        'url' => NULL,
         'host' => 'test-db',
         'port' => '5432',
         'database' => 'utfpets_test',
@@ -606,11 +609,7 @@
         'prefix' => '',
         'prefix_indexes' => true,
         'search_path' => 'public',
-        'sslmode' => 'prefer',
-        'options' => 
-        array (
-          20 => true,
-        ),
+        'sslmode' => 'require',
       ),
     ),
     'migrations' => 
@@ -690,7 +689,7 @@
   ),
   'jwt' => 
   array (
-    'secret' => '47gCZsRUpglpLJiVUxa5Lx1VvEXBcjwzwaDkS9UyaagVD0SSjtTzNm5Byfnq19qB',
+    'secret' => 'y7DpGuGueN1zcylg4kWP8fHIt8gFfQPsZX5GFQBr98ogzIeCEo8ez3mqf94zkSTn',
     'keys' => 
     array (
       'public' => NULL,
@@ -698,6 +697,7 @@
       'passphrase' => NULL,
     ),
     'ttl' => '60',
+    'refresh_iat' => false,
     'refresh_ttl' => 10080,
     'algo' => 'HS256',
     'required_claims' => 

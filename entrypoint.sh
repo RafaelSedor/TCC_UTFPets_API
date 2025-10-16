@@ -2,6 +2,13 @@
 
 set -e
 
+# Diretórios/arquivos padrão do ambiente
+APP_DIR="/var/www"
+ENV_DIR="${ENV_DIR:-/etc/utfpets}"
+ENV_SRC="${ENV_FILE:-${ENV_DIR}/.env}"
+ENV_DST="${APP_DIR}/.env"
+TEST_ENV_SRC="${ENV_DIR}/.env.testing"
+
 # Aguarda DB apenas no ambiente de testes (compose local)
 if [ "${APP_ENV}" = "testing" ]; then
   echo "[entrypoint] Aguardando PostgreSQL de teste..."
@@ -13,22 +20,28 @@ fi
 
 echo "[entrypoint] Iniciando setup do Laravel..."
 
-# Verifica e configura o ambiente principal
-if [ "${RENDER:-false}" = "true" ]; then
-  echo "[entrypoint] RENDER=true: nao criar .env local (usando variaveis de ambiente)"
-else
-  if [ ! -f .env ]; then
-    echo "[entrypoint] Criando arquivo .env a partir de .env.example"
-    cp .env.example .env
-  fi
+# Configura .env a partir de variáveis de ambiente ou arquivo
+echo "[entrypoint] ENV_DIR=${ENV_DIR}"
+if [ -n "${DB_HOST:-}" ] && [ -n "${DB_USERNAME:-}" ]; then
+  echo "[entrypoint] Usando variáveis de ambiente"
+elif [ -f "${ENV_SRC}" ]; then
+  echo "[entrypoint] Copiando .env: ${ENV_SRC}"
+  cp "${ENV_SRC}" "${ENV_DST}"
+elif [ "${RENDER:-false}" = "true" ]; then
+  echo "[entrypoint] RENDER=true: variáveis de ambiente"
+elif [ ! -f "${ENV_DST}" ]; then
+  echo "[entrypoint] Criando .env de .env.example"
+  cp "${APP_DIR}/.env.example" "${ENV_DST}"
 fi
 
-# Verifica e prepara .env.testing apenas quando em testes
+# Prepara .env.testing para ambiente de testes
 if [ "${APP_ENV}" = "testing" ]; then
-  if [ ! -f .env.testing ]; then
+  if [ -f "${TEST_ENV_SRC}" ]; then
+    cp "${TEST_ENV_SRC}" "${APP_DIR}/.env.testing"
+    echo "[entrypoint] .env.testing copiado"
+  elif [ ! -f .env.testing ]; then
     echo "[entrypoint] Criando .env.testing"
     cp .env.example .env.testing
-    # Configura as variáveis para o banco de teste Docker
     sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=pgsql_testing/' .env.testing
     sed -i 's/DB_HOST=.*/DB_HOST=test-db/' .env.testing
     sed -i 's/DB_PORT=.*/DB_PORT=5432/' .env.testing
@@ -38,44 +51,41 @@ if [ "${APP_ENV}" = "testing" ]; then
   fi
 fi
 
-# Instala as dependencias do Composer (apenas se vendor/ não existir)
+# Instala dependências do Composer
 if [ ! -d vendor ]; then
-  echo "[entrypoint] Instalando dependencias do Composer..."
+  echo "[entrypoint] Instalando dependências..."
   composer install --no-interaction --prefer-dist --optimize-autoloader
 fi
 
-# Garante as permissões corretas
-echo "[entrypoint] Ajustando permissoes..."
+# Ajusta permissões
+echo "[entrypoint] Ajustando permissões..."
 chown -R www-data:www-data storage || true
 chmod -R 775 storage || true
 chown -R www-data:www-data bootstrap/cache || true
 chmod -R 775 bootstrap/cache || true
 
-# Gera a chave somente se não estiver definida
+# Gera chaves se necessário
 if [ -z "${APP_KEY:-}" ]; then
   php artisan key:generate --no-interaction --force
 fi
 
-# Configura o JWT (gera se não estiver definido)
 if [ -z "${JWT_SECRET:-}" ]; then
   php artisan jwt:secret --force
 fi
 
-# Configura o JWT para ambiente de testes
 if [ "${APP_ENV}" = "testing" ]; then
   php artisan jwt:secret --force --env=testing
 fi
 
-# Otimiza a aplicação
-echo "[entrypoint] Otimizando aplicacao..."
-# Limpa caches antes de otimizar (evita rotas/config antigas em prod)
+# Otimiza aplicação
+echo "[entrypoint] Otimizando aplicação..."
 php artisan route:clear || true
 php artisan config:clear || true
 php artisan view:clear || true
 php artisan cache:clear || true
 php artisan optimize || true
 
-# Executa migrações automaticamente se habilitado por env
+# Executa migrações se habilitado
 if [ "${MIGRATE_ON_START:-false}" = "true" ]; then
   if [ "${APP_ENV}" = "testing" ]; then
     php artisan migrate --force --env=testing || true
@@ -84,26 +94,21 @@ if [ "${MIGRATE_ON_START:-false}" = "true" ]; then
   fi
 fi
 
-echo "[entrypoint] Setup do Laravel concluido!"
+echo "[entrypoint] Setup concluído!"
 
-# Seleciona modo de execução conforme ambiente
+# Inicia serviços
 if [ "${RENDER:-false}" = "true" ]; then
-  echo "[entrypoint] Ambiente Render detectado; iniciando Nginx + PHP-FPM"
-  # Ajusta Nginx para escutar na PORT do Render e FastCGI local
+  echo "[entrypoint] Iniciando Nginx + PHP-FPM"
   if [ -f /etc/nginx/conf.d/default.conf ]; then
     sed -ri "s/listen 80;/listen ${PORT:-8080};/" /etc/nginx/conf.d/default.conf || true
     sed -ri "s/fastcgi_pass app:9000;/fastcgi_pass 127.0.0.1:9000;/" /etc/nginx/conf.d/default.conf || true
   fi
-
-  # Inicia PHP-FPM em background
   php-fpm -F &
   PHP_FPM_PID=$!
   echo "[entrypoint] PHP-FPM PID: ${PHP_FPM_PID}"
-
-  # Inicia Nginx em foreground (processo PID 1)
-  echo "[entrypoint] Iniciando Nginx em :${PORT:-8080}"
+  echo "[entrypoint] Nginx em :${PORT:-8080}"
   exec nginx -g 'daemon off;'
 else
-  echo "[entrypoint] Iniciando PHP-FPM (produção via Nginx externo)"
+  echo "[entrypoint] Iniciando PHP-FPM"
   exec php-fpm -F
 fi

@@ -6,6 +6,8 @@
 /storage/*.key
 /storage/pail
 /storage/keys/firebase-adminsdk.json
+/storage/keys/gcp-service-account.json
+/storage/keys/*.json
 /storage/app/public/postman/*.json
 /storage/framework/views/*.php
 /storage/logs/*.log
@@ -25,4 +27,5 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/.claude
 bootstrap/cache/*.php
