@@ -35,15 +35,32 @@ jobs:
           echo "📦 Commit: ${{ github.sha }}"
           echo "👤 Author: ${{ github.actor }}"
 
-      - name: Prepare VM and create backup
+      - name: Install Docker and prepare VM
         run: |
-          echo "🔧 Preparing VM and creating backup..."
+          echo "🔧 Installing Docker and preparing VM..."
 
           gcloud compute ssh ${VM_NAME} \
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID} \
             --command="
               set -e
+
+              echo '📦 Checking Docker installation...'
+              if ! command -v docker &> /dev/null; then
+                echo 'Installing Docker Engine...'
+                sudo apt-get update -qq
+                sudo apt-get install -y ca-certificates curl
+                sudo install -m 0755 -d /etc/apt/keyrings
+                sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+                sudo chmod a+r /etc/apt/keyrings/docker.asc
+                echo \"deb [arch=\$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \$(. /etc/os-release && echo \\\"\$VERSION_CODENAME\\\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+                sudo apt-get update -qq
+                sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+                sudo usermod -aG docker \$USER
+                echo '✅ Docker installed'
+              else
+                echo '✅ Docker already installed'
+              fi
 
               echo '📁 Creating application directory...'
               sudo mkdir -p ${APP_DIR}
@@ -52,10 +69,10 @@ jobs:
               echo '📁 Creating backup directory...'
               sudo mkdir -p ${BACKUP_DIR}
 
-              if [ -d ${APP_DIR} ] && [ \"\$(ls -A ${APP_DIR})\" ]; then
+              if [ -d ${APP_DIR} ] && [ \"\$(ls -A ${APP_DIR})\" ] && command -v docker &> /dev/null; then
                 echo '⏸️  Stopping containers...'
                 cd ${APP_DIR}
-                docker-compose down || true
+                docker compose down || true
 
                 echo '💾 Creating backup...'
                 BACKUP_NAME=utfpets_\$(date +%Y%m%d_%H%M%S)
@@ -200,21 +217,21 @@ jobs:
               sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
               echo '🐳 Building and starting containers...'
-              docker-compose up -d --build
+              docker compose up -d --build
 
               echo '⏳ Waiting for containers to be ready...'
-              timeout 60 bash -c 'until docker-compose exec -T app php -r \"echo \"\"PHP OK\n\"\";\" 2>/dev/null; do echo \"Waiting for app...\"; sleep 2; done'
+              timeout 60 bash -c 'until docker compose exec -T app php -r \"echo \"\"PHP OK\n\"\";\" 2>/dev/null; do echo \"Waiting for app...\"; sleep 2; done'
 
               echo '🗃️  Running migrations...'
-              docker-compose exec -T app php artisan migrate --force || echo 'Warning: Migrations failed'
+              docker compose exec -T app php artisan migrate --force || echo 'Warning: Migrations failed'
 
               echo '⚡ Optimizing application...'
-              docker-compose exec -T app php artisan config:cache || true
-              docker-compose exec -T app php artisan route:cache || true
-              docker-compose exec -T app php artisan view:cache || true
+              docker compose exec -T app php artisan config:cache || true
+              docker compose exec -T app php artisan route:cache || true
+              docker compose exec -T app php artisan view:cache || true
 
               echo '📊 Container status:'
-              docker-compose ps
+              docker compose ps
             "
 
       - name: Health check
