@@ -253,6 +253,12 @@ jobs:
               sudo chown -R 1000:1000 storage bootstrap/cache 2>/dev/null || true
               sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
+              echo '🔐 Fixing certbot permissions...'
+              if [ -d certbot ]; then
+                sudo chown -R rafaelsedor:rafaelsedor certbot/ 2>/dev/null || true
+                sudo chmod -R 755 certbot/ 2>/dev/null || true
+              fi
+
               echo '🐳 Building and starting containers...'
               docker compose up -d --build
 
