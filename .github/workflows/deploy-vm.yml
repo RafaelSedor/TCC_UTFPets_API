@@ -205,18 +205,29 @@ jobs:
         run: |
           echo "🔐 Setting up GCP service account credentials..."
 
-          # Create the service account JSON on VM from secret
+          # Create temp file with service account JSON
+          echo '${{ secrets.GCP_SA_KEY }}' > /tmp/gcp-sa-key.json
+
+          # Create keys directory on VM
           gcloud compute ssh ${VM_NAME} \
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID} \
-            --command="
-              mkdir -p ${APP_DIR}/storage/keys
-              cat > ${APP_DIR}/storage/keys/gcp-service-account.json <<'GCPEOF'
-          ${{ secrets.GCP_SA_KEY }}
-          GCPEOF
-              chmod 600 ${APP_DIR}/storage/keys/gcp-service-account.json
-              echo '✅ Service account key configured'
-            "
+            --command="mkdir -p ${APP_DIR}/storage/keys"
+
+          # Copy the service account key to VM
+          gcloud compute scp /tmp/gcp-sa-key.json ${VM_NAME}:${APP_DIR}/storage/keys/gcp-service-account.json \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID}
+
+          # Set correct permissions
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="chmod 600 ${APP_DIR}/storage/keys/gcp-service-account.json"
+
+          # Cleanup local temp file
+          rm /tmp/gcp-sa-key.json
+          echo "✅ Service account key configured"
 
       - name: Setup and start application
         run: |
