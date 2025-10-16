@@ -191,6 +191,7 @@ jobs:
 
           GOOGLE_CLOUD_PROJECT="${{ secrets.GOOGLE_CLOUD_PROJECT || 'tccutfpets' }}"
           GOOGLE_APPLICATION_CREDENTIALS="${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '/opt/utfpets/storage/keys/gcp-service-account.json' }}"
+          CLOUD_SQL_CONNECTION_NAME="${{ secrets.CLOUD_SQL_CONNECTION_NAME || 'tccutfpets:southamerica-east1:tcc' }}"
           EOF
 
           gcloud compute scp /tmp/.env ${VM_NAME}:${APP_DIR}/.env \
