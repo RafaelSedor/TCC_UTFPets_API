@@ -66,14 +66,52 @@ docker-compose up -d
 # Migrations
 docker-compose -f docker-compose.local.yml exec app php artisan migrate
 
-# Testes
-docker-compose -f docker-compose.local.yml exec app php artisan test
+# Testes (use -T para evitar travar no terminal)
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/
+
+# Teste específico
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/AuthTest.php
 
 # Limpar cache
 docker-compose -f docker-compose.local.yml exec app php artisan cache:clear
 
 # Acessar shell
 docker-compose -f docker-compose.local.yml exec app bash
+```
+
+### ⚠️ Importante: Rodar Testes
+
+**SEMPRE use o parâmetro `-T`** ao rodar testes para evitar que o comando trave:
+
+```bash
+# ✅ CORRETO - Com -T
+docker-compose -f docker-compose.local.yml exec -T app php artisan test
+
+# ❌ ERRADO - Sem -T (vai travar após os warnings)
+docker-compose -f docker-compose.local.yml exec app php artisan test
+```
+
+### Testes Must Have Disponíveis
+
+```bash
+# Rodar todos os testes Must Have
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/
+
+# Testes individuais
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/AuthTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/PetTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/MealTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/SharedPetTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/ReminderTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/NotificationTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/AdminTest.php
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/LocationTest.php
+
+# Rodar teste específico
+docker-compose -f docker-compose.local.yml exec -T app php artisan test --filter=test_user_can_register
+
+# Ver progresso detalhado
+docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/ --verbose
 ```
 
 ---
