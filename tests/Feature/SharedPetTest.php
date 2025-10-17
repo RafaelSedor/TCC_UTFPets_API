@@ -39,7 +39,7 @@ class SharedPetTest extends TestCase
         $this->viewerToken = Auth::login($this->viewer) ?? '';
     }
 
-    /** @test */
+    
     public function owner_can_invite_user_to_share_pet()
     {
         $response = $this->withHeaders([
@@ -67,7 +67,7 @@ class SharedPetTest extends TestCase
         ]);
     }
 
-    /** @test */
+    
     public function can_invite_by_email()
     {
         $response = $this->withHeaders([
@@ -80,7 +80,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(201);
     }
 
-    /** @test */
+    
     public function cannot_create_duplicate_invitation()
     {
         SharedPet::create([
@@ -104,7 +104,7 @@ class SharedPetTest extends TestCase
             ]);
     }
 
-    /** @test */
+    
     public function user_can_accept_invitation()
     {
         $shared = SharedPet::create([
@@ -130,7 +130,7 @@ class SharedPetTest extends TestCase
         ]);
     }
 
-    /** @test */
+    
     public function only_invited_user_can_accept()
     {
         SharedPet::create([
@@ -148,7 +148,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    
     public function owner_can_change_role()
     {
         $shared = SharedPet::create([
@@ -173,7 +173,7 @@ class SharedPetTest extends TestCase
         ]);
     }
 
-    /** @test */
+    
     public function non_owner_cannot_change_role()
     {
         SharedPet::create([
@@ -193,7 +193,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    
     public function owner_can_revoke_access()
     {
         $shared = SharedPet::create([
@@ -215,7 +215,7 @@ class SharedPetTest extends TestCase
         ]);
     }
 
-    /** @test */
+    
     public function editor_can_create_meals()
     {
         SharedPet::create([
@@ -238,7 +238,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(201);
     }
 
-    /** @test */
+    
     public function viewer_cannot_create_meals()
     {
         SharedPet::create([
@@ -261,7 +261,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    
     public function viewer_can_view_pet()
     {
         SharedPet::create([
@@ -279,7 +279,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(200);
     }
 
-    /** @test */
+    
     public function editor_cannot_delete_pet()
     {
         SharedPet::create([
@@ -297,7 +297,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    
     public function only_owner_can_manage_sharing()
     {
         SharedPet::create([
@@ -318,7 +318,7 @@ class SharedPetTest extends TestCase
         $response->assertStatus(403);
     }
 
-    /** @test */
+    
     public function can_list_all_participants()
     {
         SharedPet::create([
