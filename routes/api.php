@@ -53,11 +53,14 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// ========================================
+// NÃO É MUST HAVE - Artigos educacionais
+// ========================================
 // Rotas públicas de artigos educacionais (sem autenticação)
-Route::prefix('educational-articles')->group(function () {
-    Route::get('/', [EducationalArticleController::class, 'index']);
-    Route::get('/{slug}', [EducationalArticleController::class, 'show']);
-});
+// Route::prefix('educational-articles')->group(function () {
+//     Route::get('/', [EducationalArticleController::class, 'index']);
+//     Route::get('/{slug}', [EducationalArticleController::class, 'show']);
+// });
 
 // Rotas protegidas que requerem autenticação
 Route::prefix('v1')->middleware('jwt.auth')->group(function () {
@@ -92,11 +95,17 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
         Route::get('reminders', [ReminderController::class, 'index']);
         Route::post('reminders', [ReminderController::class, 'store']);
         
+        // ========================================
+        // NÃO É MUST HAVE - Controle de peso
+        // ========================================
         // Rotas de pesos aninhadas com pets (Módulo 12)
-        Route::apiResource('weights', PetWeightController::class)->parameters(['weights' => 'petWeight']);
-        
+        // Route::apiResource('weights', PetWeightController::class)->parameters(['weights' => 'petWeight']);
+
+        // ========================================
+        // NÃO É MUST HAVE - Resumo nutricional
+        // ========================================
         // Rotas de resumo nutricional (Módulo 16)
-        Route::get('nutrition/summary', [NutritionSummaryController::class, 'summary']);
+        // Route::get('nutrition/summary', [NutritionSummaryController::class, 'summary']);
     });
     
     // Rotas de lembretes (não aninhadas)
@@ -105,7 +114,10 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::delete('reminders/{reminder}', [ReminderController::class, 'destroy']);
     Route::post('reminders/{reminder}/snooze', [ReminderController::class, 'snooze']);
     Route::post('reminders/{reminder}/complete', [ReminderController::class, 'complete']);
-    Route::post('reminders/{reminder}/test', [ReminderController::class, 'test']);
+    // ========================================
+    // NÃO É MUST HAVE - Teste de lembrete
+    // ========================================
+    // Route::post('reminders/{reminder}/test', [ReminderController::class, 'test']);
     
     // Rotas de notificações
     Route::get('notifications', [NotificationController::class, 'index']);
@@ -113,17 +125,26 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     
+    // ========================================
+    // NÃO É MUST HAVE - Calendário
+    // ========================================
     // Rotas de calendário (Módulo 13)
-    Route::get('calendar', [CalendarController::class, 'show']);
-    Route::post('calendar/rotate-token', [CalendarController::class, 'rotateToken']);
-    
+    // Route::get('calendar', [CalendarController::class, 'show']);
+    // Route::post('calendar/rotate-token', [CalendarController::class, 'rotateToken']);
+
+    // ========================================
+    // NÃO É MUST HAVE - Dispositivos/FCM
+    // ========================================
     // Rotas de dispositivos/FCM (Módulo 8)
-    Route::get('devices', [UserDeviceController::class, 'index']);
-    Route::post('devices/register', [UserDeviceController::class, 'register']);
-    Route::delete('devices/{device}', [UserDeviceController::class, 'destroy']);
-    
+    // Route::get('devices', [UserDeviceController::class, 'index']);
+    // Route::post('devices/register', [UserDeviceController::class, 'register']);
+    // Route::delete('devices/{device}', [UserDeviceController::class, 'destroy']);
+
+    // ========================================
+    // NÃO É MUST HAVE - GraphQL Proxy
+    // ========================================
     // Rotas de GraphQL Proxy (Módulo 11)
-    Route::post('graphql/read', [GraphQLProxyController::class, 'read']);
+    // Route::post('graphql/read', [GraphQLProxyController::class, 'read']);
     
     // Rotas administrativas (requerem admin)
     Route::prefix('admin')->middleware('admin')->group(function () {
@@ -132,17 +153,23 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
         Route::get('pets', [AdminController::class, 'listPets']);
         Route::get('audit-logs', [AdminController::class, 'listAuditLogs']);
         
+        // ========================================
+        // NÃO É MUST HAVE - Estatísticas gerais
+        // ========================================
         // Estatísticas gerais (Módulo 18)
-        Route::get('stats/overview', [AdminController::class, 'overview']);
-        
+        // Route::get('stats/overview', [AdminController::class, 'overview']);
+
+        // ========================================
+        // NÃO É MUST HAVE - Artigos educacionais (admin)
+        // ========================================
         // Rotas de artigos educacionais (admin) - Módulo 14
-        Route::post('educational-articles', [EducationalArticleController::class, 'store']);
-        Route::patch('educational-articles/{id}', [EducationalArticleController::class, 'update']);
-        Route::delete('educational-articles/{id}', [EducationalArticleController::class, 'destroy']);
-        Route::post('educational-articles/{id}/publish', [EducationalArticleController::class, 'publish']);
-        
+        // Route::post('educational-articles', [EducationalArticleController::class, 'store']);
+        // Route::patch('educational-articles/{id}', [EducationalArticleController::class, 'update']);
+        // Route::delete('educational-articles/{id}', [EducationalArticleController::class, 'destroy']);
+        // Route::post('educational-articles/{id}/publish', [EducationalArticleController::class, 'publish']);
+
         // Content tools (Módulo 18)
-        Route::get('educational-articles/drafts', [EducationalArticleController::class, 'drafts']);
-        Route::post('educational-articles/{id}/duplicate', [EducationalArticleController::class, 'duplicate']);
+        // Route::get('educational-articles/drafts', [EducationalArticleController::class, 'drafts']);
+        // Route::post('educational-articles/{id}/duplicate', [EducationalArticleController::class, 'duplicate']);
     });
 });
