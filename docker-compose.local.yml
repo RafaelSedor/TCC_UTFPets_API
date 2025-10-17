@@ -2,6 +2,27 @@
 # Use: docker-compose -f docker-compose.local.yml up -d
 
 services:
+  # PostgreSQL local para testes (não usar em produção!)
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: utfpets-postgres-test
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=utfpets_test
+      - POSTGRES_USER=utfpets
+      - POSTGRES_PASSWORD=utfpets_test_password
+    ports:
+      - "127.0.0.1:5433:5432"
+    networks:
+      - app-network
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U utfpets -d utfpets_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Cloud SQL Proxy para conexão segura com Google Cloud SQL
   cloud-sql-proxy:
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
@@ -110,3 +131,7 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  postgres-test-data:
+    driver: local

@@ -31,7 +31,7 @@ class AdminTest extends TestCase
 
         // Cria usuário regular
         $this->regularUser = User::factory()->create([
-            'is_admin' => false,
+            
             'email' => 'user@test.com',
         ]);
 
