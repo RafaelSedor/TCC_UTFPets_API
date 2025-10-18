@@ -9,12 +9,6 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\LocationController;
-use App\Http\Controllers\PetWeightController;
-use App\Http\Controllers\CalendarController;
-use App\Http\Controllers\UserDeviceController;
-use App\Http\Controllers\GraphQLProxyController;
-use App\Http\Controllers\EducationalArticleController;
-use App\Http\Controllers\NutritionSummaryController;
 
 /*
 |--------------------------------------------------------------------------

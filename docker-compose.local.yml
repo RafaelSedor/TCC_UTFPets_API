@@ -57,17 +57,16 @@ services:
     restart: unless-stopped
     environment:
       - APP_NAME=${APP_NAME}
-      - APP_ENV=${APP_ENV}
+      - APP_ENV=local
       - APP_KEY=${APP_KEY}
-      - APP_DEBUG=${APP_DEBUG}
+      - APP_DEBUG=true
       - APP_URL=http://localhost
-      - CLOUD_SQL_CONNECTION_NAME=${CLOUD_SQL_CONNECTION_NAME}
-      - DB_CONNECTION=${DB_CONNECTION}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres-test
+      - DB_PORT=5432
+      - DB_DATABASE=utfpets_test
+      - DB_USERNAME=utfpets
+      - DB_PASSWORD=utfpets_test_password
       - JWT_SECRET=${JWT_SECRET}
       - JWT_TTL=${JWT_TTL}
     volumes:
@@ -78,7 +77,7 @@ services:
     networks:
       - app-network
     depends_on:
-      - cloud-sql-proxy
+      - postgres-test
     security_opt:
       - no-new-privileges:true
     healthcheck:
