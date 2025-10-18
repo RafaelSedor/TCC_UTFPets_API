@@ -86,5 +86,13 @@ class User extends Authenticatable implements JWTSubject
     {
         return $this->hasMany(Location::class);
     }
+
+    /**
+     * Set the is_admin attribute - ensure proper boolean casting for PostgreSQL
+     */
+    public function setIsAdminAttribute($value): void
+    {
+        $this->attributes['is_admin'] = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false;
+    }
 }
 

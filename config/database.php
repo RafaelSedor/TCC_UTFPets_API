@@ -107,7 +107,7 @@ return [
             'sslcert' => env('DB_SSLCERT'),
             'sslkey' => env('DB_SSLKEY'),
             'options' => extension_loaded('pdo_pgsql') ? array_filter([
-                PDO::ATTR_EMULATE_PREPARES => true,
+                PDO::ATTR_EMULATE_PREPARES => false,
                 defined('PDO::ATTR_TIMEOUT') ? PDO::ATTR_TIMEOUT : null => (int) env('DB_CONNECT_TIMEOUT', 30),
             ]) : [],
         ],
