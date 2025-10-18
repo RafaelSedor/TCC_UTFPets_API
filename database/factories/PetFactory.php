@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Pet;
 use App\Models\User;
+use App\Models\Location;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class PetFactory extends Factory
@@ -14,6 +15,7 @@ class PetFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
+            'location_id' => null,
             'name' => fake()->firstName(),
             'species' => fake()->randomElement(['Cachorro', 'Gato', 'Pássaro', 'Coelho', 'Hamster']),
             'breed' => fake()->word(),

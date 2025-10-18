@@ -26,7 +26,9 @@ class LocationTest extends TestCase
 
     public function test_user_can_list_locations(): void
     {
-        Location::factory()->count(3)->create(['user_id' => $this->user->id]);
+        // O UserObserver cria 1 location padrão automaticamente ao criar o usuário
+        // Então criamos apenas 2 locations adicionais para ter um total de 3
+        Location::factory()->count(2)->create(['user_id' => $this->user->id]);
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->token

@@ -20,16 +20,39 @@ class PetController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Pet::where('user_id', Auth::id());
+        $user = Auth::user();
 
-        // Filtro por location_id
+        // Pets que o usuário possui (é owner)
+        $ownPetsQuery = Pet::select('id')->where('user_id', $user->id);
+
+        // Pets compartilhados com o usuário (é editor ou viewer)
+        $sharedPetsQuery = Pet::select('id')->whereHas('sharedWith', function($q) use ($user) {
+            $q->where('user_id', $user->id)
+              ->where('invitation_status', 'accepted');
+        });
+
+        // Filtro por location_id (aplicar ANTES do union)
         if ($request->has('location_id')) {
-            $query->where('location_id', $request->location_id);
+            $ownPetsQuery->where('location_id', $request->location_id);
+            $sharedPetsQuery->where('location_id', $request->location_id);
         }
 
-        $pets = $query->with('location:id,name')
+        // Buscar pets com relacionamentos
+        $petIds = $ownPetsQuery->union($sharedPetsQuery)->pluck('id');
+
+        if ($petIds->isEmpty()) {
+            return response()->json([]);
+        }
+
+        $pets = Pet::whereIn('id', $petIds)
+            ->with(['location:id,name,timezone', 'user:id,name,email'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function($pet) use ($user) {
+                // Adicionar informação do papel do usuário
+                $pet->user_role = $pet->getUserRole($user);
+                return $pet;
+            });
 
         return response()->json($pets);
     }

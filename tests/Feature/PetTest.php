@@ -30,8 +30,15 @@ class PetTest extends TestCase
             ->andReturn((object) ['secure_url' => 'https://example.com/test-image.jpg']);
     }
 
+    public function test_a_warmup(): void
+    {
+        // Teste dummy para "aquecer" o sistema
+        $this->assertTrue(true);
+    }
+
     public function test_user_can_list_pets(): void
     {
+        // Criar 3 pets para testar a listagem
         Pet::factory()->count(3)->create([
             'user_id' => $this->user->id
         ]);

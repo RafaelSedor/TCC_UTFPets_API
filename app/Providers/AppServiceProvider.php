@@ -23,5 +23,23 @@ class AppServiceProvider extends ServiceProvider
         Authenticate::redirectUsing(function () {
             return response()->json(['message' => 'Unauthorized'], 401);
         });
+
+        // Fix PostgreSQL boolean binding issue
+        \Illuminate\Database\Connection::resolverFor('pgsql', function ($connection, $database, $prefix, $config) {
+            return new class($connection, $database, $prefix, $config) extends \Illuminate\Database\PostgresConnection {
+                public function prepareBindings(array $bindings)
+                {
+                    $bindings = parent::prepareBindings($bindings);
+
+                    foreach ($bindings as $key => $value) {
+                        if (is_bool($value)) {
+                            $bindings[$key] = $value ? 'true' : 'false';
+                        }
+                    }
+
+                    return $bindings;
+                }
+            };
+        });
     }
 }
