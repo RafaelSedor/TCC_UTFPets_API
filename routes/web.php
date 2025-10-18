@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CalendarController;
 
 // Página inicial: landing com resumo do projeto e instruções rápidas
 Route::get('/', function () {
@@ -13,8 +12,10 @@ Route::get('/', function () {
     ]);
 });
 
-// Rota pública para feed ICS (Módulo 13)
-Route::get('calendar/{calendarToken}.ics', [CalendarController::class, 'feed'])->name('calendar.feed');
+// ========================================
+// NÃO É MUST HAVE - Feed ICS de calendário
+// ========================================
+// Route::get('calendar/{calendarToken}.ics', [CalendarController::class, 'feed'])->name('calendar.feed');
 
 // Rota para download de Postman Collection (Módulo 17)
 Route::get('/dev/postman', function () {

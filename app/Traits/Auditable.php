@@ -2,7 +2,7 @@
 
 namespace App\Traits;
 
-use App\Models\Audit;
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -46,13 +46,13 @@ trait Auditable
         $sanitizedPayload = $this->sanitizePayload($payload);
 
         // Cria registro no banco
-        $audit = Audit::create([
+        $audit = AuditLog::create([
             'user_id' => auth()->id(),
             'action' => $action,
-            'entity' => $entityName,
+            'entity_type' => $entityName,
             'entity_id' => (string)$this->getKey(),
-            'payload' => $sanitizedPayload,
-            'ip' => Request::ip(),
+            'new_values' => $sanitizedPayload,
+            'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
         ]);
 
@@ -79,13 +79,13 @@ trait Auditable
 
         $sanitizedPayload = $this->sanitizePayload($payload);
 
-        $audit = Audit::create([
+        $audit = AuditLog::create([
             'user_id' => auth()->id(),
             'action' => $action,
-            'entity' => $entityName,
+            'entity_type' => $entityName,
             'entity_id' => (string)$this->getKey(),
-            'payload' => $sanitizedPayload,
-            'ip' => Request::ip(),
+            'new_values' => $sanitizedPayload,
+            'ip_address' => Request::ip(),
             'user_agent' => Request::userAgent(),
         ]);
 

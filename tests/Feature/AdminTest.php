@@ -24,8 +24,7 @@ class AdminTest extends TestCase
         parent::setUp();
 
         // Cria usuário admin
-        $this->admin = User::factory()->create([
-            'is_admin' => true,
+        $this->admin = User::factory()->admin()->create([
             'email' => 'admin@test.com',
         ]);
 
@@ -40,7 +39,7 @@ class AdminTest extends TestCase
         $this->userToken = Auth::login($this->regularUser) ?? '';
     }
 
-    
+    #[Test]
     public function test_non_admin_cannot_access_admin_routes(): void
     {
         $response = $this->withHeaders([
@@ -51,7 +50,7 @@ class AdminTest extends TestCase
             ->assertJson(['error' => 'Forbidden. Admin access required.']);
     }
 
-    
+    #[Test]
     public function test_admin_can_list_users(): void
     {
         User::factory()->count(5)->create();
@@ -71,7 +70,7 @@ class AdminTest extends TestCase
         $this->assertGreaterThanOrEqual(7, $response->json('meta.total')); // 5 + admin + regular user
     }
 
-    
+    #[Test]
     public function test_admin_can_filter_users_by_email(): void
     {
         User::factory()->create(['email' => 'john@example.com']);
@@ -88,7 +87,7 @@ class AdminTest extends TestCase
         $this->assertFalse($emails->contains('jane@example.com'));
     }
 
-    
+    #[Test]
     public function test_admin_can_filter_users_by_date(): void
     {
         $oldUser = User::factory()->create(['created_at' => now()->subDays(10)]);
@@ -104,10 +103,10 @@ class AdminTest extends TestCase
         $this->assertTrue($ids->contains($newUser->id));
     }
 
-    
+    #[Test]
     public function test_admin_can_toggle_user_admin_status(): void
     {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create();
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $this->adminToken
@@ -137,7 +136,7 @@ class AdminTest extends TestCase
         ]);
     }
 
-    
+    #[Test]
     public function test_admin_cannot_remove_own_admin_access(): void
     {
         $response = $this->withHeaders([
@@ -157,7 +156,7 @@ class AdminTest extends TestCase
         ]);
     }
 
-    
+    #[Test]
     public function test_admin_can_list_pets(): void
     {
         $user = User::factory()->create();
@@ -179,7 +178,7 @@ class AdminTest extends TestCase
         $this->assertEquals(5, $response->json('meta.total'));
     }
 
-    
+    #[Test]
     public function test_admin_can_filter_pets_by_owner(): void
     {
         $user1 = User::factory()->create();
@@ -196,7 +195,7 @@ class AdminTest extends TestCase
         $this->assertEquals(2, $response->json('meta.total'));
     }
 
-    
+    #[Test]
     public function test_admin_can_list_audit_logs(): void
     {
         // Cria alguns logs de auditoria
@@ -217,7 +216,7 @@ class AdminTest extends TestCase
         $this->assertGreaterThanOrEqual(10, $response->json('meta.total'));
     }
 
-    
+    #[Test]
     public function test_admin_can_filter_audit_logs_by_action(): void
     {
         AuditLog::factory()->create(['action' => 'created']);
@@ -234,7 +233,7 @@ class AdminTest extends TestCase
         $this->assertEquals(['created'], $actions->toArray());
     }
 
-    
+    #[Test]
     public function test_admin_can_filter_audit_logs_by_entity_type(): void
     {
         AuditLog::factory()->create(['entity_type' => 'User']);
@@ -250,7 +249,7 @@ class AdminTest extends TestCase
         $this->assertEquals(['User'], $types->toArray());
     }
 
-    
+    #[Test]
     public function test_pagination_works_on_all_admin_endpoints(): void
     {
         User::factory()->count(25)->create();
@@ -264,7 +263,7 @@ class AdminTest extends TestCase
             ->assertJsonPath('meta.per_page', 10);
     }
 
-    
+    #[Test]
     public function test_unauthenticated_cannot_access_admin_routes(): void
     {
         $response = $this->getJson('/api/v1/admin/users');

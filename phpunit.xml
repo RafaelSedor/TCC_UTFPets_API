@@ -22,12 +22,12 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="pgsql_testing"/>
-        <env name="DB_TEST_HOST" value="test-db"/>
-        <env name="DB_TEST_PORT" value="5432"/>
-        <env name="DB_TEST_DATABASE" value="utfpets_test"/>
-        <env name="DB_TEST_USERNAME" value="test_user"/>
-        <env name="DB_TEST_PASSWORD" value="test_password"/>
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_HOST" value="postgres-test"/>
+        <env name="DB_PORT" value="5432"/>
+        <env name="DB_DATABASE" value="utfpets_test"/>
+        <env name="DB_USERNAME" value="utfpets"/>
+        <env name="DB_PASSWORD" value="utfpets_test_password"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
