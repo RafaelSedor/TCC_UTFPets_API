@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PetController;
 use App\Http\Controllers\MealController;
 use App\Http\Controllers\SharedPetController;
+use App\Http\Controllers\SharedLocationController;
 use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
@@ -64,6 +65,15 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::get('locations/{location}', [LocationController::class, 'show']);
     Route::put('locations/{location}', [LocationController::class, 'update']);
     Route::delete('locations/{location}', [LocationController::class, 'destroy']);
+
+    // Rotas de compartilhamento de locations
+    Route::prefix('locations/{location}')->group(function () {
+        Route::get('share', [SharedLocationController::class, 'index']);
+        Route::post('share', [SharedLocationController::class, 'store']);
+        Route::post('share/{user}/accept', [SharedLocationController::class, 'accept']);
+        Route::patch('share/{user}', [SharedLocationController::class, 'update']);
+        Route::delete('share/{user}', [SharedLocationController::class, 'destroy']);
+    });
     
     // Rotas de pets
     Route::get('pets', [PetController::class, 'index']);

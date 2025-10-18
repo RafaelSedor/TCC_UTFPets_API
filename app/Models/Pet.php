@@ -87,21 +87,57 @@ class Pet extends Model
 
     /**
      * Retorna o papel do usuário no pet
+     * PRIORIDADE: Pet individual > Location > Nenhum acesso
      */
     public function getUserRole(User $user): ?SharedPetRole
     {
-        // Se é o dono original
+        // Se é o dono original do pet
         if ($this->user_id === $user->id) {
             return SharedPetRole::OWNER;
         }
 
-        // Se é compartilhado
-        $shared = $this->sharedWith()
+        // Verifica compartilhamento direto do pet (prioridade 1)
+        $sharedPet = $this->sharedWith()
             ->where('user_id', $user->id)
             ->accepted()
             ->first();
 
-        return $shared ? $shared->role : null;
+        if ($sharedPet) {
+            return $sharedPet->role;
+        }
+
+        // Verifica compartilhamento da location (prioridade 2)
+        if ($this->location) {
+            $locationRole = $this->location->getUserRole($user);
+            if ($locationRole) {
+                return $locationRole;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Verifica se o usuário tem acesso ao pet (direto ou via location)
+     */
+    public function hasAccess(User $user): bool
+    {
+        // Dono original
+        if ($this->user_id === $user->id) {
+            return true;
+        }
+
+        // Compartilhamento direto do pet
+        if ($this->isSharedWith($user)) {
+            return true;
+        }
+
+        // Compartilhamento via location
+        if ($this->location && $this->location->hasAccess($user)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

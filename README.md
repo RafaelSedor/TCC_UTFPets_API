@@ -16,7 +16,10 @@ A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferec
 - **Autenticação JWT**: Sistema completo de registro e autenticação
 - **Gerenciamento de Pets**: CRUD completo com soft delete e upload de fotos
 - **Controle de Refeições**: Registro e acompanhamento detalhado
-- **Compartilhamento de Pets**: Sistema colaborativo com 3 papéis (owner/editor/viewer)
+- **Compartilhamento Flexível**:
+  - **Por Location**: Compartilhe uma location inteira e todos os seus pets de uma vez
+  - **Por Pet Individual**: Compartilhe pets específicos quando necessário
+  - Sistema colaborativo com 3 papéis (owner/editor/viewer)
 - **Lembretes Inteligentes**: Agendamento com recorrência e timezone
 - **Sistema de Notificações**: Histórico completo com controle de leitura
 - **Painel Administrativo**: Gestão de usuários, pets e auditoria
@@ -151,9 +154,16 @@ TCC_UTFPets_API/
 - `POST /api/v1/pets/{pet}/meals` - Registra nova refeição
 - `POST /api/v1/pets/{pet}/meals/{id}/consume` - Marca como consumida
 
-### Compartilhamento
-- `GET /api/v1/pets/{pet}/share` - Lista participantes
-- `POST /api/v1/pets/{pet}/share` - Envia convite
+### Compartilhamento de Locations
+- `GET /api/v1/locations/{location}/share` - Lista participantes da location
+- `POST /api/v1/locations/{location}/share` - Compartilha location (todos os pets)
+- `POST /api/v1/locations/{location}/share/{user}/accept` - Aceita convite
+- `PATCH /api/v1/locations/{location}/share/{user}` - Altera papel
+- `DELETE /api/v1/locations/{location}/share/{user}` - Revoga acesso
+
+### Compartilhamento de Pets Individuais
+- `GET /api/v1/pets/{pet}/share` - Lista participantes do pet
+- `POST /api/v1/pets/{pet}/share` - Compartilha pet específico
 - `POST /api/v1/pets/{pet}/share/{user}/accept` - Aceita convite
 - `PATCH /api/v1/pets/{pet}/share/{user}` - Altera papel
 - `DELETE /api/v1/pets/{pet}/share/{user}` - Revoga acesso
@@ -179,6 +189,20 @@ TCC_UTFPets_API/
 
 ## Sistema de Permissões
 
+### Tipos de Compartilhamento
+
+**1. Compartilhamento por Location** (Recomendado para múltiplos pets)
+- Compartilha automaticamente TODOS os pets da location
+- Ideal para famílias, clínicas veterinárias, canis
+- Novos pets adicionados à location são automaticamente compartilhados
+
+**2. Compartilhamento por Pet Individual** (Para casos específicos)
+- Compartilha apenas um pet específico
+- Útil quando não se deseja compartilhar todos os animais da location
+- Tem prioridade sobre o compartilhamento de location
+
+### Tabela de Permissões
+
 | Ação | Owner | Editor | Viewer |
 |------|-------|--------|--------|
 | Visualizar pet | ✅ | ✅ | ✅ |
@@ -187,11 +211,20 @@ TCC_UTFPets_API/
 | Criar/Editar refeição | ✅ | ✅ | ❌ |
 | Gerenciar compartilhamento | ✅ | ❌ | ❌ |
 
+### Hierarquia de Acesso
+
+**Prioridade de permissões:**
+1. **Owner do Pet/Location** (criador original) → Acesso total
+2. **Compartilhamento direto do Pet** → Papel específico (editor/viewer)
+3. **Compartilhamento da Location** → Papel específico (editor/viewer)
+4. **Sem acesso** → Negado
+
 **Regras:**
-- Apenas 1 owner por pet (o criador original)
+- Apenas 1 owner por pet/location (o criador original)
 - Owner pode convidar outros como editor ou viewer
 - Convites ficam pendentes até serem aceitos
-- Owner pode alterar papéis e revogar acessos
+- Owner pode alterar papéis e revogar acessos a qualquer momento
+- Se um pet é compartilhado individualmente E via location, o compartilhamento individual tem prioridade
 
 ## Testes
 

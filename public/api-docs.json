@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "UTFPets API",
-    "description": "API UTFPets - Funcionalidades Must Have (HU001-HU010): Gerenciamento de pets, refeições, lembretes, compartilhamento e administração",
+    "description": "API UTFPets - Gerenciamento colaborativo de pets: Sistema de compartilhamento flexível (por location ou pet individual), refeições, lembretes e administração. Ideal para famílias, clínicas veterinárias e cuidadores.",
     "version": "1.0.0",
     "contact": {
       "name": "UTFPets Team",
@@ -30,7 +30,11 @@
     },
     {
       "name": "Pet Sharing",
-      "description": "Compartilhamento de pets com sistema de papéis (owner/editor/viewer)"
+      "description": "Compartilhamento de pets individuais com sistema de papéis (owner/editor/viewer)"
+    },
+    {
+      "name": "Location Sharing",
+      "description": "Compartilhamento de locations inteiras (todos os pets de uma vez) com sistema de papéis"
     },
     {
       "name": "Reminders",
@@ -2460,6 +2464,363 @@
           }
         }
       }
+    },
+    "/v1/locations/{location}/share": {
+      "get": {
+        "tags": ["Location Sharing"],
+        "summary": "Listar participantes da location",
+        "description": "Lista todos os usuários que têm acesso à location e seus papéis",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de participantes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SharedLocation"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "pets_count": {
+                          "type": "integer",
+                          "example": 5,
+                          "description": "Número de pets nesta location"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Sem permissão para visualizar esta location"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Location Sharing"],
+        "summary": "Compartilhar location",
+        "description": "Envia um convite para outro usuário acessar a location inteira e todos os seus pets (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {
+                    "type": "integer",
+                    "example": 2,
+                    "description": "ID do usuário (usar user_id OU email)"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "maria.souza@example.com",
+                    "description": "Email do usuário (usar user_id OU email)"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": ["editor", "viewer"],
+                    "example": "editor",
+                    "description": "editor: pode criar/editar refeições de todos os pets | viewer: apenas visualização"
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Convite enviado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Convite enviado com sucesso. O usuário terá acesso a 3 pet(s) desta location."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "editor"
+                        },
+                        "invitation_status": {
+                          "type": "string",
+                          "example": "pending"
+                        },
+                        "invited_by": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "pets_count": {
+                          "type": "integer",
+                          "example": 3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Apenas o owner pode compartilhar a location"
+          },
+          "422": {
+            "description": "Erro de validação ou usuário já tem acesso"
+          }
+        }
+      }
+    },
+    "/v1/locations/{location}/share/{user}/accept": {
+      "post": {
+        "tags": ["Location Sharing"],
+        "summary": "Aceitar convite de compartilhamento de location",
+        "description": "O usuário convidado aceita o convite para acessar a location e todos os seus pets",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            },
+            "description": "ID do usuário que foi convidado"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Convite aceito com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Convite aceito com sucesso. Você agora tem acesso a 3 pet(s)."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "editor"
+                        },
+                        "invitation_status": {
+                          "type": "string",
+                          "example": "accepted"
+                        },
+                        "pets_count": {
+                          "type": "integer",
+                          "example": 3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Apenas o usuário convidado pode aceitar"
+          },
+          "404": {
+            "description": "Convite não encontrado"
+          }
+        }
+      }
+    },
+    "/v1/locations/{location}/share/{user}": {
+      "patch": {
+        "tags": ["Location Sharing"],
+        "summary": "Alterar papel do participante na location",
+        "description": "Altera o papel de um participante (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": ["editor", "viewer"],
+                    "example": "viewer"
+                  }
+                },
+                "required": ["role"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Papel atualizado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Papel atualizado com sucesso."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user_id": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "role": {
+                          "type": "string",
+                          "example": "viewer"
+                        },
+                        "previous_role": {
+                          "type": "string",
+                          "example": "editor"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Apenas o owner pode alterar papéis"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Location Sharing"],
+        "summary": "Revogar acesso do participante à location",
+        "description": "Remove o acesso de um participante à location e todos os seus pets (apenas owner)",
+        "security": [{"bearerAuth": []}],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "user",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "example": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acesso revogado com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Acesso revogado com sucesso."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Apenas o owner pode revogar acessos"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2612,6 +2973,51 @@
             ],
             "example": "editor",
             "description": "owner: controle total | editor: pode criar/editar refeições | viewer: apenas visualização"
+          },
+          "invitation_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "revoked"
+            ],
+            "example": "accepted"
+          },
+          "invited_by": {
+            "type": "integer",
+            "example": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-06T10:30:00.000000Z"
+          }
+        }
+      },
+      "SharedLocation": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "example": 2
+          },
+          "name": {
+            "type": "string",
+            "example": "Maria Souza"
+          },
+          "email": {
+            "type": "string",
+            "example": "maria.souza@example.com"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "editor",
+              "viewer"
+            ],
+            "example": "editor",
+            "description": "owner: controle total sobre a location e todos os pets | editor: pode criar/editar refeições de todos os pets | viewer: apenas visualização"
           },
           "invitation_status": {
             "type": "string",
@@ -2814,80 +3220,6 @@
           }
         }
       },
-      "EducationalArticle": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "example": "9d8e7f6a-5b4c-3d2e-1a0b-9c8d7e6f5a4b"
-          },
-          "title": {
-            "type": "string",
-            "example": "Alimentos Proibidos para Cães"
-          },
-          "slug": {
-            "type": "string",
-            "example": "alimentos-proibidos-para-caes"
-          },
-          "summary": {
-            "type": "string",
-            "example": "Descubra quais alimentos são tóxicos para cães..."
-          },
-          "body": {
-            "type": "string",
-            "example": "<h2>Introdução</h2><p>Conteúdo do artigo...</p>"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "example": [
-              "Cães",
-              "Segurança Alimentar"
-            ]
-          },
-          "published_at": {
-            "type": "string",
-            "format": "date-time",
-            "nullable": true,
-            "example": "2025-10-05T14:30:00.000000Z"
-          },
-          "created_by": {
-            "type": "integer",
-            "example": 1
-          },
-          "creator": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "integer",
-                "example": 1
-              },
-              "name": {
-                "type": "string",
-                "example": "Admin User"
-              },
-              "email": {
-                "type": "string",
-                "example": "admin@utfpets.com"
-              }
-            }
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-05T10:00:00.000000Z"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-05T10:00:00.000000Z"
-          }
-        }
-      },
       "PaginationMeta": {
         "type": "object",
         "properties": {
@@ -2971,92 +3303,6 @@
             "type": "string",
             "format": "date-time",
             "example": "2025-10-01T10:00:00.000000Z"
-          }
-        }
-      },
-      "PetWeight": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "example": "uuid-weight"
-          },
-          "pet_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "weight_kg": {
-            "type": "number",
-            "format": "float",
-            "example": 12.5
-          },
-          "weighed_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-08T10:30:00.000000Z"
-          },
-          "notes": {
-            "type": "string",
-            "nullable": true,
-            "example": "Peso após consulta veterinária"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-08T10:30:00.000000Z"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-08T10:30:00.000000Z"
-          }
-        }
-      },
-      "UserDevice": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "example": "uuid-device"
-          },
-          "user_id": {
-            "type": "integer",
-            "example": 1
-          },
-          "platform": {
-            "type": "string",
-            "enum": [
-              "android",
-              "ios",
-              "web"
-            ],
-            "example": "android"
-          },
-          "device_name": {
-            "type": "string",
-            "nullable": true,
-            "example": "Galaxy S21"
-          },
-          "fcm_token": {
-            "type": "string",
-            "example": "encrypted-token"
-          },
-          "last_seen_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-08T10:30:00.000000Z"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-08T10:30:00.000000Z"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time",
-            "example": "2025-10-08T10:30:00.000000Z"
           }
         }
       }
