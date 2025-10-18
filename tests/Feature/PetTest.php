@@ -21,10 +21,10 @@ class PetTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         $this->user = User::factory()->create();
         $this->token = Auth::login($this->user) ?? '';
-        
+
         // Mock Cloudinary para testes
         Cloudinary::shouldReceive('upload')
             ->andReturn((object) ['secure_url' => 'https://example.com/test-image.jpg']);
