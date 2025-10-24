@@ -30,16 +30,14 @@ import { Pet } from '../../../core/models/pet.model';
         </button>
       </div>
 
-      <!-- Loading State -->
       @if (loading) {
+        <!-- Loading State -->
         <div class="flex flex-col items-center justify-center py-20">
           <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
           <p class="text-gray-600 mt-4 text-lg">Carregando seus pets...</p>
         </div>
-      }
-
-      <!-- Empty State -->
-      @else if (pets.length === 0) {
+      } @else if (pets.length === 0) {
+        <!-- Empty State -->
         <div class="card text-center py-16">
           <div class="flex flex-col items-center space-y-6">
             <div class="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center">
@@ -62,10 +60,8 @@ import { Pet } from '../../../core/models/pet.model';
             </button>
           </div>
         </div>
-      }
-
-      <!-- Pets Grid -->
-      @else {
+      } @else {
+        <!-- Pets Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           @for (pet of pets; track pet.id) {
             <div
@@ -162,7 +158,22 @@ export class PetListComponent implements OnInit {
   loadPets(): void {
     this.petService.getAll().subscribe({
       next: (response) => {
-        this.pets = response.data || [];
+        console.log('Response da API:', response);
+        console.log('response.data:', response.data);
+        console.log('Type of response.data:', typeof response.data);
+        console.log('Is Array?:', Array.isArray(response.data));
+
+        // Tenta diferentes estruturas de resposta
+        if (Array.isArray(response.data)) {
+          this.pets = response.data;
+        } else if (Array.isArray(response)) {
+          this.pets = response;
+        } else {
+          this.pets = [];
+        }
+
+        console.log('Pets carregados:', this.pets);
+        console.log('Total de pets:', this.pets.length);
         this.loading = false;
       },
       error: (error) => {
