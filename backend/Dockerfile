@@ -32,8 +32,9 @@ COPY . .
 RUN chmod -R 775 storage bootstrap/cache && chown -R www-data:www-data .
 
 # Copia config do Nginx para uso em ambientes de 1 container (Render)
-RUN mkdir -p /etc/nginx/conf.d
-COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+# NOTA: Comentado para desenvolvimento local - usamos container Nginx separado
+# RUN mkdir -p /etc/nginx/conf.d
+# COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Copia e configura o entrypoint
 COPY entrypoint.sh /usr/local/bin/
