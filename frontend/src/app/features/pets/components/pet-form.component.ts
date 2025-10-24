@@ -2,15 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatIconModule } from '@angular/material/icon';
 import { PetService } from '../services/pet.service';
 import { LocationService } from '../../locations/services/location.service';
 import { Location } from '../../../core/models/pet.model';
@@ -21,225 +12,219 @@ import { Location } from '../../../core/models/pet.model';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
-    MatCardModule,
-    MatInputModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatProgressSpinnerModule,
-    MatIconModule
+    RouterModule
   ],
   template: `
-    <div class="container">
-      <mat-card>
-        <mat-card-header>
-          <button mat-icon-button routerLink="/app/pets">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <mat-card-title>{{ isEditMode ? 'Editar Pet' : 'Novo Pet' }}</mat-card-title>
-        </mat-card-header>
+    <div class="max-w-4xl mx-auto">
+      <!-- Header -->
+      <div class="flex items-center mb-6">
+        <button
+          routerLink="/app/pets"
+          class="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-4"
+        >
+          <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">{{ isEditMode ? 'Editar Pet' : 'Novo Pet' }}</h1>
+          <p class="text-gray-600 mt-1">{{ isEditMode ? 'Atualize as informações do seu pet' : 'Adicione um novo pet à sua família' }}</p>
+        </div>
+      </div>
 
-        <mat-card-content>
-          @if (loading) {
-            <div class="loading">
-              <mat-spinner></mat-spinner>
-              <p>Carregando...</p>
-            </div>
-          } @else {
-            <form [formGroup]="petForm" (ngSubmit)="onSubmit()">
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Nome do Pet</mat-label>
-                  <input matInput formControlName="name" placeholder="Ex: Rex">
-                  @if (petForm.get('name')?.hasError('required') && petForm.get('name')?.touched) {
-                    <mat-error>Nome é obrigatório</mat-error>
-                  }
-                </mat-form-field>
-              </div>
+      @if (loading) {
+        <div class="flex flex-col items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
+          <p class="text-gray-600 mt-4 text-lg">Carregando...</p>
+        </div>
+      } @else {
+        <form [formGroup]="petForm" (ngSubmit)="onSubmit()" class="card space-y-6">
+          <!-- Nome do Pet -->
+          <div>
+            <label class="label-text">Nome do Pet *</label>
+            <input
+              type="text"
+              formControlName="name"
+              placeholder="Ex: Rex, Mia, Bob..."
+              class="input-field"
+              [class.border-red-500]="petForm.get('name')?.invalid && petForm.get('name')?.touched"
+            />
+            @if (petForm.get('name')?.hasError('required') && petForm.get('name')?.touched) {
+              <p class="mt-1 text-sm text-red-600">📝 Nome é obrigatório</p>
+            }
+          </div>
 
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>Espécie</mat-label>
-                  <mat-select formControlName="species">
-                    <mat-option value="dog">Cachorro</mat-option>
-                    <mat-option value="cat">Gato</mat-option>
-                    <mat-option value="bird">Pássaro</mat-option>
-                    <mat-option value="other">Outro</mat-option>
-                  </mat-select>
-                  @if (petForm.get('species')?.hasError('required') && petForm.get('species')?.touched) {
-                    <mat-error>Espécie é obrigatória</mat-error>
-                  }
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>Raça</mat-label>
-                  <input matInput formControlName="breed" placeholder="Ex: Labrador">
-                </mat-form-field>
-              </div>
-
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>Data de Nascimento</mat-label>
-                  <input matInput [matDatepicker]="picker" formControlName="birth_date">
-                  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-                  <mat-datepicker #picker></mat-datepicker>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="half-width">
-                  <mat-label>Peso (kg)</mat-label>
-                  <input matInput type="number" formControlName="weight" placeholder="Ex: 15.5">
-                </mat-form-field>
-              </div>
-
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Location</mat-label>
-                  <mat-select formControlName="location_id">
-                    @for (location of locations; track location.id) {
-                      <mat-option [value]="location.id">{{ location.name }}</mat-option>
-                    }
-                  </mat-select>
-                  @if (petForm.get('location_id')?.hasError('required') && petForm.get('location_id')?.touched) {
-                    <mat-error>Location é obrigatória</mat-error>
-                  }
-                </mat-form-field>
-              </div>
-
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Restrições Alimentares</mat-label>
-                  <textarea matInput formControlName="dietary_restrictions"
-                            placeholder="Ex: Alérgico a frango" rows="3"></textarea>
-                </mat-form-field>
-              </div>
-
-              <div class="form-row">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Horários de Alimentação</mat-label>
-                  <textarea matInput formControlName="feeding_schedule"
-                            placeholder="Ex: 08:00, 12:00, 18:00" rows="2"></textarea>
-                </mat-form-field>
-              </div>
-
-              <div class="form-row">
-                <div class="photo-upload">
-                  <label>Foto do Pet</label>
-                  <input type="file" #fileInput accept="image/*"
-                         (change)="onFileSelected($event)" style="display: none">
-                  <button mat-stroked-button type="button" (click)="fileInput.click()">
-                    <mat-icon>photo_camera</mat-icon>
-                    Escolher Foto
-                  </button>
-                  @if (selectedFileName) {
-                    <span class="file-name">{{ selectedFileName }}</span>
-                  }
-                  @if (photoPreview) {
-                    <img [src]="photoPreview" class="photo-preview" alt="Preview">
-                  }
-                </div>
-              </div>
-
-              @if (errorMessage) {
-                <div class="error-message">{{ errorMessage }}</div>
+          <!-- Espécie e Raça -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="label-text">Espécie *</label>
+              <select
+                formControlName="species"
+                class="input-field"
+                [class.border-red-500]="petForm.get('species')?.invalid && petForm.get('species')?.touched"
+              >
+                <option value="dog">🐕 Cachorro</option>
+                <option value="cat">🐱 Gato</option>
+                <option value="bird">🐦 Pássaro</option>
+                <option value="other">🐾 Outro</option>
+              </select>
+              @if (petForm.get('species')?.hasError('required') && petForm.get('species')?.touched) {
+                <p class="mt-1 text-sm text-red-600">🐾 Espécie é obrigatória</p>
               }
+            </div>
 
-              <div class="form-actions">
-                <button mat-button type="button" routerLink="/app/pets">Cancelar</button>
-                <button mat-raised-button color="primary" type="submit"
-                        [disabled]="submitting || petForm.invalid">
-                  @if (submitting) {
-                    <mat-spinner diameter="20"></mat-spinner>
-                  } @else {
-                    {{ isEditMode ? 'Salvar' : 'Cadastrar' }}
-                  }
-                </button>
+            <div>
+              <label class="label-text">Raça</label>
+              <input
+                type="text"
+                formControlName="breed"
+                placeholder="Ex: Labrador, Siamês..."
+                class="input-field"
+              />
+            </div>
+          </div>
+
+          <!-- Data de Nascimento e Peso -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="label-text">Data de Nascimento</label>
+              <input
+                type="date"
+                formControlName="birth_date"
+                class="input-field"
+              />
+            </div>
+
+            <div>
+              <label class="label-text">Peso (kg)</label>
+              <div class="relative">
+                <input
+                  type="number"
+                  step="0.1"
+                  formControlName="weight"
+                  placeholder="Ex: 25.5"
+                  class="input-field pr-12"
+                />
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">kg</span>
               </div>
-            </form>
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div>
+            <label class="label-text">Local *</label>
+            <select
+              formControlName="location_id"
+              class="input-field"
+              [class.border-red-500]="petForm.get('location_id')?.invalid && petForm.get('location_id')?.touched"
+            >
+              <option value="">Selecione um local</option>
+              @for (location of locations; track location.id) {
+                <option [value]="location.id">{{ location.name }}</option>
+              }
+            </select>
+            @if (petForm.get('location_id')?.hasError('required') && petForm.get('location_id')?.touched) {
+              <p class="mt-1 text-sm text-red-600">📍 Local é obrigatório</p>
+            }
+          </div>
+
+          <!-- Restrições Alimentares -->
+          <div>
+            <label class="label-text">Restrições Alimentares</label>
+            <textarea
+              formControlName="dietary_restrictions"
+              rows="3"
+              placeholder="Ex: Alérgico a frango, intolerante à lactose..."
+              class="input-field resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Horários de Alimentação -->
+          <div>
+            <label class="label-text">Horários de Alimentação</label>
+            <textarea
+              formControlName="feeding_schedule"
+              rows="2"
+              placeholder="Ex: 08:00, 12:00, 18:00"
+              class="input-field resize-none"
+            ></textarea>
+          </div>
+
+          <!-- Foto do Pet -->
+          <div>
+            <label class="label-text">Foto do Pet</label>
+            <div class="flex items-center space-x-4">
+              <input
+                type="file"
+                #fileInput
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                class="hidden"
+              />
+              <button
+                type="button"
+                (click)="fileInput.click()"
+                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center space-x-2"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Escolher Foto</span>
+              </button>
+              @if (selectedFileName) {
+                <span class="text-sm text-gray-600">{{ selectedFileName }}</span>
+              }
+            </div>
+            @if (photoPreview) {
+              <div class="mt-4">
+                <img [src]="photoPreview" alt="Preview" class="w-48 h-48 object-cover rounded-xl border-2 border-gray-200 shadow-sm" />
+              </div>
+            }
+          </div>
+
+          <!-- Error Message -->
+          @if (errorMessage) {
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+              <div class="flex items-center">
+                <svg class="h-5 w-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm text-red-700">{{ errorMessage }}</p>
+              </div>
+            </div>
           }
-        </mat-card-content>
-      </mat-card>
+
+          <!-- Form Actions -->
+          <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              type="button"
+              routerLink="/app/pets"
+              class="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              [disabled]="submitting || petForm.invalid"
+              class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 px-6 py-2.5"
+            >
+              @if (submitting) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Salvando...</span>
+              } @else {
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{{ isEditMode ? 'Salvar Alterações' : 'Cadastrar Pet' }}</span>
+              }
+            </button>
+          </div>
+        </form>
+      }
     </div>
   `,
-  styles: [`
-    .container {
-      max-width: 800px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    mat-card-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .form-row {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 8px;
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    .half-width {
-      width: calc(50% - 8px);
-    }
-
-    .photo-upload {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 100%;
-    }
-
-    .photo-upload label {
-      font-weight: 500;
-      color: rgba(0, 0, 0, 0.6);
-    }
-
-    .file-name {
-      color: #666;
-      font-size: 14px;
-    }
-
-    .photo-preview {
-      max-width: 200px;
-      border-radius: 8px;
-      margin-top: 8px;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 24px;
-    }
-
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px;
-    }
-
-    .error-message {
-      color: #f44336;
-      padding: 12px;
-      background-color: #ffebee;
-      border-radius: 4px;
-      margin-bottom: 16px;
-    }
-
-    mat-spinner {
-      margin: 0 auto;
-    }
-  `]
+  styles: []
 })
 export class PetFormComponent implements OnInit {
   private fb = inject(FormBuilder);
