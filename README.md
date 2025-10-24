@@ -1,15 +1,26 @@
-# UTFPets API
+# UTFPets - Monorepo
 
-> API RESTful para gerenciamento colaborativo de pets e suas refeições
+> Aplicação web completa para gerenciamento colaborativo de pets e suas refeições
 
 [![Laravel](https://img.shields.io/badge/Laravel-12.x-red)](https://laravel.com)
+[![Angular](https://img.shields.io/badge/Angular-17-red)](https://angular.io)
 [![PHP](https://img.shields.io/badge/PHP-8.2-purple)](https://php.net)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://typescriptlang.org)
 [![Tests](https://img.shields.io/badge/tests-180+-brightgreen)](/)
 [![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-green)](/)
 
 ## Sobre o Projeto
 
-A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferece uma solução completa para gerenciamento de pets e suas refeições, com foco em **colaboração entre múltiplos usuários**. Desenvolvida como Trabalho de Conclusão de Curso (TCC) na UTFPR.
+O UTFPets é uma solução completa (frontend + backend) para gerenciamento de pets e suas refeições, com foco em **colaboração entre múltiplos usuários**. Desenvolvido como Trabalho de Conclusão de Curso (TCC) na UTFPR.
+
+### Arquitetura Monorepo
+
+Este projeto adota a abordagem **Monorepo**, onde todo o código-fonte (frontend Angular, backend Laravel e scripts de deploy) encontra-se em um único repositório Git. Essa decisão baseou-se em:
+
+- **Versionamento atômico:** Mudanças em API e interface em commits únicos
+- **Dependências compartilhadas:** Tipagens TypeScript geradas dos endpoints Laravel
+- **Testes integrados:** Testes E2E com Selenium orquestrando frontend e backend
+- **Deploy sincronizado:** Uma única pipeline CI/CD para versões compatíveis
 
 ### Principais Funcionalidades
 
@@ -17,27 +28,79 @@ A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferec
 - **Gerenciamento de Pets**: CRUD completo com soft delete e upload de fotos
 - **Controle de Refeições**: Registro e acompanhamento detalhado
 - **Compartilhamento Flexível**:
-  - **Por Location**: Compartilhe uma location inteira e todos os seus pets de uma vez
-  - **Por Pet Individual**: Compartilhe pets específicos quando necessário
+  - Por Location: Compartilhe uma location inteira e todos os seus pets
+  - Por Pet Individual: Compartilhe pets específicos quando necessário
   - Sistema colaborativo com 3 papéis (owner/editor/viewer)
 - **Lembretes Inteligentes**: Agendamento com recorrência e timezone
 - **Sistema de Notificações**: Histórico completo com controle de leitura
-- **Painel Administrativo**: Gestão de usuários, pets e auditoria
-- **Locations**: Organização hierárquica (User → Location → Pet)
-- **Push Notifications**: Integração com Firebase Cloud Messaging
-- **Histórico de Peso**: Rastreamento da evolução do peso
-- **Exportação de Calendário**: Feed ICS compatível com RFC 5545
+- **PWA**: Progressive Web App para instalação em dispositivos móveis
 
 ## Tecnologias
 
+### Backend
 - **Laravel 12.x** - Framework PHP
-- **PostgreSQL** - Banco de dados relacional (local via Docker + Google Cloud SQL em produção)
-- **Docker & Docker Compose** - Containerização
+- **PostgreSQL** - Banco de dados relacional
 - **JWT** - Autenticação stateless
 - **Cloudinary** - Armazenamento de imagens
 - **Firebase Cloud Messaging** - Push notifications
-- **Swagger UI** - Documentação interativa OpenAPI 3.0
 - **PHPUnit** - Testes automatizados (180+ testes)
+
+### Frontend
+- **Angular 17** - Framework TypeScript com Standalone Components
+- **Angular Material** - Componentes UI
+- **RxJS** - Programação reativa
+- **PWA** - Service Workers e manifest
+- **Jasmine/Karma** - Testes unitários
+
+### Infraestrutura
+- **Docker & Docker Compose** - Containerização
+- **Nginx** - Servidor web e proxy reverso
+- **Google Cloud Platform**:
+  - Compute Engine (VM)
+  - Cloud SQL (PostgreSQL)
+  - Let's Encrypt (SSL/TLS)
+- **GitHub Actions** - CI/CD automatizado
+
+## Estrutura do Projeto
+
+```
+TCC_UTFPets/
+├── backend/                    # Laravel API
+│   ├── app/
+│   ├── database/
+│   ├── routes/
+│   ├── tests/
+│   ├── docs/
+│   ├── Dockerfile
+│   └── composer.json
+│
+├── frontend/                   # Angular PWA
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── features/      # Módulos por funcionalidade
+│   │   │   ├── core/          # Services, Guards, Interceptors
+│   │   │   └── shared/        # Componentes reutilizáveis
+│   │   ├── assets/
+│   │   └── environments/
+│   ├── Dockerfile
+│   ├── angular.json
+│   └── package.json
+│
+├── tests/                      # Testes E2E Selenium
+│   └── e2e/
+│
+├── nginx/                      # Configurações Nginx
+│   ├── utfpets.online.conf    # Frontend
+│   └── api.utfpets.online.conf # Backend API
+│
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          # CI/CD unificado
+│
+├── docker-compose.yml          # Orquestração produção
+├── docker-compose.local.yml    # Desenvolvimento local
+└── README.md
+```
 
 ## Início Rápido
 
@@ -49,20 +112,20 @@ A UTFPets API é uma aplicação backend desenvolvida em Laravel 12.x que oferec
 - Conta Cloudinary (para upload de imagens)
 - Conta Google Cloud (para banco de produção)
 
-### Instalação
+### Instalação Local
 
 1. **Clone o repositório:**
 ```bash
-git clone https://github.com/seu-usuario/TCC_UTFPets_API.git
+git clone https://github.com/RafaelSedor/TCC_UTFPets_API.git
 cd TCC_UTFPets_API
 ```
 
-2. **Configure o ambiente:**
+2. **Configure o ambiente backend:**
 ```bash
-cp .env.example .env
+cp backend/.env.example backend/.env
 ```
 
-Edite o arquivo `.env` com suas credenciais:
+Edite `backend/.env` com suas credenciais:
 ```env
 # Banco de Dados (Google Cloud SQL)
 CLOUD_SQL_CONNECTION_NAME=seu-projeto:regiao:instancia
@@ -78,64 +141,101 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 
 # JWT
 JWT_SECRET=sua_jwt_secret
-
-# Firebase (opcional)
-FCM_CREDENTIALS_PATH=/var/www/storage/keys/firebase-adminsdk.json
 ```
 
-3. **Coloque as credenciais do GCP:**
+3. **Configure o ambiente frontend:**
 ```bash
-mkdir -p storage/keys
-# Copie o arquivo de credenciais para storage/keys/gcp-service-account.json
+cp frontend/src/environments/environment.example.ts frontend/src/environments/environment.ts
 ```
 
-4. **Inicie os containers:**
+4. **Coloque as credenciais do GCP:**
 ```bash
-docker-compose up -d
+mkdir -p backend/storage/keys
+# Copie o arquivo de credenciais para backend/storage/keys/gcp-service-account.json
 ```
 
-5. **Execute as migrações:**
+5. **Inicie os containers:**
 ```bash
-docker-compose exec app php artisan migrate --force
+docker-compose -f docker-compose.local.yml up -d
 ```
 
-6. **Acesse a documentação interativa:**
-```
-http://localhost:8081/swagger
-```
-
-## Estrutura do Projeto
-
-```
-TCC_UTFPets_API/
-├── app/
-│   ├── Console/Commands/      # Comandos Artisan
-│   ├── Enums/                 # PHP 8.2 Enums (7 enums)
-│   ├── Events/                # Eventos do sistema
-│   ├── Http/
-│   │   ├── Controllers/       # Controllers da API
-│   │   ├── Middleware/        # CORS, Security Headers, IsAdmin
-│   │   └── Requests/          # Form Requests para validação
-│   ├── Jobs/                  # Background Jobs
-│   ├── Models/                # Eloquent Models
-│   ├── Policies/              # Authorization Policies
-│   ├── Services/              # Service Layer
-│   └── Traits/                # Traits reutilizáveis
-├── database/
-│   ├── migrations/            # Migrations do banco
-│   ├── factories/             # Factories para testes
-│   └── seeders/               # Seeders
-├── docs/                      # Documentação completa
-├── routes/
-│   ├── api.php                # Rotas da API
-│   └── web.php                # Rotas web
-├── tests/
-│   └── Feature/               # Testes de feature
-├── docker-compose.yml         # Orquestração de containers
-└── Dockerfile                 # Imagem da aplicação
+6. **Execute as migrações:**
+```bash
+docker-compose exec backend php artisan migrate --seed
 ```
 
-## Endpoints Principais
+7. **Acesse a aplicação:**
+```
+Frontend: http://localhost:4200
+API: http://localhost:8080
+Swagger UI: http://localhost:8081/swagger
+```
+
+## Deploy em Produção
+
+O projeto está configurado para deploy automático na Google Cloud VM via GitHub Actions.
+
+### Domínios
+- **Frontend:** https://utfpets.online
+- **API:** https://api.utfpets.online
+- **Swagger UI:** https://api.utfpets.online/swagger
+
+### Infraestrutura GCP
+- **VM:** e2-small (Compute Engine) em southamerica-east1
+- **Banco de Dados:** Cloud SQL PostgreSQL
+- **SSL/TLS:** Let's Encrypt (renovação automática)
+- **Containers:** Docker Compose com 5 serviços
+
+Documentação completa: [backend/docs/DEPLOY.md](backend/docs/DEPLOY.md)
+
+## Desenvolvimento
+
+### Backend (Laravel)
+
+```bash
+# Executar testes
+docker-compose exec backend php artisan test
+
+# Limpar cache
+docker-compose exec backend php artisan cache:clear
+
+# Migrations
+docker-compose exec backend php artisan migrate
+
+# Tinker (REPL)
+docker-compose exec backend php artisan tinker
+```
+
+### Frontend (Angular)
+
+```bash
+# Entrar no container
+cd frontend
+
+# Instalar dependências
+npm install
+
+# Servidor de desenvolvimento
+npm start
+
+# Build de produção
+npm run build:prod
+
+# Testes unitários
+npm test
+
+# Testes E2E
+npm run e2e
+```
+
+### Testes E2E (Selenium)
+
+```bash
+# Executar todos os testes E2E
+docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
+```
+
+## Endpoints Principais da API
 
 ### Autenticação
 - `POST /api/auth/register` - Registro de novo usuário
@@ -154,54 +254,16 @@ TCC_UTFPets_API/
 - `POST /api/v1/pets/{pet}/meals` - Registra nova refeição
 - `POST /api/v1/pets/{pet}/meals/{id}/consume` - Marca como consumida
 
-### Compartilhamento de Locations
-- `GET /api/v1/locations/{location}/share` - Lista participantes da location
-- `POST /api/v1/locations/{location}/share` - Compartilha location (todos os pets)
-- `POST /api/v1/locations/{location}/share/{user}/accept` - Aceita convite
+### Compartilhamento
+- `GET /api/v1/locations/{location}/share` - Lista participantes
+- `POST /api/v1/locations/{location}/share` - Compartilha location
 - `PATCH /api/v1/locations/{location}/share/{user}` - Altera papel
-- `DELETE /api/v1/locations/{location}/share/{user}` - Revoga acesso
 
-### Compartilhamento de Pets Individuais
-- `GET /api/v1/pets/{pet}/share` - Lista participantes do pet
-- `POST /api/v1/pets/{pet}/share` - Compartilha pet específico
-- `POST /api/v1/pets/{pet}/share/{user}/accept` - Aceita convite
-- `PATCH /api/v1/pets/{pet}/share/{user}` - Altera papel
-- `DELETE /api/v1/pets/{pet}/share/{user}` - Revoga acesso
-
-### Lembretes
-- `GET /api/v1/pets/{pet}/reminders` - Lista lembretes
-- `POST /api/v1/pets/{pet}/reminders` - Cria lembrete
-- `POST /api/v1/reminders/{id}/snooze` - Adia lembrete
-- `POST /api/v1/reminders/{id}/complete` - Marca como concluído
-
-### Notificações
-- `GET /api/v1/notifications` - Lista notificações
-- `PATCH /api/v1/notifications/{notification}/read` - Marca como lida
-- `POST /api/v1/notifications/mark-all-read` - Marca todas como lidas
-
-### Admin
-- `GET /api/v1/admin/users` - Lista usuários
-- `GET /api/v1/admin/pets` - Lista pets do sistema
-- `GET /api/v1/admin/audit-logs` - Logs de auditoria
-- `GET /api/v1/admin/stats/overview` - Estatísticas gerais
-
-**Ver todos os endpoints:** http://localhost:8081/swagger
+**Ver todos os endpoints:** https://api.utfpets.online/swagger
 
 ## Sistema de Permissões
 
-### Tipos de Compartilhamento
-
-**1. Compartilhamento por Location** (Recomendado para múltiplos pets)
-- Compartilha automaticamente TODOS os pets da location
-- Ideal para famílias, clínicas veterinárias, canis
-- Novos pets adicionados à location são automaticamente compartilhados
-
-**2. Compartilhamento por Pet Individual** (Para casos específicos)
-- Compartilha apenas um pet específico
-- Útil quando não se deseja compartilhar todos os animais da location
-- Tem prioridade sobre o compartilhamento de location
-
-### Tabela de Permissões
+### Papéis de Usuário
 
 | Ação | Owner | Editor | Viewer |
 |------|-------|--------|--------|
@@ -211,177 +273,49 @@ TCC_UTFPets_API/
 | Criar/Editar refeição | ✅ | ✅ | ❌ |
 | Gerenciar compartilhamento | ✅ | ❌ | ❌ |
 
-### Hierarquia de Acesso
+## Documentação
 
-**Prioridade de permissões:**
-1. **Owner do Pet/Location** (criador original) → Acesso total
-2. **Compartilhamento direto do Pet** → Papel específico (editor/viewer)
-3. **Compartilhamento da Location** → Papel específico (editor/viewer)
-4. **Sem acesso** → Negado
+- [Backend API Documentation](backend/docs/INDEX.md)
+- [Frontend Development Guide](frontend/README.md)
+- [Deployment Guide](backend/docs/DEPLOY.md)
+- [Testing Guide](tests/README.md)
+- [Architecture Decision Records](docs/ADR.md)
 
-**Regras:**
-- Apenas 1 owner por pet/location (o criador original)
-- Owner pode convidar outros como editor ou viewer
-- Convites ficam pendentes até serem aceitos
-- Owner pode alterar papéis e revogar acessos a qualquer momento
-- Se um pet é compartilhado individualmente E via location, o compartilhamento individual tem prioridade
+## Metodologia Ágil
+
+O projeto segue **Scrum** com sprints de 2 semanas e **Kanban** para visualização do fluxo de trabalho:
+
+- **Planejamento:** Priorização via método MoSCoW
+- **Desenvolvimento:** Entregas incrementais
+- **Testes:** Automatizados (unitários, integração, E2E)
+- **Review & Retrospectiva:** Ao final de cada sprint
 
 ## Testes
 
-### Executar todos os testes
-```bash
-docker-compose exec app php artisan test
-```
-
-### Cobertura
-- **AuthTest**: 5 testes (registro, login, logout)
-- **PetTest**: 6 testes (CRUD completo)
-- **MealTest**: 6 testes (CRUD completo)
-- **ReminderTest**: 14 testes (agendamento, recorrência)
-- **SharedPetTest**: 14 testes (compartilhamento e permissões)
-- **NotificationTest**: 9 testes (sistema de notificações)
-- **AdminTest**: 13 testes (painel administrativo)
-- **LocationTest**: 14 testes (gestão de locais)
-
-**Total: 180+ testes | Core 100% funcional** ✅
-
-## Documentação
-
-### Swagger UI (Interativo)
-Acesse: **http://localhost:8081/swagger**
-
-A documentação inclui:
-- 52+ endpoints com exemplos prontos
-- Sistema de autenticação integrado
-- Descrição completa de permissões e validações
-- Códigos de erro documentados
-
-### Como testar no Swagger UI
-1. Acesse http://localhost:8081/swagger
-2. Registre um usuário em `/auth/register`
-3. Copie o `token` retornado
-4. Clique em **"Authorize"** no topo
-5. Cole o token e teste os endpoints
-
-### Documentação Adicional
-- [📚 Índice Completo](docs/INDEX.md)
-- [Compartilhamento de Pets](docs/MODULO_1_COMPARTILHAMENTO.md)
-- [Lembretes](docs/MODULO_2_LEMBRETES.md)
-- [Notificações](docs/MODULO_3_NOTIFICACOES.md)
-- [Painel Admin](docs/MODULO_4_ADMIN.md)
-- [Deploy na Google Cloud](docs/DEPLOY.md)
+- **Backend:** 180+ testes (PHPUnit)
+- **Frontend:** Testes unitários (Jasmine/Karma)
+- **E2E:** Selenium WebDriver
+- **Cobertura:** Core 100% funcional
 
 ## Containers e Portas
 
-- **API (Laravel)**: exposto via Nginx
-- **Nginx**: http://localhost:80 (produção: https://api.utfpets.online)
-- **Cloud SQL Proxy**: localhost:5432 (interno)
-- **Swagger UI**: http://localhost:8081/swagger
+### Desenvolvimento Local
+- **Frontend:** http://localhost:4200
+- **API (Laravel):** http://localhost:8080
+- **PostgreSQL:** localhost:5432
+- **Swagger UI:** http://localhost:8081
 
-## Comandos Úteis
-
-### Database
-```bash
-# Executar migrations
-docker-compose exec app php artisan migrate
-
-# Executar migrations fresh com seeds
-docker-compose exec app php artisan migrate:fresh --seed
-
-# Limpar cache
-docker-compose exec app php artisan cache:clear
-docker-compose exec app php artisan config:clear
-```
-
-### Queue
-```bash
-# Processar jobs em background
-docker-compose exec app php artisan queue:work
-
-# Retry de dead letters
-docker-compose exec app php artisan retry:dead-letters
-```
-
-### Logs
-```bash
-# Logs da aplicação
-docker-compose logs app
-
-# Logs do Nginx
-docker-compose logs nginx
-
-# Todos os logs
-docker-compose logs -f
-```
-
-### Containers
-```bash
-# Status dos containers
-docker-compose ps
-
-# Reiniciar containers
-docker-compose restart
-
-# Rebuild completo
-docker-compose down
-docker-compose up --build -d
-```
-
-## Troubleshooting
-
-### Container da aplicação parado
-```bash
-docker-compose up -d app
-```
-
-### Problemas com dependências
-```bash
-docker-compose exec app composer install
-```
-
-### Verificar logs de erros
-```bash
-docker-compose logs app
-tail -f storage/logs/laravel.log
-```
-
-### Reiniciar tudo
-```bash
-docker-compose down
-docker-compose up --build -d
-docker-compose exec app php artisan migrate --force
-```
-
-## Deploy em Produção
-
-O projeto está configurado para deploy automático na Google Cloud VM via GitHub Actions.
-
-**Guia completo:** [docs/DEPLOY.md](docs/DEPLOY.md)
-
-**Infraestrutura:**
-- Google Compute Engine (VM)
-- Google Cloud SQL (PostgreSQL)
-- Let's Encrypt (SSL/TLS)
-- Docker Compose
-- Nginx
-
-## Arquitetura
-
-O projeto segue as melhores práticas do Laravel:
-
-- **MVC Pattern**: Controllers, Models, Views (API)
-- **Service Layer**: Lógica de negócio centralizada
-- **Form Requests**: Validação de entrada isolada
-- **Policies**: Autorização baseada em permissões
-- **Events**: Sistema de eventos para ações importantes
-- **Repository Pattern**: Eloquent ORM com relacionamentos
-- **Middleware**: CORS, JWT, Security Headers
-- **PHP 8.2 Enums**: Type-safe para roles e status
+### Produção
+- **Frontend:** https://utfpets.online
+- **API:** https://api.utfpets.online
+- **PostgreSQL:** Cloud SQL (privado)
+- **Swagger UI:** https://api.utfpets.online/swagger
 
 ## Autor
 
 **Rafael Sedor Oliveira Deda**
-Trabalho de Conclusão de Curso (TCC)
+Trabalho de Conclusão de Curso (TCC) - UTFPR
+Tecnologia em Análise e Desenvolvimento de Sistemas
 
 ## Licença
 
@@ -389,4 +323,4 @@ Este projeto é de código aberto sob a licença MIT.
 
 ---
 
-🐾 **UTFPets API - Cuidando dos pets com tecnologia!** 🐾
+🐾 **UTFPets - Cuidando dos pets com tecnologia!** 🐾

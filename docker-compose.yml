@@ -1,5 +1,7 @@
 services:
-  # Cloud SQL Proxy para conexão segura com Google Cloud SQL
+  # ========================================
+  # Cloud SQL Proxy - Conexão segura com Google Cloud SQL
+  # ========================================
   cloud-sql-proxy:
     image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.8.0
     container_name: utfpets-cloud-sql-proxy
@@ -9,7 +11,7 @@ services:
       - "--address=0.0.0.0"
       - "${CLOUD_SQL_CONNECTION_NAME}"
     volumes:
-      - ./storage/keys/gcp-service-account.json:/secrets/gcp-service-account.json:ro
+      - ./backend/storage/keys/gcp-service-account.json:/secrets/gcp-service-account.json:ro
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp-service-account.json
     ports:
@@ -25,11 +27,14 @@ services:
       retries: 5
       start_period: 10s
 
-  app:
+  # ========================================
+  # Backend - Laravel API
+  # ========================================
+  backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: utfpets-app
+    container_name: utfpets-backend
     restart: unless-stopped
     environment:
       - APP_NAME=${APP_NAME}
@@ -46,38 +51,87 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
       - JWT_TTL=${JWT_TTL}
+      - CLOUDINARY_URL=${CLOUDINARY_URL}
     volumes:
-      - ./storage:/var/www/storage
-      - ./bootstrap/cache:/var/www/bootstrap/cache
+      - ./backend/storage:/var/www/storage
+      - ./backend/bootstrap/cache:/var/www/bootstrap/cache
     expose:
       - "9000"
     networks:
       - app-network
     depends_on:
-      - cloud-sql-proxy
+      cloud-sql-proxy:
+        condition: service_healthy
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 9000"]
+      test: ["CMD-SHELL", "nc -z localhost 9000 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
 
+  # ========================================
+  # Frontend - Angular PWA
+  # ========================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - ENVIRONMENT=production
+    container_name: utfpets-frontend
+    restart: unless-stopped
+    environment:
+      - API_URL=${API_URL:-https://api.utfpets.online}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_UPLOAD_PRESET=${CLOUDINARY_UPLOAD_PRESET}
+      - ENABLE_PWA=${ENABLE_PWA:-true}
+      - ENABLE_NOTIFICATIONS=${ENABLE_NOTIFICATIONS:-true}
+    volumes:
+      - frontend-dist:/app/dist
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    expose:
+      - "80"
+    networks:
+      - app-network
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      - backend
+
+  # ========================================
+  # Nginx - Reverse Proxy e Static Files
+  # ========================================
   nginx:
-    image: nginx:1.24-alpine
+    image: nginx:1.25-alpine
     container_name: utfpets-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./public:/var/www/public:ro
-      - ./nginx/api.utfpets.online.conf:/etc/nginx/conf.d/default.conf:ro
+      # Backend public files
+      - ./backend/public:/var/www/backend/public:ro
+      # Frontend static files (from frontend container)
+      - frontend-dist:/usr/share/nginx/html:ro
+      # Nginx configurations
+      - ./nginx/utfpets.online.conf:/etc/nginx/conf.d/utfpets.conf:ro
+      - ./nginx/api.utfpets.online.conf:/etc/nginx/conf.d/api.conf:ro
+      # SSL certificates
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     depends_on:
-      app:
+      backend:
+        condition: service_healthy
+      frontend:
         condition: service_healthy
     networks:
       - app-network
@@ -89,9 +143,13 @@ services:
       timeout: 10s
       retries: 3
 
+  # ========================================
+  # Certbot - SSL Certificate Management
+  # ========================================
   certbot:
     image: certbot/certbot:latest
     container_name: utfpets-certbot
+    restart: unless-stopped
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
@@ -99,9 +157,11 @@ services:
     networks:
       - app-network
 
-  # Swagger UI para documentação da API
+  # ========================================
+  # Swagger UI - API Documentation
+  # ========================================
   swagger-ui:
-    image: docker.swagger.io/swaggerapi/swagger-ui:latest
+    image: swaggerapi/swagger-ui:latest
     container_name: utfpets-swagger-ui
     restart: unless-stopped
     ports:
@@ -117,6 +177,16 @@ services:
     security_opt:
       - no-new-privileges:true
 
+# ========================================
+# VOLUMES
+# ========================================
+volumes:
+  frontend-dist:
+    driver: local
+
+# ========================================
+# NETWORKS
+# ========================================
 networks:
   app-network:
     driver: bridge
