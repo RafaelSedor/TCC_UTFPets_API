@@ -12,40 +12,36 @@ export class MealService {
   private apiUrl = environment.apiUrl;
 
   // Helper method to get all meals from all user's pets
-  getAll(): Observable<{ data: Meal[] }> {
-    // This would need a backend endpoint that returns all meals for the authenticated user
-    // For now, we'll return an empty array - you'll need to implement this properly
-    // Option 1: Create a new endpoint GET /v1/meals that returns all meals for the user
-    // Option 2: Fetch all pets first, then fetch meals for each pet
-    return this.http.get<{ data: Meal[] }>(`${this.apiUrl}/v1/meals`);
+  getAll(): Observable<Meal[]> {
+    return this.http.get<Meal[]>(`${this.apiUrl}/meals`);
   }
 
-  getMealsByPet(petId: number): Observable<{ data: Meal[] }> {
-    return this.http.get<{ data: Meal[] }>(`${this.apiUrl}/v1/pets/${petId}/meals`);
+  getMealsByPet(petId: number): Observable<Meal[]> {
+    return this.http.get<Meal[]>(`${this.apiUrl}/pets/${petId}/meals`);
   }
 
-  getById(petId: number, mealId: number): Observable<{ data: Meal }> {
-    return this.http.get<{ data: Meal }>(`${this.apiUrl}/v1/pets/${petId}/meals/${mealId}`);
+  getById(petId: number, mealId: number): Observable<Meal> {
+    return this.http.get<Meal>(`${this.apiUrl}/pets/${petId}/meals/${mealId}`);
   }
 
-  create(data: MealFormData): Observable<{ data: Meal }> {
+  create(data: MealFormData): Observable<Meal> {
     const petId = data.pet_id;
     const formData = this.toFormData(data);
-    return this.http.post<{ data: Meal }>(`${this.apiUrl}/v1/pets/${petId}/meals`, formData);
+    return this.http.post<Meal>(`${this.apiUrl}/pets/${petId}/meals`, formData);
   }
 
-  update(mealId: number, data: Partial<MealFormData>): Observable<{ data: Meal }> {
+  update(mealId: number, data: Partial<MealFormData>): Observable<Meal> {
     const petId = data.pet_id!;
     const formData = this.toFormData(data);
-    return this.http.put<{ data: Meal }>(`${this.apiUrl}/v1/pets/${petId}/meals/${mealId}`, formData);
+    return this.http.put<Meal>(`${this.apiUrl}/pets/${petId}/meals/${mealId}`, formData);
   }
 
   delete(petId: number, mealId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/v1/pets/${petId}/meals/${mealId}`);
+    return this.http.delete<void>(`${this.apiUrl}/pets/${petId}/meals/${mealId}`);
   }
 
-  markAsConsumed(petId: number, mealId: number): Observable<{ data: Meal }> {
-    return this.http.post<{ data: Meal }>(`${this.apiUrl}/v1/pets/${petId}/meals/${mealId}/consume`, {});
+  markAsConsumed(petId: number, mealId: number): Observable<Meal> {
+    return this.http.post<Meal>(`${this.apiUrl}/pets/${petId}/meals/${mealId}/consume`, {});
   }
 
   private toFormData(data: Partial<MealFormData>): FormData {

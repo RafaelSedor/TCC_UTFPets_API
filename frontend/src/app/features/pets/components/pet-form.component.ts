@@ -63,10 +63,14 @@ import { Location } from '../../../core/models/pet.model';
                 class="input-field"
                 [class.border-red-500]="petForm.get('species')?.invalid && petForm.get('species')?.touched"
               >
-                <option value="dog">🐕 Cachorro</option>
-                <option value="cat">🐱 Gato</option>
-                <option value="bird">🐦 Pássaro</option>
-                <option value="other">🐾 Outro</option>
+                <option value="">Selecione a espécie...</option>
+                <option value="Cachorro">🐕 Cachorro</option>
+                <option value="Gato">🐱 Gato</option>
+                <option value="Pássaro">🐦 Pássaro</option>
+                <option value="Peixe">🐟 Peixe</option>
+                <option value="Réptil">🦎 Réptil</option>
+                <option value="Roedor">🐭 Roedor</option>
+                <option value="Outro">🐾 Outro</option>
               </select>
               @if (petForm.get('species')?.hasError('required') && petForm.get('species')?.touched) {
                 <p class="mt-1 text-sm text-red-600">🐾 Espécie é obrigatória</p>
@@ -247,7 +251,7 @@ export class PetFormComponent implements OnInit {
   constructor() {
     this.petForm = this.fb.group({
       name: ['', Validators.required],
-      species: ['dog', Validators.required],
+      species: ['', Validators.required],
       breed: [''],
       birth_date: [''],
       weight: [''],
@@ -270,14 +274,15 @@ export class PetFormComponent implements OnInit {
 
   loadLocations(): void {
     this.locationService.getAll().subscribe({
-      next: (response) => {
-        this.locations = response.data;
+      next: (locations) => {
+        this.locations = Array.isArray(locations) ? locations : [];
         if (this.locations.length > 0 && !this.isEditMode) {
           this.petForm.patchValue({ location_id: this.locations[0].id });
         }
       },
       error: (error) => {
         console.error('Erro ao carregar locations:', error);
+        this.locations = [];
       }
     });
   }
@@ -287,8 +292,7 @@ export class PetFormComponent implements OnInit {
 
     this.loading = true;
     this.petService.getById(this.petId).subscribe({
-      next: (response) => {
-        const pet = response.data;
+      next: (pet) => {
         this.petForm.patchValue({
           name: pet.name,
           species: pet.species,

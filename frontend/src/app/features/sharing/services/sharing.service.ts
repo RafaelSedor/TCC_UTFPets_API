@@ -16,60 +16,60 @@ export class SharingService {
   // ========================================
 
   // Get all pets shared BY the current user
-  getSharedByMe(): Observable<{ data: SharedPetAccess[] }> {
+  getSharedByMe(): Observable<SharedPetAccess[]> {
     // This would need a backend endpoint that returns all shared access created by the user
-    return this.http.get<{ data: SharedPetAccess[] }>(`${this.apiUrl}/v1/shared-pets/by-me`);
+    return this.http.get<SharedPetAccess[]>(`${this.apiUrl}/shared-pets/by-me`);
   }
 
   // Get all pets shared WITH the current user
-  getSharedWithMe(): Observable<{ data: SharedPetAccess[] }> {
+  getSharedWithMe(): Observable<SharedPetAccess[]> {
     // This would need a backend endpoint that returns all pets shared with the user
-    return this.http.get<{ data: SharedPetAccess[] }>(`${this.apiUrl}/v1/shared-pets/with-me`);
+    return this.http.get<SharedPetAccess[]>(`${this.apiUrl}/shared-pets/with-me`);
   }
 
   // Share a pet with another user
-  shareAccess(data: SharePetRequest): Observable<{ data: SharedPetAccess }> {
-    return this.http.post<{ data: SharedPetAccess }>(`${this.apiUrl}/v1/pets/${data.pet_id}/share`, {
+  shareAccess(data: SharePetRequest): Observable<SharedPetAccess> {
+    return this.http.post<SharedPetAccess>(`${this.apiUrl}/pets/${data.pet_id}/share`, {
       email: data.user_email,
       role: data.permission_level === 'write' ? 'editor' : 'viewer'
     });
   }
 
   // Update permission level
-  updatePermission(accessId: number, data: { permission_level: string }): Observable<{ data: SharedPetAccess }> {
-    // This needs to extract petId and userId from the access somehow
-    // For now, using a simplified endpoint
-    return this.http.patch<{ data: SharedPetAccess }>(`${this.apiUrl}/v1/shared-pets/${accessId}`, {
+  updatePermission(petId: number, userId: number, data: { permission_level: string }): Observable<SharedPetAccess> {
+    // Use the correct nested route format
+    return this.http.patch<SharedPetAccess>(`${this.apiUrl}/pets/${petId}/share/${userId}`, {
       role: data.permission_level === 'write' ? 'editor' : 'viewer'
     });
   }
 
   // Revoke access
-  revokeAccess(accessId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/v1/shared-pets/${accessId}`);
+  revokeAccess(petId: number, userId: number): Observable<void> {
+    // Use the correct nested route format
+    return this.http.delete<void>(`${this.apiUrl}/pets/${petId}/share/${userId}`);
   }
 
   // ========================================
   // Original methods for individual pet sharing
   // ========================================
 
-  getSharedPets(petId: number): Observable<{ data: SharedPetAccess[] }> {
-    return this.http.get<{ data: SharedPetAccess[] }>(`${this.apiUrl}/v1/pets/${petId}/share`);
+  getSharedPets(petId: number): Observable<SharedPetAccess[]> {
+    return this.http.get<SharedPetAccess[]>(`${this.apiUrl}/pets/${petId}/share`);
   }
 
-  sharePet(petId: number, email: string, role: 'editor' | 'viewer'): Observable<{ data: SharedPetAccess }> {
-    return this.http.post<{ data: SharedPetAccess }>(`${this.apiUrl}/v1/pets/${petId}/share`, { email, role });
+  sharePet(petId: number, email: string, role: 'editor' | 'viewer'): Observable<SharedPetAccess> {
+    return this.http.post<SharedPetAccess>(`${this.apiUrl}/pets/${petId}/share`, { email, role });
   }
 
-  acceptPetShare(petId: number, userId: number): Observable<{ data: SharedPetAccess }> {
-    return this.http.post<{ data: SharedPetAccess }>(`${this.apiUrl}/v1/pets/${petId}/share/${userId}/accept`, {});
+  acceptPetShare(petId: number, userId: number): Observable<SharedPetAccess> {
+    return this.http.post<SharedPetAccess>(`${this.apiUrl}/pets/${petId}/share/${userId}/accept`, {});
   }
 
-  updatePetRole(petId: number, userId: number, role: 'editor' | 'viewer'): Observable<{ data: SharedPetAccess }> {
-    return this.http.patch<{ data: SharedPetAccess }>(`${this.apiUrl}/v1/pets/${petId}/share/${userId}`, { role });
+  updatePetRole(petId: number, userId: number, role: 'editor' | 'viewer'): Observable<SharedPetAccess> {
+    return this.http.patch<SharedPetAccess>(`${this.apiUrl}/pets/${petId}/share/${userId}`, { role });
   }
 
   revokePetAccess(petId: number, userId: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/v1/pets/${petId}/share/${userId}`);
+    return this.http.delete<void>(`${this.apiUrl}/pets/${petId}/share/${userId}`);
   }
 }

@@ -1,337 +1,305 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatListModule } from '@angular/material/list';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PetService } from '../services/pet.service';
 import { MealService } from '../../meals/services/meal.service';
 import { ReminderService } from '../../reminders/services/reminder.service';
 import { Pet } from '../../../core/models/pet.model';
 import { Meal } from '../../../core/models/meal.model';
 import { Reminder } from '../../../core/models/reminder.model';
+import { ModalService } from '../../../core/services/modal.service';
 
 @Component({
   selector: 'app-pet-detail',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTabsModule,
-    MatListModule,
-    MatProgressSpinnerModule,
-    MatDialogModule
+    RouterModule
   ],
   template: `
-    <div class="container">
+    <div class="max-w-7xl mx-auto">
       @if (loading) {
-        <div class="loading">
-          <mat-spinner></mat-spinner>
-          <p>Carregando...</p>
+        <div class="flex flex-col items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
+          <p class="text-gray-600 mt-4 text-lg">Carregando...</p>
         </div>
       } @else if (pet) {
-        <mat-card>
-          <mat-card-header>
-            <button mat-icon-button routerLink="/app/pets">
-              <mat-icon>arrow_back</mat-icon>
+        <!-- Header with Back Button -->
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center">
+            <button
+              routerLink="/app/pets"
+              class="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-4"
+            >
+              <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
             </button>
-            <mat-card-title>{{ pet.name }}</mat-card-title>
-            <span class="spacer"></span>
-            <button mat-icon-button color="primary" [routerLink]="['/app/pets/edit', pet.id]">
-              <mat-icon>edit</mat-icon>
-            </button>
-            <button mat-icon-button color="warn" (click)="deletePet()">
-              <mat-icon>delete</mat-icon>
-            </button>
-          </mat-card-header>
+            <div>
+              <h1 class="text-3xl font-bold text-gray-900">{{ pet.name }}</h1>
+              <p class="text-gray-600 mt-1">{{ getSpeciesLabel(pet.species) }}</p>
+            </div>
+          </div>
 
-          <mat-card-content>
-            <div class="pet-info">
-              <div class="pet-photo">
-                @if (pet.photo_url) {
-                  <img [src]="pet.photo_url" [alt]="pet.name">
-                } @else {
-                  <div class="no-photo">
-                    <mat-icon>pets</mat-icon>
-                  </div>
-                }
-              </div>
+          <div class="flex space-x-3">
+            <button
+              [routerLink]="['/app/pets/edit', pet.id]"
+              class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>Editar</span>
+            </button>
+            <button
+              (click)="deletePet()"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center space-x-2"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span>Excluir</span>
+            </button>
+          </div>
+        </div>
 
-              <div class="pet-details">
-                <div class="detail-item">
-                  <mat-icon>category</mat-icon>
-                  <span class="label">Espécie:</span>
-                  <span class="value">{{ getSpeciesLabel(pet.species) }}</span>
+        <!-- Pet Info Card -->
+        <div class="card mb-8">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Photo -->
+            <div class="flex justify-center items-start">
+              @if (pet.photo_url) {
+                <img
+                  [src]="pet.photo_url"
+                  [alt]="pet.name"
+                  class="w-full max-w-sm h-80 object-cover rounded-2xl shadow-lg"
+                />
+              } @else {
+                <div class="w-full max-w-sm h-80 bg-gradient-to-br from-primary-100 to-primary-200 rounded-2xl flex items-center justify-center">
+                  <svg class="w-32 h-32 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
-
-                @if (pet.breed) {
-                  <div class="detail-item">
-                    <mat-icon>info</mat-icon>
-                    <span class="label">Raça:</span>
-                    <span class="value">{{ pet.breed }}</span>
-                  </div>
-                }
-
-                @if (pet.birth_date) {
-                  <div class="detail-item">
-                    <mat-icon>cake</mat-icon>
-                    <span class="label">Idade:</span>
-                    <span class="value">{{ calculateAge(pet.birth_date) }}</span>
-                  </div>
-                }
-
-                @if (pet.weight) {
-                  <div class="detail-item">
-                    <mat-icon>monitor_weight</mat-icon>
-                    <span class="label">Peso:</span>
-                    <span class="value">{{ pet.weight }} kg</span>
-                  </div>
-                }
-
-                @if (pet.location) {
-                  <div class="detail-item">
-                    <mat-icon>place</mat-icon>
-                    <span class="label">Localização:</span>
-                    <span class="value">{{ pet.location.name }}</span>
-                  </div>
-                }
-
-                @if (pet.dietary_restrictions) {
-                  <div class="detail-item">
-                    <mat-icon>restaurant</mat-icon>
-                    <span class="label">Restrições Alimentares:</span>
-                    <span class="value">{{ pet.dietary_restrictions }}</span>
-                  </div>
-                }
-
-                @if (pet.feeding_schedule) {
-                  <div class="detail-item">
-                    <mat-icon>schedule</mat-icon>
-                    <span class="label">Horários de Alimentação:</span>
-                    <span class="value">{{ pet.feeding_schedule }}</span>
-                  </div>
-                }
-              </div>
+              }
             </div>
 
-            <mat-tab-group>
-              <mat-tab label="Refeições">
-                <div class="tab-content">
-                  <div class="tab-header">
-                    <h3>Histórico de Refeições</h3>
-                    <button mat-raised-button color="primary" [routerLink]="['/app/meals/new']" [queryParams]="{pet_id: pet.id}">
-                      <mat-icon>add</mat-icon>
-                      Nova Refeição
-                    </button>
+            <!-- Details -->
+            <div class="lg:col-span-2 space-y-4">
+              @if (pet.breed) {
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
+                  <div>
+                    <p class="text-sm text-gray-500 font-medium">Raça</p>
+                    <p class="text-lg text-gray-900">{{ pet.breed }}</p>
+                  </div>
+                </div>
+              }
 
-                  @if (loadingMeals) {
-                    <div class="loading">
-                      <mat-spinner diameter="40"></mat-spinner>
-                    </div>
-                  } @else if (meals.length > 0) {
-                    <mat-list>
-                      @for (meal of meals; track meal.id) {
-                        <mat-list-item>
-                          <mat-icon matListItemIcon>restaurant</mat-icon>
-                          <div matListItemTitle>{{ meal.meal_time | date:'dd/MM/yyyy HH:mm' }}</div>
-                          <div matListItemLine>Quantidade: {{ meal.quantity }}g</div>
+              @if (pet.birth_date) {
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <svg class="w-6 h-6 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500 font-medium">Idade</p>
+                    <p class="text-lg text-gray-900">{{ calculateAge(pet.birth_date) }}</p>
+                  </div>
+                </div>
+              }
+
+              @if (pet.weight) {
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500 font-medium">Peso</p>
+                    <p class="text-lg text-gray-900">{{ pet.weight }} kg</p>
+                  </div>
+                </div>
+              }
+
+              @if (pet.location) {
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500 font-medium">Localização</p>
+                    <p class="text-lg text-gray-900">{{ pet.location.name }}</p>
+                  </div>
+                </div>
+              }
+
+              @if (pet.dietary_restrictions) {
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500 font-medium">Restrições Alimentares</p>
+                    <p class="text-lg text-gray-900">{{ pet.dietary_restrictions }}</p>
+                  </div>
+                </div>
+              }
+
+              @if (pet.feeding_schedule) {
+                <div class="flex items-start">
+                  <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4 flex-shrink-0">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-500 font-medium">Horários de Alimentação</p>
+                    <p class="text-lg text-gray-900">{{ pet.feeding_schedule }}</p>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs for Meals and Reminders -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <!-- Meals Tab -->
+          <div class="card">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-2xl font-bold text-gray-900">Refeições</h2>
+              <button
+                [routerLink]="['/app/meals/new']"
+                [queryParams]="{pet_id: pet.id}"
+                class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center space-x-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Nova Refeição</span>
+              </button>
+            </div>
+
+            @if (loadingMeals) {
+              <div class="flex justify-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600"></div>
+              </div>
+            } @else if (meals.length > 0) {
+              <div class="space-y-3 max-h-96 overflow-y-auto">
+                @for (meal of meals; track meal.id) {
+                  <div class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-start justify-between">
+                      <div class="flex items-start space-x-3">
+                        <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-900">{{ meal.scheduled_for | date:'dd/MM/yyyy HH:mm' }}</p>
+                          <p class="text-sm text-gray-600">{{ meal.food_type }} - {{ meal.quantity }}{{ meal.unit }}</p>
                           @if (meal.notes) {
-                            <div matListItemLine>{{ meal.notes }}</div>
+                            <p class="text-sm text-gray-500 mt-1">{{ meal.notes }}</p>
                           }
-                        </mat-list-item>
-                      }
-                    </mat-list>
-                  } @else {
-                    <p class="no-data">Nenhuma refeição registrada</p>
-                  }
-                </div>
-              </mat-tab>
-
-              <mat-tab label="Lembretes">
-                <div class="tab-content">
-                  <div class="tab-header">
-                    <h3>Lembretes Ativos</h3>
-                    <button mat-raised-button color="primary" [routerLink]="['/app/reminders/new']" [queryParams]="{pet_id: pet.id}">
-                      <mat-icon>add</mat-icon>
-                      Novo Lembrete
-                    </button>
-                  </div>
-
-                  @if (loadingReminders) {
-                    <div class="loading">
-                      <mat-spinner diameter="40"></mat-spinner>
+                        </div>
+                      </div>
                     </div>
-                  } @else if (reminders.length > 0) {
-                    <mat-list>
-                      @for (reminder of reminders; track reminder.id) {
-                        <mat-list-item>
-                          <mat-icon matListItemIcon [color]="reminder.is_active ? 'primary' : 'warn'">
-                            {{ reminder.type === 'feeding' ? 'restaurant' : reminder.type === 'vet' ? 'medical_services' : 'event' }}
-                          </mat-icon>
-                          <div matListItemTitle>{{ reminder.title }}</div>
-                          <div matListItemLine>{{ reminder.reminder_time | date:'dd/MM/yyyy HH:mm' }}</div>
-                          @if (reminder.description) {
-                            <div matListItemLine>{{ reminder.description }}</div>
-                          }
-                        </mat-list-item>
-                      }
-                    </mat-list>
-                  } @else {
-                    <p class="no-data">Nenhum lembrete configurado</p>
-                  }
-                </div>
-              </mat-tab>
-            </mat-tab-group>
-          </mat-card-content>
-        </mat-card>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <p class="text-gray-500">Nenhuma refeição registrada</p>
+              </div>
+            }
+          </div>
+
+          <!-- Reminders Tab -->
+          <div class="card">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-2xl font-bold text-gray-900">Lembretes</h2>
+              <button
+                [routerLink]="['/app/reminders/new']"
+                [queryParams]="{pet_id: pet.id}"
+                class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center space-x-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Novo Lembrete</span>
+              </button>
+            </div>
+
+            @if (loadingReminders) {
+              <div class="flex justify-center py-12">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600"></div>
+              </div>
+            } @else if (reminders.length > 0) {
+              <div class="space-y-3 max-h-96 overflow-y-auto">
+                @for (reminder of reminders; track reminder.id) {
+                  <div class="p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-start space-x-3">
+                      <div class="w-10 h-10 bg-accent-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                      </div>
+                      <div class="flex-1">
+                        <p class="font-medium text-gray-900">{{ reminder.title }}</p>
+                        <p class="text-sm text-gray-600">{{ reminder.reminder_time | date:'dd/MM/yyyy HH:mm' }}</p>
+                        @if (reminder.description) {
+                          <p class="text-sm text-gray-500 mt-1">{{ reminder.description }}</p>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <p class="text-gray-500">Nenhum lembrete configurado</p>
+              </div>
+            }
+          </div>
+        </div>
       } @else {
-        <div class="error-message">Pet não encontrado</div>
+        <div class="card text-center py-16">
+          <svg class="w-24 h-24 text-red-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Pet não encontrado</h2>
+          <p class="text-gray-600 mb-6">O pet que você está procurando não existe ou foi removido</p>
+          <button
+            routerLink="/app/pets"
+            class="btn-primary inline-flex items-center space-x-2 px-6 py-3"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Voltar para Pets</span>
+          </button>
+        </div>
       }
     </div>
   `,
-  styles: [`
-    .container {
-      max-width: 1000px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    mat-card-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .spacer {
-      flex: 1;
-    }
-
-    .pet-info {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-      gap: 32px;
-      margin-bottom: 24px;
-    }
-
-    .pet-photo {
-      width: 300px;
-      height: 300px;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #f5f5f5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .pet-photo img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .no-photo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 100%;
-    }
-
-    .no-photo mat-icon {
-      font-size: 100px;
-      width: 100px;
-      height: 100px;
-      color: #ccc;
-    }
-
-    .pet-details {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .detail-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 8px;
-      border-radius: 8px;
-      background: #f9f9f9;
-    }
-
-    .detail-item mat-icon {
-      color: #667eea;
-    }
-
-    .detail-item .label {
-      font-weight: 500;
-      color: #666;
-      min-width: 180px;
-    }
-
-    .detail-item .value {
-      color: #333;
-    }
-
-    .tab-content {
-      padding: 24px 0;
-    }
-
-    .tab-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-    }
-
-    .tab-header h3 {
-      margin: 0;
-      color: #333;
-    }
-
-    .no-data {
-      text-align: center;
-      color: #999;
-      padding: 48px;
-    }
-
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px;
-    }
-
-    .error-message {
-      text-align: center;
-      color: #f44336;
-      padding: 48px;
-      font-size: 18px;
-    }
-
-    @media (max-width: 768px) {
-      .pet-info {
-        grid-template-columns: 1fr;
-        gap: 16px;
-      }
-
-      .pet-photo {
-        width: 100%;
-        max-width: 300px;
-        margin: 0 auto;
-      }
-    }
-  `]
+  styles: []
 })
 export class PetDetailComponent implements OnInit {
   private petService = inject(PetService);
@@ -339,7 +307,7 @@ export class PetDetailComponent implements OnInit {
   private reminderService = inject(ReminderService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private dialog = inject(MatDialog);
+  private modalService = inject(ModalService);
 
   pet?: Pet;
   meals: Meal[] = [];
@@ -360,12 +328,13 @@ export class PetDetailComponent implements OnInit {
   loadPet(id: number): void {
     this.loading = true;
     this.petService.getById(id).subscribe({
-      next: (response) => {
-        this.pet = response.data;
+      next: (pet) => {
+        this.pet = pet;
         this.loading = false;
       },
       error: (error) => {
         console.error('Erro ao carregar pet:', error);
+        this.pet = undefined;
         this.loading = false;
       }
     });
@@ -374,12 +343,15 @@ export class PetDetailComponent implements OnInit {
   loadMeals(petId: number): void {
     this.loadingMeals = true;
     this.mealService.getAll().subscribe({
-      next: (response) => {
-        this.meals = response.data.filter(meal => meal.pet_id === petId);
+      next: (meals) => {
+        this.meals = Array.isArray(meals)
+          ? meals.filter(meal => meal.pet_id === petId)
+          : [];
         this.loadingMeals = false;
       },
       error: (error) => {
         console.error('Erro ao carregar refeições:', error);
+        this.meals = [];
         this.loadingMeals = false;
       }
     });
@@ -388,12 +360,15 @@ export class PetDetailComponent implements OnInit {
   loadReminders(petId: number): void {
     this.loadingReminders = true;
     this.reminderService.getAll().subscribe({
-      next: (response) => {
-        this.reminders = response.data.filter(reminder => reminder.pet_id === petId);
+      next: (reminders) => {
+        this.reminders = Array.isArray(reminders)
+          ? reminders.filter(reminder => reminder.pet_id === petId)
+          : [];
         this.loadingReminders = false;
       },
       error: (error) => {
         console.error('Erro ao carregar lembretes:', error);
+        this.reminders = [];
         this.loadingReminders = false;
       }
     });
@@ -401,6 +376,14 @@ export class PetDetailComponent implements OnInit {
 
   getSpeciesLabel(species: string): string {
     const labels: { [key: string]: string } = {
+      'Cachorro': 'Cachorro',
+      'Gato': 'Gato',
+      'Pássaro': 'Pássaro',
+      'Peixe': 'Peixe',
+      'Réptil': 'Réptil',
+      'Roedor': 'Roedor',
+      'Outro': 'Outro',
+      // Fallbacks para valores antigos em inglês
       'dog': 'Cachorro',
       'cat': 'Gato',
       'bird': 'Pássaro',
@@ -424,19 +407,25 @@ export class PetDetailComponent implements OnInit {
     }
   }
 
-  deletePet(): void {
-    if (confirm(`Tem certeza que deseja excluir ${this.pet?.name}?`)) {
-      if (this.pet?.id) {
-        this.petService.delete(this.pet.id).subscribe({
-          next: () => {
-            this.router.navigate(['/app/pets']);
-          },
-          error: (error) => {
-            console.error('Erro ao deletar pet:', error);
-            alert('Erro ao deletar pet. Tente novamente.');
-          }
-        });
-      }
+  async deletePet(): Promise<void> {
+    const confirmed = await this.modalService.confirm(
+      `Tem certeza que deseja excluir ${this.pet?.name}? Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.`,
+      'Excluir Pet',
+      'Excluir',
+      'Cancelar'
+    );
+
+    if (confirmed && this.pet?.id) {
+      this.petService.delete(this.pet.id).subscribe({
+        next: () => {
+          this.modalService.success('Pet excluído com sucesso!');
+          this.router.navigate(['/app/pets']);
+        },
+        error: (error) => {
+          console.error('Erro ao deletar pet:', error);
+          this.modalService.showBackendError(error, 'Erro ao deletar pet. Tente novamente.');
+        }
+      });
     }
   }
 }

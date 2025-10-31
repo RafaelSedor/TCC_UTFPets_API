@@ -1,10 +1,10 @@
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost/api',
-  apiPublicUrl: 'http://localhost',
+  apiUrl: '/api/v1',  // Usa proxy do Angular - sem CORS!
+  apiPublicUrl: 'http://localhost/api/v1',
   appName: 'UTFPets',
   appVersion: '1.0.0',
-  vapidPublicKey: '', // TODO: Adicionar VAPID key quando configurar PWA
-  enablePwa: false,
-  enableNotifications: false
+  vapidPublicKey: 'BPXuOil4km670_Bntd2GdUN80YRBcUzcNXyRRxs3xX_DtLgFE1SS1OYLQ1QI6XKd9zJPnlSxA-Rt4r8eL94WwlNt0',
+  enablePwa: true,
+  enableNotifications: true
 };

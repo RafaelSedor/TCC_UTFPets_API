@@ -1,104 +1,117 @@
 # Guia de Deploy - UTFPets API
 
-Guia completo para configurar e fazer deploy automático da UTFPets API no Google Cloud Platform.
-
 ## Infraestrutura
 
-### VM (Compute Engine)
-- **Nome**: tccutfpets
-- **Zona**: southamerica-east1-b
-- **Tipo**: e2-medium (2 vCPUs, 4GB RAM)
-- **OS**: Debian 12 Bookworm
-- **IP Externo**: 34.39.150.157
-- **IP Interno**: 10.158.0.2
-- **Disco**: 10GB
+### Arquitetura Escolhida
 
-### Cloud SQL
-- **Instance**: tccutfpets:southamerica-east1:tcc
-- **Versão**: PostgreSQL 17.6
-- **Região**: southamerica-east1
+**VM + Cloud SQL (Google Cloud Platform)**
 
----
+- **VM**: Compute Engine e2-medium (2 vCPUs, 4GB RAM)
+- **Banco**: Cloud SQL PostgreSQL 17
+- **Região**: southamerica-east1 (São Paulo)
 
-## Setup Inicial (Executar Apenas uma Vez)
+**Justificativa**: A separação entre aplicação (VM) e banco de dados (Cloud SQL) oferece:
+- **Escalabilidade independente**: VM e banco podem escalar separadamente
+- **Backup gerenciado**: Cloud SQL oferece backups automáticos
+- **Alta disponibilidade**: Cloud SQL possui réplicas automáticas
+- **Custo-benefício**: e2-medium suficiente para o escopo do TCC
 
-### Passo 1: Configurar Firewall
+### Docker Compose
 
-Execute localmente para abrir portas HTTP/HTTPS:
+A aplicação usa Docker Compose para orquestração:
 
-```bash
-chmod +x scripts/setup-firewall.sh
-./scripts/setup-firewall.sh
+```yaml
+services:
+  app:       # Laravel API
+  nginx:     # Reverse proxy
+  cloud-sql-proxy: # Proxy seguro para Cloud SQL
 ```
 
-### Passo 2: Deploy Inicial da Aplicação
+**Justificativa**:
+- **Portabilidade**: Mesma configuração em dev e produção
+- **Isolamento**: Cada serviço em seu container
+- **Cloud SQL Proxy**: Conexão segura sem expor IP público do banco
 
-Execute localmente para configurar a VM:
+## CI/CD com GitHub Actions
 
-```bash
-chmod +x scripts/deploy-gcp.sh
-./scripts/deploy-gcp.sh
-```
+### Fluxo Automatizado
 
-Isso irá:
-- Instalar Docker e Docker Compose na VM
-- Copiar arquivos do projeto
-- Copiar service account key
-- Configurar permissões
-- Iniciar containers
-- Executar migrations
-- Otimizar aplicação
+Cada push na branch `master` dispara:
 
-### Passo 3: Configurar CI/CD (Deploy Automático)
+1. Autenticação no GCP com Service Account
+2. Backup da versão atual
+3. Deploy de novos arquivos na VM
+4. Rebuild dos containers
+5. Execução de migrations
+6. Health check
+7. Limpeza de backups antigos (mantém 5)
 
-Execute o script para configurar tudo automaticamente:
+**Justificativa**:
+- **Confiabilidade**: Deploy consistente sem intervenção manual
+- **Rollback rápido**: Backups automáticos a cada deploy
+- **Validação**: Health check garante que deploy funcionou
+- **Auditoria**: Histórico completo no GitHub Actions
 
-```bash
-chmod +x scripts/setup-ci-cd.sh
-./scripts/setup-ci-cd.sh
-```
+### Service Account
 
-Esse script irá:
-1. Criar Service Account `github-actions-deployer`
-2. Conceder permissões necessárias
-3. Gerar chave JSON
-4. Instruir você a adicionar o secret no GitHub
+Usa-se Service Account dedicada (`github-actions-deployer`) com permissões mínimas:
+- Compute Instance Admin (apenas para a VM específica)
+- Service Account User
 
-**Ação Manual Necessária:**
-Após executar o script acima, siga as instruções para:
-1. Ir em **GitHub** → **Settings** → **Secrets and variables** → **Actions**
-2. Criar secret `GCP_SA_KEY` com o conteúdo de `github-actions-key.json`
-3. Deletar o arquivo `github-actions-key.json` localmente
+**Justificativa**: Princípio do privilégio mínimo. Se a chave vazar, danos são limitados.
 
----
+## Segurança
 
-## Deploy Automático
+### Firewall Configurado
 
-### Como Funciona
+- **Portas abertas**: 80 (HTTP), 443 (HTTPS), 8080 (API)
+- **SSH**: Apenas via gcloud (IAM)
 
-Após configurar o CI/CD, cada push na branch `master` automaticamente:
+**Justificativa**: Reduz superfície de ataque. SSH não exposto publicamente.
 
-1. Autentica no Google Cloud
-2. Para containers
-3. Faz backup da versão atual
-4. Copia novos arquivos para a VM
-5. Reconstrói containers Docker
-6. Executa migrations
-7. Otimiza a aplicação (cache)
-8. Verifica se está funcionando (health check)
-9. Mantém apenas 5 backups mais recentes
+### Secrets Management
 
-### Fazer Deploy
+- **`.env`**: Nunca commitado, copiado via script
+- **Service Account Keys**: Armazenadas como GitHub Secrets
+- **Permissões**: Arquivos sensíveis com 600 (apenas owner)
 
-```bash
-git add .
-git commit -m "feat: sua mensagem"
-git push origin master
-```
+**Justificativa**: Previne vazamento acidental de credenciais no controle de versão.
 
-Acompanhe em: **GitHub** → **Actions**
+### Backups Automáticos
 
----
+- **Frequência**: A cada deploy
+- **Retenção**: 5 backups mais recentes
+- **Localização**: `/opt/utfpets_backup_YYYYMMDD_HHMMSS`
+
+**Justificativa**: Permite rollback rápido em caso de deploy problemático.
+
+## Decisões Técnicas
+
+### Por que não Kubernetes?
+
+Para o escopo do TCC, Docker Compose é suficiente:
+- **Simplicidade**: Mais fácil de entender e manter
+- **Custo**: Kubernetes requer mais recursos ($$)
+- **Escopo**: Single-server atende demanda esperada
+
+**Justificativa**: Evita complexidade desnecessária. Kubernetes seria over-engineering para este projeto.
+
+### Por que Cloud SQL e não DB no Docker?
+
+- **Persistência garantida**: Dados não dependem da VM
+- **Backups gerenciados**: GCP cuida dos backups
+- **Performance**: SSDs otimizados
+- **Manutenção**: Patches automáticos
+
+**Justificativa**: Confiabilidade do banco é crítica. Cloud SQL remove essa preocupação.
+
+### Por que GitHub Actions e não Jenkins/GitLab CI?
+
+- **Integração nativa**: Direto no repositório
+- **Gratuito**: Para repositórios públicos/acadêmicos
+- **Simplicidade**: Configuração em YAML simples
+
+**Justificativa**: Reduz complexidade de infra (não precisa manter servidor Jenkins).
 
 ## URLs da Aplicação
 
@@ -106,267 +119,32 @@ Acompanhe em: **GitHub** → **Actions**
 - **Swagger**: http://34.39.150.157:8080/swagger
 - **Health Check**: http://34.39.150.157:8080/api/health
 
----
-
-## Comandos Úteis
-
-### Conectar na VM
-
-```bash
-gcloud compute ssh tccutfpets --zone=southamerica-east1-b
-```
-
-### Ver Status dos Containers
-
-```bash
-cd /opt/utfpets
-docker-compose ps
-```
-
-### Ver Logs
-
-```bash
-# Logs de todos os containers
-docker-compose logs -f
-
-# Logs apenas do app
-docker-compose logs -f app
-
-# Logs do Laravel
-docker-compose exec app tail -f storage/logs/laravel.log
-```
-
-### Executar Comandos Laravel
-
-```bash
-cd /opt/utfpets
-
-# Migrations
-docker-compose exec app php artisan migrate
-
-# Limpar cache
-docker-compose exec app php artisan cache:clear
-docker-compose exec app php artisan config:clear
-
-# Otimizar para produção
-docker-compose exec app php artisan config:cache
-docker-compose exec app php artisan route:cache
-docker-compose exec app php artisan view:cache
-```
-
-### Reiniciar Containers
-
-```bash
-cd /opt/utfpets
-docker-compose restart
-```
-
-### Rebuild Completo
-
-```bash
-cd /opt/utfpets
-docker-compose down
-docker-compose up -d --build
-```
-
----
-
-## Backups
-
-### Backups Automáticos
-
-A cada deployment via CI/CD:
-- Backup criado em: `/opt/utfpets_backup_YYYYMMDD_HHMMSS`
-- Mantidos os 5 backups mais recentes
-- Backups antigos removidos automaticamente
-
-### Reverter para Backup
-
-```bash
-# Conectar na VM
-gcloud compute ssh tccutfpets --zone=southamerica-east1-b
-
-# Listar backups
-ls -ltr /opt/utfpets_backup_*
-
-# Reverter
-cd /opt/utfpets
-docker-compose down
-sudo rm -rf /opt/utfpets
-sudo cp -r /opt/utfpets_backup_20250115_143022 /opt/utfpets
-cd /opt/utfpets
-docker-compose up -d
-```
-
-### Backup do Banco de Dados
-
-```bash
-cd /opt/utfpets
-
-# Criar backup
-docker-compose exec -T cloud-sql-proxy pg_dump -h localhost -U RafaelSedor postgres > backup_$(date +%Y%m%d).sql
-
-# Restaurar backup
-docker-compose exec -T cloud-sql-proxy psql -h localhost -U RafaelSedor postgres < backup_20250115.sql
-```
-
----
-
-## Troubleshooting
-
-### Container Não Inicia
-
-```bash
-# Ver logs detalhados
-docker-compose logs app
-
-# Verificar .env
-cat .env
-
-# Testar conexão com Cloud SQL
-docker-compose exec app nc -zv cloud-sql-proxy 5432
-```
-
-### Erro de Permissão no Storage
-
-```bash
-sudo chown -R 1000:1000 /opt/utfpets/storage /opt/utfpets/bootstrap/cache
-sudo chmod -R 775 /opt/utfpets/storage /opt/utfpets/bootstrap/cache
-```
-
-### Migrations Falhando
-
-```bash
-# Ver status
-docker-compose exec app php artisan migrate:status
-
-# Ver detalhes do erro
-docker-compose exec app php artisan migrate --verbose
-```
-
-### Deploy Falha no CI/CD
-
-1. Ver logs no **GitHub Actions**
-2. Conectar na VM e ver logs dos containers
-3. Verificar health endpoint manualmente
-4. Reverter para backup se necessário
-
----
-
-## Segurança
-
-### Checklist de Segurança
-
-- [x] Firewall configurado (apenas portas 80, 443, 8080)
-- [x] `.env` com permissões 600
-- [x] `gcp-service-account.json` com permissões 600
-- [x] APP_DEBUG=false em produção
-- [x] Senhas fortes no .env
-- [x] CI/CD com backups automáticos
-- [ ] HTTPS configurado (opcional)
-
-### Boas Práticas
-
-- Nunca commitar arquivos `.env` ou `*-key.json`
-- Rotacionar chaves da service account periodicamente
-- Revisar logs de deployment regularmente
-- Manter backups do banco de dados
-- Monitorar uso de recursos da VM
-
----
-
-## Configuração HTTPS (Opcional)
-
-Se você tiver um domínio apontando para `34.39.150.157`:
-
-```bash
-# Copiar script para VM
-gcloud compute scp scripts/setup-https.sh tccutfpets:/tmp/ --zone=southamerica-east1-b
-
-# Conectar na VM
-gcloud compute ssh tccutfpets --zone=southamerica-east1-b
-
-# Executar script (fornecerá seu domínio e email)
-sudo bash /tmp/setup-https.sh
-```
-
----
-
-## Estrutura de Arquivos na VM
-
-```
-/opt/utfpets/
-├── app/
-├── bootstrap/
-├── config/
-├── database/
-├── public/
-├── routes/
-├── storage/
-│   └── keys/
-│       └── gcp-service-account.json
-├── .env
-├── docker-compose.yml
-├── Dockerfile
-└── entrypoint.sh
-
-/opt/utfpets_backup_*/
-└── (backups automáticos do CI/CD)
-```
-
----
-
-## Fluxo de Trabalho Recomendado
-
-1. Desenvolver em branch de feature
-2. Criar Pull Request para master
-3. Code Review
-4. Merge para master
-5. **Deploy Automático** (GitHub Actions)
-6. Monitorar logs e health check
-7. Reverter se necessário
-
----
-
 ## Monitoramento
 
-### Health Check Manual
+### Health Check Endpoint
 
+`GET /api/health` retorna status da aplicação e conexão com banco:
+
+**Justificativa**: Permite validar deploy automaticamente e configurar alertas externos (UptimeRobot, etc).
+
+### Logs
+
+Logs da aplicação acessíveis via:
 ```bash
-curl http://34.39.150.157:8080/api/health
+docker-compose logs -f app
 ```
 
-### Status dos Containers
+**Justificativa**: Centralização de logs facilita debugging em produção.
 
-```bash
-docker-compose ps
-```
+## Melhorias Futuras
 
-### Uso de Recursos
+Para evolução além do TCC:
 
-```bash
-docker stats
-```
+- **HTTPS**: Certificado SSL via Let's Encrypt
+- **CDN**: Cloudflare para assets estáticos
+- **Monitoring**: Grafana + Prometheus
+- **Auto-scaling**: Horizontal pod autoscaler
+- **Multi-region**: Réplicas em outras regiões
+- **Container Registry**: GCR em vez de rebuild na VM
 
-### Logs em Tempo Real
-
-```bash
-docker-compose logs -f
-```
-
----
-
-## Suporte
-
-Em caso de problemas:
-
-1. Verificar logs: `docker-compose logs -f`
-2. Verificar status: `docker-compose ps`
-3. Verificar health: `curl http://34.39.150.157:8080/api/health`
-4. Verificar GitHub Actions se deploy falhou
-5. Consultar backups disponíveis
-6. Reverter se necessário
-
----
-
-**Última atualização**: Outubro 2025
+**Nota**: Estas melhorias adicionariam complexidade além do escopo acadêmico atual.

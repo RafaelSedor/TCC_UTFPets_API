@@ -26,7 +26,7 @@ interface AuditLogResponse {
   providedIn: 'root'
 })
 export class AdminService {
-  private apiUrl = `${environment.apiUrl}/api/v1/admin`;
+  private apiUrl = `${environment.apiUrl}/admin`;
 
   constructor(private http: HttpClient) {}
 

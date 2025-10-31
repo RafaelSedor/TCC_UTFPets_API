@@ -1,391 +1,197 @@
-# Módulo 3 — Notificações (histórico e leitura)
+# Módulo 3 — Notificações (Histórico e Leitura)
 
-## 📋 Visão Geral
+## Objetivo
 
-O **Módulo 3** implementa um sistema completo de notificações para registrar e gerenciar eventos do sistema, incluindo lembretes, convites de compartilhamento e mudanças de papéis. O sistema oferece histórico de notificações, controle de leitura e integração com todos os módulos existentes.
+Implementar um sistema completo de notificações para registrar e gerenciar eventos do sistema, incluindo lembretes, convites de compartilhamento e mudanças de papéis.
 
-## 🎯 Objetivos
+**Principais Recursos:**
+- Histórico completo de notificações
+- Controle de leitura (read/unread)
+- Integração com todos os módulos
+- Performance otimizada com paginação
 
-- **Registrar eventos**: Capturar automaticamente eventos importantes do sistema
-- **Histórico completo**: Manter registro de todas as notificações do usuário
-- **Controle de leitura**: Permitir marcar notificações como lidas
-- **Integração total**: Conectar com lembretes e compartilhamento de pets
-- **Performance**: Sistema otimizado com paginação e filtros
+## Arquitetura Implementada
 
-## 🏗️ Arquitetura
+### Sistema de Status com Enums
 
-### **Banco de Dados**
-
-#### Tabela `notifications`
-```sql
-CREATE TABLE notifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    body TEXT,
-    data JSONB,
-    channel VARCHAR(20) NOT NULL CHECK (channel IN ('db', 'email', 'push')),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('queued', 'sent', 'failed', 'read')),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Índices para performance
-CREATE INDEX idx_notifications_user_id ON notifications(user_id);
-CREATE INDEX idx_notifications_status ON notifications(status);
-CREATE INDEX idx_notifications_created_at ON notifications(created_at);
-```
-
-### **Modelos e Relacionamentos**
-
-#### `Notification` Model
 ```php
-class Notification extends Model
-{
-    protected $fillable = [
-        'user_id', 'title', 'body', 'data', 'channel', 'status'
-    ];
+enum NotificationStatus: string {
+    case QUEUED = 'queued';   // Na fila para envio
+    case SENT = 'sent';       // Enviada com sucesso
+    case FAILED = 'failed';   // Falha no envio
+    case READ = 'read';       // Lida pelo usuário
+}
 
-    protected $casts = [
-        'data' => 'array',
-        'channel' => NotificationChannel::class,
-        'status' => NotificationStatus::class,
-    ];
-
-    // Relacionamentos
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    // Scopes
-    public function scopeForUser($query, $userId)
-    public function scopeByStatus($query, $status)
-    public function scopeUnread($query)
-    public function scopeRead($query)
+enum NotificationChannel: string {
+    case DB = 'db';           // In-app (banco de dados)
+    case EMAIL = 'email';     // Email
+    case PUSH = 'push';       // Push notification
 }
 ```
 
-### **Enums**
+**Justificativa**: A separação de status permite rastrear o ciclo de vida completo da notificação. `QUEUED` → `SENT` → `READ` oferece visibilidade sobre o processamento e permite retry de notificações falhadas.
 
-#### `NotificationChannel`
-```php
-enum NotificationChannel: string
-{
-    case DB = 'db';
-    case EMAIL = 'email';
-    case PUSH = 'push';
-}
-```
+### Service Layer para Criação
 
-#### `NotificationStatus`
-```php
-enum NotificationStatus: string
-{
-    case QUEUED = 'queued';
-    case SENT = 'sent';
-    case FAILED = 'failed';
-    case READ = 'read';
-}
-```
-
-## 🔧 Componentes Implementados
-
-### **1. NotificationService**
-
-Serviço centralizado para gerenciamento de notificações:
+Centraliza criação de notificações no `NotificationService`:
 
 ```php
-class NotificationService
-{
+class NotificationService {
     public function queue(
         User $user,
         string $title,
         string $body,
         array $data = [],
         NotificationChannel $channel = NotificationChannel::DB
-    ): Notification {
-        // Cria notificação na fila
-        // Dispara job de entrega
+    ): Notification
+}
+```
+
+**Justificativa**: Centralizar a criação garante consistência no formato e facilita adicionar lógica comum (rate limiting, validações, logging). Outros módulos não precisam conhecer detalhes de implementação.
+
+### Event-Driven Integration
+
+Listeners conectam eventos de outros módulos às notificações:
+
+```php
+class SendSharedPetNotification implements ShouldQueue {
+    public function handle(SharedPetInvited $event) {
+        $this->notificationService->queue(
+            $event->shared->user,
+            "Convite para visualizar pet",
+            "Você foi convidado para visualizar {$event->shared->pet->name}",
+            ['pet_id' => $event->shared->pet_id, 'type' => 'pet_invite']
+        );
     }
 }
 ```
 
-### **2. Jobs e Processamento**
+**Justificativa**: Desacoplamento total. O módulo de compartilhamento não conhece notificações - apenas dispara eventos. Isso permite adicionar/remover listeners sem modificar código existente (Open/Closed Principle).
 
-#### `DeliverNotificationJob`
-- Processa notificações da fila
-- Marca como `sent` após entrega
-- Tratamento de falhas
+### Campo `data` em JSONB
 
-#### `SendReminderJob` (Integrado)
-- Cria notificações para lembretes
-- Notifica todos os participantes do pet
-- Dados estruturados para contexto
+A tabela `notifications` possui campo `data` do tipo JSONB (PostgreSQL):
 
-### **3. Event Listeners**
+**Justificativa**: Permite armazenar contexto adicional de forma flexível (pet_id, reminder_id, etc.) sem criar colunas específicas. JSONB permite queries e índices sobre o JSON, mantendo performance.
 
-#### `SendSharedPetNotification`
-Integrado com eventos de compartilhamento:
+### Job Assíncrono para Entrega
 
-- **SharedPetInvited**: Notifica usuário convidado
-- **SharedPetAccepted**: Notifica owner sobre aceitação
-- **SharedPetRoleChanged**: Notifica sobre mudança de papel
-- **SharedPetRemoved**: Notifica sobre remoção
+`DeliverNotificationJob` processa o envio de notificações:
 
-### **4. Controller e Rotas**
+**Justificativa**: Separar criação (síncrona) de entrega (assíncrona) garante que a API responda rápido. Se o envio de email falhar, não impacta a experiência do usuário na ação principal.
 
-#### `NotificationController`
+## Decisões Técnicas
+
+### Paginação com Defaults Específicos
+
+- Notificações: 20 itens por página (interação frequente)
+- Audit Logs: 50 itens por página (análise em massa)
+
+**Justificativa**: Notificações são consultadas frequentemente em pequenos lotes (ver últimas). Logs de auditoria são analisados em volume maior durante investigações.
+
+### Endpoint `unread-count` Separado
+
+API oferece `/notifications/unread-count` além de `/notifications`:
+
+**Justificativa**: O contador é usado frequentemente (badge no header) e não precisa dos dados completos. Endpoint separado evita tráfego desnecessário e permite cache agressivo.
+
+### Marcar Como Lida (Individual e Em Massa)
+
+Dois endpoints:
+- `PATCH /notifications/{id}/read` - Individual
+- `POST /notifications/mark-all-read` - Em massa
+
+**Justificativa**: Usuários precisam marcar uma notificação ao clicar nela (individual) e também "limpar tudo" (massa). Ambos os padrões de uso são comuns.
+
+### Filtro por Status
+
+A API permite filtrar por `queued`, `sent`, `failed`, `read`:
+
+**Justificativa**: Debugging e auditoria requerem filtros específicos. Admins podem querer ver notificações falhadas para investigar problemas.
+
+### Isolamento por Usuário
+
+Todas as queries incluem automaticamente `WHERE user_id = auth()->id()`:
+
+**Justificativa**: Garante que usuários nunca vejam notificações de outros, mesmo se houver bug na aplicação. Defesa em profundidade (defense in depth).
+
+## Integração com Outros Módulos
+
+### Lembretes (Módulo 2)
+
+`SendReminderJob` cria notificações para todos os participantes do pet:
+
 ```php
-// GET /notifications - Listar com filtros e paginação
-// GET /notifications/unread-count - Contar não lidas
-// PATCH /notifications/{id}/read - Marcar como lida
-// POST /notifications/mark-all-read - Marcar todas como lidas
-```
-
-## 📡 Endpoints da API
-
-### **Listar Notificações**
-```http
-GET /api/v1/notifications?status=sent&page=1&per_page=20
-Authorization: Bearer {token}
-```
-
-**Resposta:**
-```json
-{
-  "data": [
-    {
-      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
-      "user_id": 1,
-      "title": "🔔 Lembrete: Ração manhã",
-      "body": "É hora de dar ração para o Buddy!",
-      "data": {
-        "pet_id": 1,
-        "reminder_id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
-        "type": "reminder_due"
-      },
-      "channel": "db",
-      "status": "sent",
-      "created_at": "2025-10-06T10:30:00.000000Z"
-    }
-  ],
-  "meta": {
-    "total": 1,
-    "per_page": 20,
-    "current_page": 1,
-    "last_page": 1
-  }
+foreach ($pet->participants as $user) {
+    NotificationService::queue(
+        $user,
+        "🔔 Lembrete: {$reminder->title}",
+        "É hora de cuidar do {$pet->name}!",
+        ['reminder_id' => $reminder->id, 'pet_id' => $pet->id]
+    );
 }
 ```
 
-### **Contar Não Lidas**
-```http
-GET /api/v1/notifications/unread-count
-Authorization: Bearer {token}
+### Compartilhamento (Módulo 1)
+
+Eventos `SharedPet*` disparam notificações automáticas:
+- **SharedPetInvited**: Notifica convidado
+- **SharedPetAccepted**: Notifica owner
+- **SharedPetRoleChanged**: Notifica usuário afetado
+- **SharedPetRemoved**: Notifica usuário removido
+
+**Justificativa**: Transparência total. Todas as ações de compartilhamento geram notificações, mantendo usuários informados sobre mudanças de acesso.
+
+## API RESTful
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/notifications` | Lista notificações (com filtros e paginação) |
+| GET | `/notifications/unread-count` | Conta não lidas |
+| PATCH | `/notifications/{id}/read` | Marca como lida |
+| POST | `/notifications/mark-all-read` | Marca todas como lidas |
+
+**Justificativa**: Estrutura simples e intuitiva. Segue convenções REST e cobre todos os casos de uso comuns.
+
+## Índices de Performance
+
+```sql
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_status ON notifications(status);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at);
 ```
 
-**Resposta:**
-```json
-{
-  "unread_count": 3
-}
-```
+**Justificativa**:
+- `user_id`: Todas as queries filtram por usuário
+- `status`: Filtros comuns (unread = sent)
+- `created_at`: Ordenação padrão (mais recentes primeiro)
 
-### **Marcar como Lida**
-```http
-PATCH /api/v1/notifications/{id}/read
-Authorization: Bearer {token}
-```
+## Testes e Qualidade
 
-**Resposta:**
-```json
-{
-  "message": "Notificação marcada como lida"
-}
-```
+**9 testes automatizados** cobrem:
+- Listagem com paginação
+- Filtros por status
+- Marcar como lida (individual e massa)
+- Contador de não lidas
+- Segurança (isolamento de usuários)
+- NotificationService
+- Integração com eventos
 
-### **Marcar Todas como Lidas**
-```http
-POST /api/v1/notifications/mark-all-read
-Authorization: Bearer {token}
-```
+**Justificativa**: Notificações são críticas para a experiência do usuário. Testes garantem que integrações com outros módulos funcionem corretamente.
 
-**Resposta:**
-```json
-{
-  "message": "Todas as notificações foram marcadas como lidas",
-  "updated_count": 5
-}
-```
+## Arquivos Relacionados
 
-## 🔄 Fluxo de Funcionamento
+### Criados
+- `database/migrations/*_create_notifications_table.php`
+- `app/Models/Notification.php`
+- `app/Enums/NotificationStatus.php`
+- `app/Enums/NotificationChannel.php`
+- `app/Services/NotificationService.php`
+- `app/Jobs/DeliverNotificationJob.php`
+- `app/Listeners/SendSharedPetNotification.php`
+- `app/Http/Controllers/NotificationController.php`
+- `tests/Feature/NotificationTest.php`
 
-### **1. Criação de Notificações**
-
-```mermaid
-graph TD
-    A[Evento do Sistema] --> B[NotificationService::queue]
-    B --> C[Criar Notification]
-    C --> D[Status: queued]
-    D --> E[DeliverNotificationJob]
-    E --> F[Status: sent]
-```
-
-### **2. Integração com Lembretes**
-
-```mermaid
-graph TD
-    A[SendReminderJob] --> B[Buscar Participantes]
-    B --> C[NotificationService::queue]
-    C --> D[Notificação para cada usuário]
-    D --> E[DeliverNotificationJob]
-```
-
-### **3. Integração com Compartilhamento**
-
-```mermaid
-graph TD
-    A[SharedPetInvited] --> B[SendSharedPetNotification]
-    B --> C[NotificationService::queue]
-    C --> D[Notificação para convidado]
-    
-    E[SharedPetAccepted] --> F[SendSharedPetNotification]
-    F --> G[NotificationService::queue]
-    G --> H[Notificação para owner]
-```
-
-## 🧪 Testes Implementados
-
-### **Testes de Feature (9 testes)**
-
-1. ✅ **Listar notificações** - Paginação e filtros
-2. ✅ **Filtrar por status** - queued, sent, failed, read
-3. ✅ **Marcar como lida** - Notificação específica
-4. ✅ **Segurança** - Usuário não pode acessar notificações de outros
-5. ✅ **Marcar todas como lidas** - Operação em lote
-6. ✅ **Contar não lidas** - Contador em tempo real
-7. ✅ **NotificationService** - Enfileiramento individual
-8. ✅ **NotificationService** - Enfileiramento em massa
-9. ✅ **Paginação** - Navegação entre páginas
-
-### **Cobertura de Testes**
-
-- **Funcionalidade**: 100% dos endpoints testados
-- **Segurança**: Verificação de acesso por usuário
-- **Performance**: Testes de paginação
-- **Integração**: Serviços e jobs
-
-## 📊 Métricas e Performance
-
-### **Índices de Banco**
-- `user_id`: Consultas por usuário
-- `status`: Filtros por status
-- `created_at`: Ordenação temporal
-
-### **Paginação**
-- **Padrão**: 20 itens por página
-- **Máximo**: 100 itens por página
-- **Navegação**: Meta informações completas
-
-### **Filtros Disponíveis**
-- **Status**: queued, sent, failed, read
-- **Período**: Por data de criação
-- **Usuário**: Automático (autenticação)
-
-## 🔐 Segurança e Permissões
-
-### **Controle de Acesso**
-- **Autenticação**: JWT obrigatório
-- **Isolamento**: Usuário só vê suas notificações
-- **Validação**: Verificação de propriedade
-
-### **Políticas de Segurança**
-```php
-// Usuário só pode acessar suas próprias notificações
-if ($notification->user_id !== $user->id) {
-    return response()->json(['error' => 'Unauthorized'], 403);
-}
-```
-
-## 🚀 Melhorias Futuras
-
-### **Canais Adicionais**
-- **Email**: Integração com Mailables
-- **Push**: Notificações push via FCM
-- **SMS**: Integração com provedores SMS
-
-### **Funcionalidades Avançadas**
-- **Rate Limiting**: Limite de notificações por usuário
-- **Templates**: Templates personalizáveis
-- **Agrupamento**: Notificações similares agrupadas
-- **Preferências**: Configurações por usuário
-
-### **Analytics**
-- **Métricas**: Taxa de abertura, cliques
-- **Relatórios**: Dashboard de notificações
-- **Insights**: Padrões de uso
-
-## 📈 Benefícios Implementados
-
-### **Para Usuários**
-- ✅ **Histórico completo** de eventos
-- ✅ **Controle de leitura** personalizado
-- ✅ **Notificações contextuais** com dados estruturados
-- ✅ **Interface intuitiva** com filtros e paginação
-
-### **Para Desenvolvedores**
-- ✅ **API RESTful** completa
-- ✅ **Documentação Swagger** atualizada
-- ✅ **Testes abrangentes** (9 testes)
-- ✅ **Integração total** com módulos existentes
-
-### **Para o Sistema**
-- ✅ **Performance otimizada** com índices
-- ✅ **Escalabilidade** com jobs assíncronos
-- ✅ **Confiabilidade** com tratamento de falhas
-- ✅ **Monitoramento** com status detalhado
-
-## 🎯 Critérios de Aceite - ATENDIDOS
-
-### **✅ Funcionalidade**
-- [x] Listagem paginada de notificações
-- [x] Filtros por status e período
-- [x] Marcar notificações como lidas
-- [x] Contador de não lidas
-- [x] Integração com lembretes
-- [x] Integração com compartilhamento
-
-### **✅ Performance**
-- [x] Paginação eficiente
-- [x] Índices otimizados
-- [x] Jobs assíncronos
-- [x] Consultas otimizadas
-
-### **✅ Segurança**
-- [x] Autenticação JWT
-- [x] Isolamento por usuário
-- [x] Validação de acesso
-- [x] Sanitização de dados
-
-### **✅ Qualidade**
-- [x] 9 testes passando (100%)
-- [x] Documentação completa
-- [x] Código limpo e organizado
-- [x] Integração perfeita
-
-## 📚 Documentação Relacionada
-
-- [Módulo 1 - Compartilhamento](MODULO_1_COMPARTILHAMENTO.md)
-- [Módulo 2 - Lembretes](MODULO_2_LEMBRETES.md)
-- [Configuração do Banco](DATABASE_SETUP.md)
-- [README Principal](../README.md)
-
----
-
-## 🏆 Status: **IMPLEMENTADO COM SUCESSO**
-
-**54 testes passando (100%)** ✅  
-**Documentação Swagger atualizada** ✅  
-**Integração total com módulos existentes** ✅  
-**Sistema de notificações completo e funcional** ✅
+### Modificados
+- `routes/api.php` - 4 novas rotas
+- `app/Providers/EventServiceProvider.php` - Listeners registrados

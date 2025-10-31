@@ -157,23 +157,9 @@ export class PetListComponent implements OnInit {
 
   loadPets(): void {
     this.petService.getAll().subscribe({
-      next: (response) => {
-        console.log('Response da API:', response);
-        console.log('response.data:', response.data);
-        console.log('Type of response.data:', typeof response.data);
-        console.log('Is Array?:', Array.isArray(response.data));
-
-        // Tenta diferentes estruturas de resposta
-        if (Array.isArray(response.data)) {
-          this.pets = response.data;
-        } else if (Array.isArray(response)) {
-          this.pets = response;
-        } else {
-          this.pets = [];
-        }
-
-        console.log('Pets carregados:', this.pets);
-        console.log('Total de pets:', this.pets.length);
+      next: (response: any) => {
+        // A API retorna um array direto, não um objeto com data
+        this.pets = Array.isArray(response) ? response : [];
         this.loading = false;
       },
       error: (error) => {
@@ -186,6 +172,14 @@ export class PetListComponent implements OnInit {
 
   getSpeciesLabel(species: string): string {
     const labels: { [key: string]: string } = {
+      'Cachorro': 'Cachorro',
+      'Gato': 'Gato',
+      'Pássaro': 'Pássaro',
+      'Peixe': 'Peixe',
+      'Réptil': 'Réptil',
+      'Roedor': 'Roedor',
+      'Outro': 'Outro',
+      // Fallbacks para valores antigos em inglês
       'dog': 'Cachorro',
       'cat': 'Gato',
       'bird': 'Pássaro',

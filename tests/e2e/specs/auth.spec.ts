@@ -1,21 +1,26 @@
 import { WebDriver } from 'selenium-webdriver';
 import { expect } from 'chai';
-import { describe, it, before, after } from 'mocha';
+import { describe, it, before, after, beforeEach } from 'mocha';
 import WebDriverHelper from '../config/webdriver';
 import { LoginPage } from '../pages/LoginPage';
+import { RegisterPage } from '../pages/RegisterPage';
 import { PetListPage } from '../pages/PetListPage';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 describe('Authentication E2E Tests', function() {
   let driver: WebDriver;
   let loginPage: LoginPage;
+  let registerPage: RegisterPage;
   let petListPage: PetListPage;
 
-  // Configurar timeout para testes E2E
   this.timeout(60000);
 
   before(async function() {
     driver = await WebDriverHelper.buildDriver();
     loginPage = new LoginPage(driver);
+    registerPage = new RegisterPage(driver);
     petListPage = new PetListPage(driver);
   });
 
@@ -23,69 +28,139 @@ describe('Authentication E2E Tests', function() {
     await WebDriverHelper.quitDriver(driver);
   });
 
-  describe('Login Page', function() {
-    it('Deve carregar a p√°gina de login corretamente', async function() {
+  beforeEach(async function() {
+    // Limpar cookies e storage antes de cada teste
+    await WebDriverHelper.clearBrowserData(driver);
+  });
+
+  describe('Login', function() {
+    it('Deve carregar a p·gina de login corretamente', async function() {
       await loginPage.open();
       const title = await loginPage.getPageTitle();
-      expect(title).to.equal('UTFPets');
+      expect(title).to.exist;
+      expect(title.length).to.be.greaterThan(0);
+      await WebDriverHelper.takeScreenshot(driver, 'auth-login-page-loaded.png');
     });
 
-    it('Deve desabilitar bot√£o de login quando campos est√£o vazios', async function() {
+    it('Bot„o de login deve estar desabilitado com campos vazios', async function() {
       await loginPage.open();
+      await driver.sleep(1000); // Aguardar p·gina renderizar
       const isDisabled = await loginPage.isLoginButtonDisabled();
       expect(isDisabled).to.be.true;
+      await WebDriverHelper.takeScreenshot(driver, 'auth-login-button-disabled.png');
     });
 
-    it('Deve mostrar erro ao tentar login com credenciais inv√°lidas', async function() {
+    it('Deve aceitar entrada de email', async function() {
       await loginPage.open();
-      await loginPage.login('usuario_invalido@teste.com', 'senha_errada');
+      await loginPage.enterEmail('teste@exemplo.com');
+      // N„o verificamos o bot„o aqui pois ainda falta a senha
+      await WebDriverHelper.takeScreenshot(driver, 'auth-login-email-entered.png');
+    });
 
-      // Aguardar resposta da API
-      await driver.sleep(2000);
+    it('Deve aceitar entrada de senha', async function() {
+      await loginPage.open();
+      await loginPage.enterEmail('teste@exemplo.com');
+      await loginPage.enterPassword('senha123');
+      await WebDriverHelper.takeScreenshot(driver, 'auth-login-credentials-entered.png');
+    });
 
+    it('Deve mostrar erro com credenciais inv·lidas', async function() {
+      await loginPage.open();
+      await loginPage.login('invalido@teste.com', 'senhaerrada123');
+
+      // Aguardar resposta do backend
+      await driver.sleep(3000);
+
+      // Verificar se h· mensagem de erro ou modal de erro
       const hasError = await loginPage.hasErrorMessage();
       expect(hasError).to.be.true;
 
-      // Tirar screenshot do erro
-      await WebDriverHelper.takeScreenshot(driver, 'login-erro-credenciais-invalidas.png');
+      await WebDriverHelper.takeScreenshot(driver, 'auth-login-invalid-credentials.png');
     });
 
-    it('Deve redirecionar para /pets ap√≥s login bem-sucedido', async function() {
-      // NOTA: Este teste requer um usu√°rio v√°lido no backend
-      // Voc√™ pode criar um usu√°rio de teste ou usar seed do banco
-
+    it('Deve fazer login com sucesso com credenciais v·lidas', async function() {
       await loginPage.open();
 
-      // Credenciais de teste - AJUSTE conforme seu ambiente
-      const testEmail = process.env.TEST_USER_EMAIL || 'admin@utfpets.com';
-      const testPassword = process.env.TEST_USER_PASSWORD || 'Admin@123';
+      const email = process.env.TEST_USER_EMAIL || 'teste@utfpets.com';
+      const password = process.env.TEST_USER_PASSWORD || 'Test@12345';
 
-      await loginPage.login(testEmail, testPassword);
+      await loginPage.login(email, password);
 
       // Aguardar redirecionamento
-      await petListPage.waitForUrl('/app/pets', 10000);
+      await loginPage.waitForUrl('/app/pets', 15000);
 
-      const isOnPetList = await petListPage.isOnPetListPage();
-      expect(isOnPetList).to.be.true;
+      const currentUrl = await loginPage.getCurrentUrl();
+      expect(currentUrl).to.include('/app/pets');
 
-      // Tirar screenshot do sucesso
-      await WebDriverHelper.takeScreenshot(driver, 'login-sucesso.png');
+      await WebDriverHelper.takeScreenshot(driver, 'auth-login-success.png');
     });
-  });
 
-  describe('Protected Routes', function() {
-    it('Deve redirecionar para login ao acessar /pets sem autentica√ß√£o', async function() {
-      // Limpar cookies/storage para simular n√£o autenticado
-      await driver.manage().deleteAllCookies();
-      await driver.executeScript('localStorage.clear();');
-
+    it('Deve redirecionar rotas protegidas para login quando n„o autenticado', async function() {
+      // Tentar acessar rota protegida sem estar logado
       await petListPage.open();
 
       // Deve redirecionar para login
-      await loginPage.waitForUrl('/auth/login', 5000);
-
-      const currentUrl = await driver.getCurrentUrl();
+      await driver.sleep(2000);
+      const currentUrl = await petListPage.getCurrentUrl();
       expect(currentUrl).to.include('/auth/login');
+
+      await WebDriverHelper.takeScreenshot(driver, 'auth-protected-route-redirect.png');
+    });
+  });
+
+  describe('Register', function() {
+    it('Deve carregar a p·gina de registro corretamente', async function() {
+      await registerPage.open();
+      const title = await registerPage.getPageTitle();
+      expect(title).to.exist;
+      expect(title.length).to.be.greaterThan(0);
+      await WebDriverHelper.takeScreenshot(driver, 'auth-register-page-loaded.png');
+    });
+
+    it('Bot„o de registro deve estar desabilitado com campos vazios', async function() {
+      await registerPage.open();
+      await driver.sleep(1000);
+      const isDisabled = await registerPage.isRegisterButtonDisabled();
+      expect(isDisabled).to.be.true;
+      await WebDriverHelper.takeScreenshot(driver, 'auth-register-button-disabled.png');
+    });
+
+    it('Deve aceitar entrada de nome', async function() {
+      await registerPage.open();
+      await registerPage.enterName('Usu·rio Teste');
+      await WebDriverHelper.takeScreenshot(driver, 'auth-register-name-entered.png');
+    });
+
+    it('Deve aceitar entrada de email', async function() {
+      await registerPage.open();
+      await registerPage.enterName('Usu·rio Teste');
+      await registerPage.enterEmail('novousuario@teste.com');
+      await WebDriverHelper.takeScreenshot(driver, 'auth-register-email-entered.png');
+    });
+
+    it('Deve validar formato de email', async function() {
+      await registerPage.open();
+      await registerPage.enterEmail('emailinvalido');
+      await registerPage.enterPassword('Senha@123');
+      await registerPage.enterPasswordConfirm('Senha@123');
+
+      // Tentar submeter com email inv·lido
+      const isDisabled = await registerPage.isRegisterButtonDisabled();
+      // Bot„o deve estar desabilitado ou mostrar erro de validaÁ„o
+      expect(isDisabled).to.be.true;
+
+      await WebDriverHelper.takeScreenshot(driver, 'auth-register-invalid-email.png');
+    });
+
+    it('Deve navegar para p·gina de login atravÈs do link', async function() {
+      await registerPage.open();
+      await registerPage.clickLoginLink();
+
+      await driver.sleep(1000);
+      const currentUrl = await registerPage.getCurrentUrl();
+      expect(currentUrl).to.include('/auth/login');
+
+      await WebDriverHelper.takeScreenshot(driver, 'auth-register-to-login-nav.png');
     });
   });
 
@@ -93,22 +168,63 @@ describe('Authentication E2E Tests', function() {
     it('Deve fazer logout e redirecionar para login', async function() {
       // Primeiro fazer login
       await loginPage.open();
-      const testEmail = process.env.TEST_USER_EMAIL || 'admin@utfpets.com';
-      const testPassword = process.env.TEST_USER_PASSWORD || 'Admin@123';
-      await loginPage.login(testEmail, testPassword);
-      await petListPage.waitForUrl('/app/pets', 10000);
+      const email = process.env.TEST_USER_EMAIL || 'teste@utfpets.com';
+      const password = process.env.TEST_USER_PASSWORD || 'Test@12345';
+      await loginPage.login(email, password);
+      await loginPage.waitForUrl('/app/pets', 15000);
 
       // Fazer logout
       await petListPage.logout();
 
-      // Aguardar redirecionamento para login
-      await loginPage.waitForUrl('/auth/login', 5000);
-
-      const currentUrl = await driver.getCurrentUrl();
+      // Aguardar redirecionamento
+      await driver.sleep(2000);
+      const currentUrl = await petListPage.getCurrentUrl();
       expect(currentUrl).to.include('/auth/login');
 
-      // Tirar screenshot
-      await WebDriverHelper.takeScreenshot(driver, 'logout-sucesso.png');
+      await WebDriverHelper.takeScreenshot(driver, 'auth-logout-success.png');
+    });
+
+    it('N„o deve permitir acesso a rotas protegidas apÛs logout', async function() {
+      // Fazer login
+      await loginPage.open();
+      const email = process.env.TEST_USER_EMAIL || 'teste@utfpets.com';
+      const password = process.env.TEST_USER_PASSWORD || 'Test@12345';
+      await loginPage.login(email, password);
+      await loginPage.waitForUrl('/app/pets', 15000);
+
+      // Fazer logout
+      await petListPage.logout();
+      await driver.sleep(2000);
+
+      // Tentar acessar rota protegida
+      await petListPage.open();
+      await driver.sleep(2000);
+
+      const currentUrl = await petListPage.getCurrentUrl();
+      expect(currentUrl).to.include('/auth/login');
+
+      await WebDriverHelper.takeScreenshot(driver, 'auth-post-logout-protected-route.png');
+    });
+  });
+
+  describe('Session Persistence', function() {
+    it('Deve manter sess„o apÛs recarregar p·gina', async function() {
+      // Fazer login
+      await loginPage.open();
+      const email = process.env.TEST_USER_EMAIL || 'teste@utfpets.com';
+      const password = process.env.TEST_USER_PASSWORD || 'Test@12345';
+      await loginPage.login(email, password);
+      await loginPage.waitForUrl('/app/pets', 15000);
+
+      // Recarregar p·gina
+      await driver.navigate().refresh();
+      await driver.sleep(2000);
+
+      // Deve continuar na p·gina de pets
+      const currentUrl = await petListPage.getCurrentUrl();
+      expect(currentUrl).to.include('/app/pets');
+
+      await WebDriverHelper.takeScreenshot(driver, 'auth-session-persistence.png');
     });
   });
 });

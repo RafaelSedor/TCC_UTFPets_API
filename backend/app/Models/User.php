@@ -87,6 +87,11 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(Location::class);
     }
 
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
+    }
+
     /**
      * Set the is_admin attribute - ensure proper boolean casting for PostgreSQL
      */

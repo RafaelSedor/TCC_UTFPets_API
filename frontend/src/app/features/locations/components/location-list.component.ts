@@ -2,17 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatListModule } from '@angular/material/list';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { LocationService } from '../services/location.service';
-import { Location } from '../../../core/models/shared.model';
+import { Location } from '../../../core/models/pet.model';
+import { ModalService } from '../../../core/services/modal.service';
 
 @Component({
   selector: 'app-location-list',
@@ -20,247 +12,166 @@ import { Location } from '../../../core/models/shared.model';
   imports: [
     CommonModule,
     RouterModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatListModule,
-    MatProgressSpinnerModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSnackBarModule,
-    MatDialogModule
+    ReactiveFormsModule
   ],
   template: `
-    <div class="container">
-      <div class="header">
-        <h1>Localizações Compartilhadas</h1>
+    <div class="max-w-7xl mx-auto">
+      <!-- Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Localizações Compartilhadas</h1>
+        <p class="text-gray-600 mt-1">Organize os lugares onde seus pets ficam</p>
       </div>
-      <!-- Create new location form -->
-      <mat-card class="form-card">
-        <mat-card-header>
-          <mat-card-title>Nova Localização</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <form [formGroup]="locationForm" (ngSubmit)="createLocation()">
-            <mat-form-field appearance="outline">
-              <mat-label>Nome da Localização</mat-label>
-              <input matInput formControlName="name" required placeholder="Ex: Casa, Escritório, Pet Shop">
+
+      <!-- Create New Location Form -->
+      <div class="card mb-8">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Nova Localização</h2>
+        <form [formGroup]="locationForm" (ngSubmit)="createLocation()" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="label-text">Nome da Localização *</label>
+              <input
+                type="text"
+                formControlName="name"
+                placeholder="Ex: Casa, Escritório, Pet Shop"
+                class="input-field"
+                [class.border-red-500]="locationForm.get('name')?.invalid && locationForm.get('name')?.touched"
+              />
               @if (locationForm.get('name')?.hasError('required') && locationForm.get('name')?.touched) {
-                <mat-error>Nome é obrigatório</mat-error>
+                <p class="mt-1 text-sm text-red-600">📝 Nome é obrigatório</p>
               }
-            </mat-form-field>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Endereço</mat-label>
-              <input matInput formControlName="address" placeholder="Opcional">
-            </mat-form-field>
+            <div>
+              <label class="label-text">Endereço (Opcional)</label>
+              <input
+                type="text"
+                formControlName="address"
+                placeholder="Ex: Rua das Flores, 123"
+                class="input-field"
+              />
+            </div>
+          </div>
 
-            @if (errorMessage) {
-              <div class="error-message">
-                <mat-icon>error</mat-icon>
-                {{ errorMessage }}
-              </div>
-            }
+          @if (errorMessage) {
+            <div class="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2 text-red-800">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>{{ errorMessage }}</span>
+            </div>
+          }
 
-            <button mat-raised-button color="primary" type="submit" [disabled]="locationForm.invalid || submitting">
+          <div class="flex justify-end">
+            <button
+              type="submit"
+              [disabled]="locationForm.invalid || submitting"
+              class="btn-primary flex items-center space-x-2 px-6 py-2.5 disabled:opacity-50"
+            >
               @if (submitting) {
-                <mat-spinner diameter="20"></mat-spinner>
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                <span>Criando...</span>
               } @else {
-                <mat-icon>add</mat-icon>
-                Criar Localização
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Criar Localização</span>
               }
             </button>
-          </form>
-        </mat-card-content>
-      </mat-card>
+          </div>
+        </form>
+      </div>
 
-      <!-- Locations list -->
+      <!-- Locations List -->
       @if (loading) {
-        <div class="loading">
-          <mat-spinner></mat-spinner>
-          <p>Carregando localizações...</p>
+        <div class="flex flex-col items-center justify-center py-20">
+          <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
+          <p class="text-gray-600 mt-4 text-lg">Carregando localizações...</p>
         </div>
       } @else if (locations.length > 0) {
-        <div class="locations-grid">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           @for (location of locations; track location.id) {
-            <mat-card class="location-card">
-              <mat-card-header>
-                <mat-icon mat-card-avatar>place</mat-icon>
-                <mat-card-title>{{ location.name }}</mat-card-title>
-                @if (location.address) {
-                  <mat-card-subtitle>{{ location.address }}</mat-card-subtitle>
-                }
-              </mat-card-header>
-
-              <mat-card-content>
-                <div class="location-info">
-                  <div class="info-item">
-                    <mat-icon>pets</mat-icon>
-                    <span>{{ location.pets_count || 0 }} pet(s) nesta localização</span>
+            <div class="card hover:shadow-xl transition-all duration-300 group">
+              <!-- Location Header -->
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex items-start space-x-3 flex-1">
+                  <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                   </div>
-
-                  @if (location.created_at) {
-                    <div class="info-item">
-                      <mat-icon>event</mat-icon>
-                      <span>Criado em {{ location.created_at | date:'dd/MM/yyyy' }}</span>
-                    </div>
-                  }
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-semibold text-gray-900 group-hover:text-primary-600 transition-colors truncate">
+                      {{ location.name }}
+                    </h3>
+                    @if (location.address) {
+                      <p class="text-sm text-gray-600 mt-1 truncate">{{ location.address }}</p>
+                    }
+                  </div>
                 </div>
-              </mat-card-content>
+              </div>
 
-              <mat-card-actions>
-                <button mat-icon-button color="primary" (click)="editLocation(location)">
-                  <mat-icon>edit</mat-icon>
+              <!-- Location Info -->
+              <div class="space-y-3 mb-4">
+                <div class="flex items-center space-x-2 text-gray-700">
+                  <svg class="w-5 h-5 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span class="text-sm">{{ location.pets_count || 0 }} pet(s) nesta localização</span>
+                </div>
+
+                @if (location.created_at) {
+                  <div class="flex items-center space-x-2 text-gray-700">
+                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span class="text-sm">Criado em {{ location.created_at | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                }
+              </div>
+
+              <!-- Actions -->
+              <div class="flex justify-end space-x-2 pt-4 border-t border-gray-200">
+                <button
+                  (click)="editLocation(location)"
+                  class="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  title="Editar"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
                 </button>
-                <button mat-icon-button color="warn" (click)="deleteLocation(location)">
-                  <mat-icon>delete</mat-icon>
+                <button
+                  (click)="deleteLocation(location)"
+                  class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  title="Excluir"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
                 </button>
-              </mat-card-actions>
-            </mat-card>
+              </div>
+            </div>
           }
         </div>
       } @else {
-        <div class="empty-state">
-          <mat-icon>location_off</mat-icon>
-          <h2>Nenhuma localização cadastrada</h2>
-          <p>Crie localizações para organizar onde seus pets ficam</p>
+        <div class="card text-center py-16">
+          <svg class="w-24 h-24 text-gray-300 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Nenhuma localização cadastrada</h2>
+          <p class="text-gray-600">Crie localizações para organizar onde seus pets ficam</p>
         </div>
       }
     </div>
   `,
-  styles: [`
-    .container {
-      max-width: 1200px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-
-    .header h1 {
-      margin: 0;
-      font-size: 32px;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .form-card {
-      margin-bottom: 32px;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    .error-message {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: #ffebee;
-      color: #c62828;
-      border-radius: 4px;
-    }
-
-    .locations-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
-    }
-
-    .location-card {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .location-card mat-card-header {
-      margin-bottom: 16px;
-    }
-
-    .location-card mat-card-content {
-      flex: 1;
-    }
-
-    .location-info {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: #666;
-    }
-
-    .info-item mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-      color: #667eea;
-    }
-
-    mat-card-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      padding: 8px;
-    }
-
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 48px;
-    }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 64px 24px;
-      text-align: center;
-    }
-
-    .empty-state mat-icon {
-      font-size: 120px;
-      width: 120px;
-      height: 120px;
-      color: #ccc;
-      margin-bottom: 24px;
-    }
-
-    .empty-state h2 {
-      margin: 0 0 8px 0;
-      color: #333;
-    }
-
-    .empty-state p {
-      margin: 0;
-      color: #666;
-    }
-  `]
+  styles: []
 })
 export class LocationListComponent implements OnInit {
   private fb = inject(FormBuilder);
   private locationService = inject(LocationService);
-  private snackBar = inject(MatSnackBar);
-  private dialog = inject(MatDialog);
+  private modalService = inject(ModalService);
 
   locationForm: FormGroup;
   locations: Location[] = [];
@@ -282,12 +193,13 @@ export class LocationListComponent implements OnInit {
   loadLocations(): void {
     this.loading = true;
     this.locationService.getAll().subscribe({
-      next: (response) => {
-        this.locations = response.data;
+      next: (locations) => {
+        this.locations = Array.isArray(locations) ? locations : [];
         this.loading = false;
       },
       error: (error) => {
         console.error('Erro ao carregar localizações:', error);
+        this.locations = [];
         this.loading = false;
       }
     });
@@ -299,10 +211,9 @@ export class LocationListComponent implements OnInit {
       this.errorMessage = '';
 
       this.locationService.create(this.locationForm.value).subscribe({
-        next: (response) => {
-          this.locations.push(response.data);
+        next: (location) => {
+          this.locations.push(location);
           this.locationForm.reset();
-          this.snackBar.open('Localização criada com sucesso!', 'Fechar', { duration: 3000 });
           this.submitting = false;
         },
         error: (error) => {
@@ -314,35 +225,32 @@ export class LocationListComponent implements OnInit {
     }
   }
 
-  editLocation(location: Location): void {
-    const newName = prompt('Novo nome:', location.name);
-    if (newName && newName !== location.name) {
-      this.locationService.update(location.id, { name: newName }).subscribe({
-        next: (response) => {
-          const index = this.locations.findIndex(l => l.id === location.id);
-          if (index !== -1) {
-            this.locations[index] = response.data;
-          }
-          this.snackBar.open('Localização atualizada!', 'Fechar', { duration: 3000 });
-        },
-        error: (error) => {
-          console.error('Erro ao atualizar localização:', error);
-          this.snackBar.open('Erro ao atualizar localização', 'Fechar', { duration: 3000 });
-        }
-      });
-    }
+  async editLocation(location: Location): Promise<void> {
+    // TODO: Implementar modal de edição com formulário completo
+    // Por enquanto, vamos usar o modal de confirmação como exemplo
+    await this.modalService.alert(
+      'A edição de localização será implementada com um formulário modal completo em breve.',
+      'Editar Localização'
+    );
   }
 
-  deleteLocation(location: Location): void {
-    if (confirm(`Tem certeza que deseja excluir "${location.name}"?`)) {
+  async deleteLocation(location: Location): Promise<void> {
+    const confirmed = await this.modalService.confirm(
+      `Tem certeza que deseja excluir "${location.name}"? Esta ação não pode ser desfeita.`,
+      'Excluir Localização',
+      'Excluir',
+      'Cancelar'
+    );
+
+    if (confirmed) {
       this.locationService.delete(location.id).subscribe({
         next: () => {
           this.locations = this.locations.filter(l => l.id !== location.id);
-          this.snackBar.open('Localização excluída!', 'Fechar', { duration: 3000 });
+          this.modalService.success('Localização excluída com sucesso!');
         },
         error: (error) => {
           console.error('Erro ao deletar localização:', error);
-          this.snackBar.open('Erro ao deletar localização', 'Fechar', { duration: 3000 });
+          this.modalService.showBackendError(error, 'Erro ao deletar localização. Tente novamente.');
         }
       });
     }

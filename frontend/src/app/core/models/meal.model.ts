@@ -1,10 +1,12 @@
 export interface Meal {
   id: number;
   pet_id: number;
-  meal_time: string;
+  food_type: string;
   quantity: number;
+  unit: string;
+  scheduled_for: string;
+  consumed_at?: string;
   notes?: string;
-  photo_url?: string;
   created_at: string;
   updated_at: string;
   pet?: {
@@ -16,8 +18,9 @@ export interface Meal {
 
 export interface MealFormData {
   pet_id: number;
-  meal_time: string;
+  food_type: string;
   quantity: number;
+  unit: string;
+  scheduled_for: string;
   notes?: string;
-  photo?: File;
 }

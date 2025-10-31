@@ -390,11 +390,12 @@ Tempo de execução: ~200s
 
 **Taxa de conclusão**: 94% (17 de 18 módulos) 🎉
 
-### 🔮 Próximos Passos
-- 🚀 Otimizações de performance
-- 📊 Dashboards e analytics
-- 🔔 Melhorias em notificações push
-- 📱 App móvel nativo (Flutter/React Native)
+### 🎓 Escopo do TCC
+Este sistema foi desenvolvido como Trabalho de Conclusão de Curso, focando em demonstrar:
+- Arquitetura moderna de APIs RESTful
+- Padrões de design e boas práticas
+- Testes automatizados e qualidade de código
+- Deploy e CI/CD em ambiente de produção
 
 ---
 

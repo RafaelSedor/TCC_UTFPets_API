@@ -1,236 +1,94 @@
 # Setup para Desenvolvimento Local
 
-Este guia explica como executar o UTFPets API localmente em `http://localhost`.
+## Arquitetura Local
 
-## Opção 1: Usar docker-compose.local.yml (Recomendado)
+### docker-compose.local.yml
 
-### 1. Parar containers atuais (se estiverem rodando)
-```bash
-docker-compose down
+O projeto utiliza configuração separada para desenvolvimento local:
+
+**Justificativa**: Separar configurações de dev e produção evita deploy acidental de configurações locais. O arquivo `docker-compose.local.yml` sobrescreve apenas o necessário (porta 80 e configuração do nginx).
+
+### Nginx Localhost
+
+```nginx
+server {
+    listen 80;
+    server_name localhost;
+    # ...
+}
 ```
 
-### 2. Iniciar com configuração local
+**Justificativa**: Em desenvolvimento, usa-se `localhost` sem SSL para simplicidade. Em produção, usa-se domínio real com HTTPS.
+
+## Decisões Técnicas
+
+### Por que não SQLite?
+
+Mesmo localmente, usa-se PostgreSQL (via Cloud SQL):
+
+**Justificativa**:
+- **Paridade com produção**: Evita bugs específicos de SQLite vs PostgreSQL
+- **Features específicas**: JSONB, Enums, etc não existem em SQLite
+- **Testes realistas**: Queries testadas localmente funcionarão em prod
+
+### Cloud SQL Proxy Local
+
+O proxy é usado também em desenvolvimento:
+
+**Justificativa**: Mantém configuração idêntica à produção. Testa o proxy localmente antes do deploy.
+
+### Porta 80 vs 8080
+
+- **Local**: Porta 80 (http://localhost)
+- **Produção**: Porta 8080 (http://IP:8080)
+
+**Justificativa**: Porta 80 requer sudo em muitos sistemas, mas em Docker não há esse problema. Simplifica URLs locais.
+
+### Hot Reload Não Configurado
+
+Laravel não possui hot reload nativo como frameworks JavaScript:
+
+**Justificativa**: PHP não requer build step. Mudanças em arquivos PHP são refletidas imediatamente (opcache desabilitado em dev).
+
+## Testes Locais
+
+### Parâmetro `-T` no docker-compose exec
+
 ```bash
-docker-compose -f docker-compose.local.yml up -d
+docker-compose exec -T app php artisan test
 ```
 
-### 3. Verificar se está funcionando
-```bash
-# Verificar containers
-docker-compose -f docker-compose.local.yml ps
+**Justificativa**: O parâmetro `-T` desabilita alocação de TTY, evitando que testes travem após warnings do PHPUnit. Essencial para CI/CD e scripts automatizados.
 
-# Testar API
-curl http://localhost/api/health
-```
+### Banco de Teste Separado
 
-### 4. Acessar a aplicação
+O arquivo `.env.testing` usa banco separado:
+
+**Justificativa**: Testes não devem poluir banco de desenvolvimento. Migrations rodam fresh a cada execução de teste.
+
+## Desenvolvimento
+
+### URLs Locais
+
 - **API**: http://localhost/api
-- **Health Check**: http://localhost/api/health
-- **Swagger UI**: http://localhost/swagger
-- **Documentação JSON**: http://localhost/api-docs.json
+- **Swagger**: http://localhost/swagger
+- **Health**: http://localhost/api/health
 
-### 5. Para parar
-```bash
-docker-compose -f docker-compose.local.yml down
-```
+### Swagger UI Local
 
----
+Swagger UI roda em container separado apontando para `localhost`:
 
-## Opção 2: Modificar docker-compose.yml original
+**Justificativa**: Evita problemas de CORS. Swagger UI e API na mesma origem (localhost).
 
-Se preferir modificar o arquivo principal:
-
-### 1. Editar docker-compose.yml
-
-Altere a linha 76 de:
-```yaml
-- ./nginx/api.utfpets.online.conf:/etc/nginx/conf.d/default.conf:ro
-```
-
-Para:
-```yaml
-- ./nginx/localhost.conf:/etc/nginx/conf.d/default.conf:ro
-```
-
-### 2. Reiniciar containers
-```bash
-docker-compose down
-docker-compose up -d
-```
-
----
-
-## Executar Comandos no Container
-
-```bash
-# Migrations
-docker-compose -f docker-compose.local.yml exec app php artisan migrate
-
-# Testes (use -T para evitar travar no terminal)
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/
-
-# Teste específico
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/AuthTest.php
-
-# Limpar cache
-docker-compose -f docker-compose.local.yml exec app php artisan cache:clear
-
-# Acessar shell
-docker-compose -f docker-compose.local.yml exec app bash
-```
-
-### ⚠️ Importante: Rodar Testes
-
-**SEMPRE use o parâmetro `-T`** ao rodar testes para evitar que o comando trave:
-
-```bash
-# ✅ CORRETO - Com -T
-docker-compose -f docker-compose.local.yml exec -T app php artisan test
-
-# ❌ ERRADO - Sem -T (vai travar após os warnings)
-docker-compose -f docker-compose.local.yml exec app php artisan test
-```
-
-### Testes Must Have Disponíveis
-
-```bash
-# Rodar todos os testes Must Have
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/
-
-# Testes individuais
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/AuthTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/PetTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/MealTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/SharedPetTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/ReminderTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/NotificationTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/AdminTest.php
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/LocationTest.php
-
-# Rodar teste específico
-docker-compose -f docker-compose.local.yml exec -T app php artisan test --filter=test_user_can_register
-
-# Ver progresso detalhado
-docker-compose -f docker-compose.local.yml exec -T app php artisan test tests/Feature/ --verbose
-```
-
----
-
-## Trocar entre Local e Produção
-
-### Para desenvolvimento local:
-```bash
-docker-compose -f docker-compose.local.yml up -d
-```
-
-### Para produção (api.utfpets.online):
-```bash
-docker-compose up -d
-```
-
----
-
-## Endpoints Principais (localhost)
-
-### Autenticação
-- `POST http://localhost/api/auth/register` - Registro
-- `POST http://localhost/api/auth/login` - Login
-- `GET http://localhost/api/auth/me` - Perfil
-
-### Pets
-- `GET http://localhost/api/v1/pets` - Listar pets
-- `POST http://localhost/api/v1/pets` - Criar pet
-
-### Refeições
-- `GET http://localhost/api/v1/pets/{pet}/meals` - Listar refeições
-- `POST http://localhost/api/v1/pets/{pet}/meals` - Criar refeição
-
-### Compartilhamento
-- `POST http://localhost/api/v1/pets/{pet}/share` - Compartilhar pet
-- `POST http://localhost/api/v1/pets/{pet}/share/{user}/accept` - Aceitar convite
-
-### Lembretes
-- `GET http://localhost/api/v1/pets/{pet}/reminders` - Listar lembretes
-- `POST http://localhost/api/v1/pets/{pet}/reminders` - Criar lembrete
-
----
-
-## Testar no Swagger UI
-
-1. Acesse: http://localhost/swagger
-2. Teste o endpoint `/api/auth/register`:
-   ```json
-   {
-     "name": "Teste Local",
-     "email": "teste@localhost.com",
-     "password": "Senha@123",
-     "password_confirmation": "Senha@123"
-   }
-   ```
-3. Copie o token retornado
-4. Clique em "Authorize" no topo
-5. Cole o token (sem "Bearer")
-6. Teste os outros endpoints!
-
----
-
-## Troubleshooting
-
-### Porta 80 já está em uso
-Se a porta 80 estiver ocupada, você pode mudar no `docker-compose.local.yml`:
-
-```yaml
-ports:
-  - "8080:80"  # Mude de "80:80" para "8080:80"
-```
-
-Depois acesse: http://localhost:8080
-
-### Erro de conexão com banco de dados
-Certifique-se de que:
-1. O arquivo `.env` está configurado corretamente
-2. As credenciais do banco estão corretas
-3. O serviço `cloud-sql-proxy` está rodando
-
-### Verificar logs
-```bash
-# Logs do Nginx
-docker-compose -f docker-compose.local.yml logs nginx
-
-# Logs da aplicação
-docker-compose -f docker-compose.local.yml logs app
-
-# Logs do banco
-docker-compose -f docker-compose.local.yml logs cloud-sql-proxy
-
-# Todos os logs
-docker-compose -f docker-compose.local.yml logs -f
-```
-
----
-
-## Diferenças entre Local e Produção
+## Comparação: Local vs Produção
 
 | Aspecto | Local | Produção |
 |---------|-------|----------|
-| URL | http://localhost | https://api.utfpets.online |
-| Porta | 80 | 80 e 443 (HTTPS) |
-| SSL | Não | Sim (Let's Encrypt) |
-| Nginx Config | localhost.conf | api.utfpets.online.conf |
-| Docker Compose | docker-compose.local.yml | docker-compose.yml |
-| APP_URL | http://localhost | https://api.utfpets.online |
+| URL | localhost | IP público |
+| Porta | 80 | 8080 |
+| SSL | Não | Sim (futuro) |
+| Logs | Console | Arquivos + GCP Logging |
+| Debug | Habilitado | Desabilitado |
+| Cache | Desabilitado | Habilitado |
 
----
-
-## Próximos Passos
-
-Depois de configurar o ambiente local:
-
-1. ✅ Execute as migrations: `docker-compose -f docker-compose.local.yml exec app php artisan migrate`
-2. ✅ Teste a API: `curl http://localhost/api/health`
-3. ✅ Acesse o Swagger: http://localhost/swagger
-4. ✅ Registre um usuário e comece a testar!
-
----
-
-**Pronto! Seu ambiente local está configurado e funcionando!** 🚀
+**Justificativa**: Ambiente de dev prioriza debugging (logs verbosos, debug ativo). Produção prioriza performance (cache, otimizações).
