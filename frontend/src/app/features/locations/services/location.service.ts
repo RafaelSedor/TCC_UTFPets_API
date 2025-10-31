@@ -9,30 +9,89 @@ export interface LocationFormData {
   description?: string;
 }
 
+export interface SharedLocationData {
+  email: string;
+  role: 'editor' | 'viewer';
+}
+
+export interface SharedLocationAccess {
+  id: number;
+  location_id: number;
+  user_id: number;
+  role: 'owner' | 'editor' | 'viewer';
+  invitation_status: 'pending' | 'accepted' | 'declined';
+  created_at: string;
+  updated_at: string;
+  location: {
+    id: number;
+    name: string;
+    description?: string;
+  };
+  shared_with_user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  owner?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class LocationService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/v1/locations`;
+  private apiUrl = `${environment.apiUrl}/locations`;
 
-  getAll(): Observable<{ data: Location[] }> {
-    return this.http.get<{ data: Location[] }>(this.apiUrl);
+  getAll(): Observable<Location[]> {
+    return this.http.get<Location[]>(this.apiUrl);
   }
 
-  getById(id: number): Observable<{ data: Location }> {
-    return this.http.get<{ data: Location }>(`${this.apiUrl}/${id}`);
+  getById(id: string): Observable<Location> {
+    return this.http.get<Location>(`${this.apiUrl}/${id}`);
   }
 
-  create(data: LocationFormData): Observable<{ data: Location }> {
-    return this.http.post<{ data: Location }>(this.apiUrl, data);
+  create(data: LocationFormData): Observable<Location> {
+    return this.http.post<Location>(this.apiUrl, data);
   }
 
-  update(id: number, data: Partial<LocationFormData>): Observable<{ data: Location }> {
-    return this.http.put<{ data: Location }>(`${this.apiUrl}/${id}`, data);
+  update(id: string, data: Partial<LocationFormData>): Observable<Location> {
+    return this.http.put<Location>(`${this.apiUrl}/${id}`, data);
   }
 
-  delete(id: number): Observable<void> {
+  delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  // Shared location methods
+  shareLocation(locationId: number, data: SharedLocationData): Observable<SharedLocationAccess> {
+    return this.http.post<SharedLocationAccess>(`${this.apiUrl}/${locationId}/share`, data);
+  }
+
+  getSharedLocationsByMe(locationId: number): Observable<SharedLocationAccess[]> {
+    return this.http.get<SharedLocationAccess[]>(`${this.apiUrl}/${locationId}/share`);
+  }
+
+  getAllSharedLocationsByMe(): Observable<SharedLocationAccess[]> {
+    return this.http.get<SharedLocationAccess[]>(`${environment.apiUrl}/shared-locations/by-me`);
+  }
+
+  getSharedLocationsWithMe(): Observable<SharedLocationAccess[]> {
+    return this.http.get<SharedLocationAccess[]>(`${environment.apiUrl}/shared-locations/with-me`);
+  }
+
+  updateLocationPermission(locationId: number, userId: number, data: { role: string }): Observable<SharedLocationAccess> {
+    return this.http.patch<SharedLocationAccess>(`${this.apiUrl}/${locationId}/share/${userId}`, data);
+  }
+
+  revokeLocationAccess(locationId: number, userId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${locationId}/share/${userId}`);
+  }
+
+  acceptLocationInvitation(locationId: number, userId: number): Observable<SharedLocationAccess> {
+    return this.http.post<SharedLocationAccess>(`${this.apiUrl}/${locationId}/share/${userId}/accept`, {});
   }
 }

@@ -1,27 +1,50 @@
-# Frontend
+# UTFPets - Frontend
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 17.3.17.
+Sistema de gerenciamento de pets desenvolvido com Angular 17.
 
-## Development server
+## 📚 Documentação Completa
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+Para documentação detalhada sobre o projeto, acesse a pasta **[docs/](./docs/)**:
 
-## Code scaffolding
+- **[Sistema de Notificações](./docs/NOTIFICATIONS-SYSTEM.md)** - Guia do sistema de notificações in-app
+- **[PWA Setup](./docs/PWA-SETUP.md)** - Configuração do Progressive Web App
+- **[Push Notifications](./docs/PWA-PUSH-NOTIFICATIONS-COMPLETE.md)** - Guia completo de push notifications
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## 🚀 Execução
 
-## Build
+Ver [README principal](../README.md) para instruções completas de setup e execução.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+## 🎯 Funcionalidades Principais
 
-## Running unit tests
+- ✅ **PWA** - Progressive Web App instalável
+- ✅ **Offline Mode** - Funciona sem internet
+- ✅ **Push Notifications** - Notificações do sistema
+- ✅ **Notificações In-App** - Sistema completo de notificações
+- ✅ **Service Worker** - Cache inteligente de assets e API
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## 🏗️ Tecnologias
 
-## Running end-to-end tests
+- **Angular 17** - Framework principal
+- **Standalone Components** - Arquitetura moderna
+- **TailwindCSS** - Estilização
+- **Angular Material** - Componentes UI
+- **RxJS** - Programação reativa
+- **Service Worker** - PWA e offline mode
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+## 📂 Estrutura do Projeto
 
-## Further help
+```
+src/
+├── app/
+│   ├── core/              # Serviços, guards, interceptors
+│   ├── features/          # Módulos de funcionalidades
+│   ├── shared/            # Componentes compartilhados
+│   └── app.config.ts      # Configuração principal
+├── environments/          # Ambientes (dev/prod)
+├── assets/               # Imagens, ícones, etc
+└── manifest.webmanifest  # PWA manifest
+```
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+## 🛠️ Tecnologia
+
+Este projeto utiliza [Angular CLI](https://github.com/angular/angular-cli) versão 17.3.17 com **Standalone Components**, uma arquitetura moderna que elimina a necessidade de NgModules, reduzindo boilerplate e melhorando tree-shaking.

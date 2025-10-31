@@ -3,13 +3,11 @@ import { BasePage } from './BasePage';
 
 export class PetListPage extends BasePage {
   // Locators
-  private toolbar = By.css('mat-toolbar');
-  private pageTitle = By.css('.header h1');
-  private addPetButton = By.css('button[color="primary"]');
-  private logoutButton = By.css('button mat-icon:contains("logout")');
-  private petCards = By.css('.pet-card');
-  private emptyState = By.css('.empty-state');
-  private loadingIndicator = By.css('.loading');
+  private pageTitle = By.css('h1');
+  private addPetButton = By.css('button.btn-primary, a[routerLink="/app/pets/new"]');
+  private petCards = By.css('.group.bg-white.rounded-2xl');
+  private emptyState = By.css('.card.text-center');
+  private loadingIndicator = By.css('.animate-spin');
 
   constructor(driver: WebDriver) {
     super(driver);
@@ -68,31 +66,54 @@ export class PetListPage extends BasePage {
 
   async getPetName(index: number): Promise<string> {
     const petCard = await this.getPetCardByIndex(index);
-    const nameElement = await petCard.findElement(By.css('mat-card-title'));
+    const nameElement = await petCard.findElement(By.css('h3'));
     return await nameElement.getText();
   }
 
   async clickPetDetails(index: number): Promise<void> {
     const petCard = await this.getPetCardByIndex(index);
-    const detailsButton = await petCard.findElement(By.css('button mat-icon:contains("visibility")'));
-    await detailsButton.click();
+    await petCard.click(); // O card inteiro é clicável
+  }
+
+  async clickPetEdit(index: number): Promise<void> {
+    const petCard = await this.getPetCardByIndex(index);
+    const editButton = await petCard.findElement(By.xpath('.//button[contains(text(), "Editar")]'));
+    await editButton.click();
   }
 
   async logout(): Promise<void> {
-    // Clicar no botão do menu do usuário
-    const menuButton = await this.driver.findElement(By.css('mat-toolbar button[mat-icon-button]'));
-    await menuButton.click();
-
-    // Aguardar menu abrir
-    await this.driver.sleep(500);
-
-    // Clicar no botão de sair
-    const logoutBtn = await this.driver.findElement(By.css('button[mat-menu-item]'));
-    await logoutBtn.click();
+    const logoutButton = By.css('button[routerLink="/auth/login"]');
+    await this.click(logoutButton);
   }
 
   async isOnPetListPage(): Promise<boolean> {
     const url = await this.getCurrentUrl();
     return url.includes('/pets');
+  }
+
+  async getPetSpecies(index: number): Promise<string> {
+    const petCard = await this.getPetCardByIndex(index);
+    const speciesBadge = await petCard.findElement(By.css('.absolute.top-3.right-3 span'));
+    return await speciesBadge.getText();
+  }
+
+  async getPetBreed(index: number): Promise<string> {
+    const petCard = await this.getPetCardByIndex(index);
+    try {
+      const breedElement = await petCard.findElement(By.css('p.text-sm.text-gray-600'));
+      return await breedElement.getText();
+    } catch {
+      return '';
+    }
+  }
+
+  async getPetWeight(index: number): Promise<string> {
+    const petCard = await this.getPetCardByIndex(index);
+    try {
+      const weightElement = await petCard.findElement(By.xpath('.//span[contains(text(), "kg")]'));
+      return await weightElement.getText();
+    } catch {
+      return '';
+    }
   }
 }

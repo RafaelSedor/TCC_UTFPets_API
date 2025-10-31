@@ -1,5 +1,5 @@
 export interface Reminder {
-  id: number;
+  id: string;  // UUID
   pet_id: number;
   title: string;
   description?: string;

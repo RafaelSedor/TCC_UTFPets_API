@@ -46,6 +46,46 @@ class ReminderController extends Controller
     }
 
     /**
+     * Lista todos os lembretes de todos os pets que o usuário tem acesso
+     */
+    public function indexAll(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Buscar todos os pets que o usuário possui
+        $ownedPetIds = $user->pets()->pluck('id');
+
+        // Buscar todos os pets compartilhados com o usuário (aceitos)
+        $sharedPetIds = \App\Models\SharedPet::where('user_id', $user->id)
+            ->where('invitation_status', \App\Enums\InvitationStatus::ACCEPTED)
+            ->pluck('pet_id');
+
+        // Combinar IDs de pets próprios e compartilhados
+        $accessiblePetIds = $ownedPetIds->merge($sharedPetIds)->unique();
+
+        $query = Reminder::whereIn('pet_id', $accessiblePetIds);
+
+        // Filtro por status
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filtro por data inicial
+        if ($request->has('from')) {
+            $query->where('scheduled_at', '>=', $request->from);
+        }
+
+        // Filtro por data final
+        if ($request->has('to')) {
+            $query->where('scheduled_at', '<=', $request->to);
+        }
+
+        $reminders = $query->orderBy('scheduled_at', 'asc')->get();
+
+        return response()->json($reminders);
+    }
+
+    /**
      * Cria um novo lembrete
      */
     public function store(ReminderRequest $request, Pet $pet): JsonResponse

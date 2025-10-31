@@ -1,17 +1,19 @@
 import { Injectable, inject } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { environment } from '../../../environments/environment';
+import { PushNotificationService } from './push-notification.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class NotificationService {
   private snackBar = inject(MatSnackBar);
-  private readonly NOTIFICATIONS_ENABLED = environment.enableNotifications;
+  private pushService = inject(PushNotificationService);
+  private readonly NOTIFICATIONS_ENABLED = (environment as any).features?.enableNotifications || (environment as any).enableNotifications || false;
 
   /**
    * Solicita permissão para notificações push (PWA)
-   * Nota: Requer Service Worker configurado
+   * Agora integrado com Service Worker
    */
   async requestNotificationPermission(): Promise<boolean> {
     if (!this.NOTIFICATIONS_ENABLED) {
@@ -27,8 +29,27 @@ export class NotificationService {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        this.showSuccess('Notificações ativadas!');
-        return true;
+        // Subscreve para push notifications via Service Worker
+        const subscribed = await this.pushService.requestSubscription();
+
+        if (subscribed) {
+          this.showSuccess('Notificações ativadas!');
+
+          // Escuta mensagens push
+          this.pushService.listenToNotifications().subscribe(message => {
+            console.log('Push notification received:', message);
+          });
+
+          // Escuta clicks em notificações
+          this.pushService.listenToNotificationClicks().subscribe(click => {
+            console.log('Notification clicked:', click);
+          });
+
+          return true;
+        } else {
+          this.showWarning('Erro ao ativar notificações push');
+          return false;
+        }
       } else {
         this.showWarning('Permissão de notificação negada');
         return false;

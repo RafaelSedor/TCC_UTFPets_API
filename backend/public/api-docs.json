@@ -45,6 +45,10 @@
       "description": "Sistema de notificações para eventos do sistema (lembretes, convites, mudanças de papel)"
     },
     {
+      "name": "Push Notifications",
+      "description": "Gerenciamento de subscrições para push notifications via Service Worker (PWA)"
+    },
+    {
       "name": "Admin",
       "description": "Painel administrativo para gestão de usuários, pets e auditoria (requer permissão de admin)"
     },
@@ -54,7 +58,7 @@
     }
   ],
   "paths": {
-    "/auth/register": {
+    "/v1/auth/register": {
       "post": {
         "tags": [
           "Authentication"
@@ -140,7 +144,7 @@
         }
       }
     },
-    "/auth/login": {
+    "/v1/auth/login": {
       "post": {
         "tags": [
           "Authentication"
@@ -195,7 +199,7 @@
         }
       }
     },
-    "/auth/logout": {
+    "/v1/auth/logout": {
       "post": {
         "tags": [
           "Authentication"
@@ -227,7 +231,7 @@
         }
       }
     },
-    "/auth/me": {
+    "/v1/auth/me": {
       "get": {
         "tags": [
           "Authentication"
@@ -1838,6 +1842,243 @@
                     "updated_count": {
                       "type": "integer",
                       "example": 5
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/push-subscriptions": {
+      "get": {
+        "tags": [
+          "Push Notifications"
+        ],
+        "summary": "Listar subscrições push do usuário",
+        "description": "Retorna todas as subscrições push do usuário autenticado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de subscrições",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer",
+                            "example": 1
+                          },
+                          "endpoint": {
+                            "type": "string",
+                            "example": "https://fcm.googleapis.com/fcm/send/..."
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2025-10-26T20:00:00.000000Z"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Push Notifications"
+        ],
+        "summary": "Criar subscrição push",
+        "description": "Cria ou atualiza subscrição push do Service Worker para o usuário",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "example": "https://fcm.googleapis.com/fcm/send/...",
+                    "description": "Endpoint URL fornecido pelo Service Worker"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "properties": {
+                      "p256dh": {
+                        "type": "string",
+                        "example": "BIz...",
+                        "description": "Chave pública P-256 para criptografia"
+                      },
+                      "auth": {
+                        "type": "string",
+                        "example": "xY1...",
+                        "description": "Secret de autenticação"
+                      }
+                    },
+                    "required": [
+                      "p256dh",
+                      "auth"
+                    ]
+                  }
+                },
+                "required": [
+                  "endpoint",
+                  "keys"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Subscrição salva com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Push subscription saved successfully"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "example": 1
+                        },
+                        "endpoint": {
+                          "type": "string",
+                          "example": "https://fcm.googleapis.com/fcm/send/..."
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Erro de validação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Validation failed"
+                    },
+                    "errors": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Push Notifications"
+        ],
+        "summary": "Deletar subscrição push",
+        "description": "Remove subscrição push do Service Worker",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "endpoint": {
+                    "type": "string",
+                    "example": "https://fcm.googleapis.com/fcm/send/...",
+                    "description": "Endpoint URL da subscrição a ser removida"
+                  }
+                },
+                "required": [
+                  "endpoint"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Subscrição removida com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Push subscription deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Subscrição não encontrada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Push subscription not found"
                     }
                   }
                 }

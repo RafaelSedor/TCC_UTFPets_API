@@ -1,4 +1,8 @@
 import { WebDriver, By, until, WebElement } from 'selenium-webdriver';
+import * as dotenv from 'dotenv';
+
+// Carregar variáveis de ambiente
+dotenv.config();
 
 export abstract class BasePage {
   protected driver: WebDriver;
@@ -6,7 +10,7 @@ export abstract class BasePage {
 
   constructor(driver: WebDriver) {
     this.driver = driver;
-    this.baseUrl = process.env.BASE_URL || 'http://localhost:4201';
+    this.baseUrl = process.env.BASE_URL || 'http://localhost:4200';
   }
 
   async navigateTo(path: string = ''): Promise<void> {
@@ -54,5 +58,64 @@ export abstract class BasePage {
 
   async getCurrentUrl(): Promise<string> {
     return await this.driver.getCurrentUrl();
+  }
+
+  async waitForElementNotVisible(locator: By, timeout: number = 10000): Promise<void> {
+    const element = await this.driver.findElement(locator);
+    await this.driver.wait(until.elementIsNotVisible(element), timeout);
+  }
+
+  async clickWhenClickable(locator: By, timeout: number = 10000): Promise<void> {
+    const element = await this.waitForElement(locator, timeout);
+    await this.driver.wait(until.elementIsVisible(element), timeout);
+    await this.driver.wait(until.elementIsEnabled(element), timeout);
+    await element.click();
+  }
+
+  async isElementVisible(locator: By): Promise<boolean> {
+    try {
+      const element = await this.driver.findElement(locator);
+      return await element.isDisplayed();
+    } catch {
+      return false;
+    }
+  }
+
+  async waitForLoading(timeout: number = 10000): Promise<void> {
+    // Aguarda loading spinners desaparecerem
+    try {
+      const loadingLocator = By.css('.animate-spin, .loading, .spinner');
+      await this.waitForElementNotVisible(loadingLocator, timeout);
+    } catch {
+      // Se não encontrar loading, continua
+    }
+  }
+
+  async scrollToTop(): Promise<void> {
+    await this.driver.executeScript('window.scrollTo(0, 0);');
+  }
+
+  async getAttribute(locator: By, attribute: string): Promise<string | null> {
+    const element = await this.waitForElement(locator);
+    return await element.getAttribute(attribute);
+  }
+
+  async isEnabled(locator: By): Promise<boolean> {
+    try {
+      const element = await this.driver.findElement(locator);
+      return await element.isEnabled();
+    } catch {
+      return false;
+    }
+  }
+
+  async getElementCount(locator: By): Promise<number> {
+    const elements = await this.driver.findElements(locator);
+    return elements.length;
+  }
+
+  async selectDropdown(locator: By, value: string): Promise<void> {
+    const select = await this.waitForElementVisible(locator);
+    await select.findElement(By.css(`option[value="${value}"]`)).click();
   }
 }

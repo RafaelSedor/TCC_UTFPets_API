@@ -28,6 +28,25 @@ class MealController extends BaseController
     }
 
     /**
+     * Lista todas as refeições de todos os pets do usuário autenticado
+     */
+    public function indexAll(): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Buscar todos os pets que o usuário possui ou tem acesso
+        $petIds = $user->pets()->pluck('id');
+
+        // Buscar todas as refeições destes pets
+        $meals = Meal::whereIn('pet_id', $petIds)
+            ->with('pet:id,name,species')
+            ->orderBy('scheduled_for', 'desc')
+            ->get();
+
+        return response()->json($meals);
+    }
+
+    /**
      * Lista todas as refeições de um pet
      */
     public function index(Pet $pet): JsonResponse

@@ -9,37 +9,37 @@ import { Pet, PetFormData } from '../../../core/models/pet.model';
 })
 export class PetService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/v1/pets`;
+  private apiUrl = `${environment.apiUrl}/pets`;
 
-  getAll(): Observable<{ data: Pet[] }> {
-    return this.http.get<{ data: Pet[] }>(this.apiUrl);
+  getAll(): Observable<Pet[]> {
+    return this.http.get<Pet[]>(this.apiUrl);
   }
 
-  getById(id: number): Observable<{ data: Pet }> {
-    return this.http.get<{ data: Pet }>(`${this.apiUrl}/${id}`);
+  getById(id: number): Observable<Pet> {
+    return this.http.get<Pet>(`${this.apiUrl}/${id}`);
   }
 
-  create(data: PetFormData): Observable<{ data: Pet }> {
+  create(data: PetFormData): Observable<Pet> {
     const formData = this.toFormData(data);
-    return this.http.post<{ data: Pet }>(this.apiUrl, formData);
+    return this.http.post<Pet>(this.apiUrl, formData);
   }
 
-  update(id: number, data: Partial<PetFormData>): Observable<{ data: Pet }> {
+  update(id: number, data: Partial<PetFormData>): Observable<Pet> {
     const formData = this.toFormData(data);
     // Laravel method spoofing para PUT via FormData
     formData.append('_method', 'PUT');
-    return this.http.post<{ data: Pet }>(`${this.apiUrl}/${id}`, formData);
+    return this.http.post<Pet>(`${this.apiUrl}/${id}`, formData);
   }
 
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  uploadPhoto(petId: number, photo: File): Observable<{ data: Pet }> {
+  uploadPhoto(petId: number, photo: File): Observable<Pet> {
     const formData = new FormData();
     formData.append('photo', photo);
     formData.append('_method', 'PUT');
-    return this.http.post<{ data: Pet }>(`${this.apiUrl}/${petId}`, formData);
+    return this.http.post<Pet>(`${this.apiUrl}/${petId}`, formData);
   }
 
   private toFormData(data: Partial<PetFormData>): FormData {

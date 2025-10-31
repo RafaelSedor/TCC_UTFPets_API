@@ -1,14 +1,18 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { NotificationBellComponent } from '../components/notification-bell.component';
+import { ModalComponent } from '../components/modal.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
   imports: [
     CommonModule,
-    RouterModule
+    RouterModule,
+    NotificationBellComponent,
+    ModalComponent
   ],
   template: `
     <div class="flex h-screen bg-gray-50">
@@ -110,6 +114,20 @@ import { AuthService } from '../services/auth.service';
               <span class="ml-3 font-medium">Compartilhamento</span>
             }
           </a>
+
+          <a
+            routerLink="/app/invitations"
+            routerLinkActive="bg-white bg-opacity-20 shadow-lg"
+            class="flex items-center px-3 py-3 mb-2 rounded-lg hover:bg-white hover:bg-opacity-10 transition-all duration-200 group"
+            [class.justify-center]="isSidebarCollapsed()"
+          >
+            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            @if (!isSidebarCollapsed()) {
+              <span class="ml-3 font-medium">Convites</span>
+            }
+          </a>
         </nav>
 
         <!-- Logout Button at Bottom -->
@@ -143,8 +161,14 @@ import { AuthService } from '../services/auth.service';
           </button>
 
           <div class="flex items-center space-x-4">
+            <!-- Notification Bell -->
+            <app-notification-bell></app-notification-bell>
+
             <!-- User Profile -->
-            <div class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+            <a
+              routerLink="/app/profile"
+              class="flex items-center space-x-3 px-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            >
               <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 rounded-full flex items-center justify-center text-white font-bold">
                 U
               </div>
@@ -152,7 +176,7 @@ import { AuthService } from '../services/auth.service';
                 <p class="text-sm font-medium text-gray-700">Usuário</p>
                 <p class="text-xs text-gray-500">Ver perfil</p>
               </div>
-            </div>
+            </a>
           </div>
         </header>
 
@@ -161,12 +185,16 @@ import { AuthService } from '../services/auth.service';
           <router-outlet></router-outlet>
         </main>
       </div>
+
+      <!-- Global Modal -->
+      <app-modal></app-modal>
     </div>
   `,
   styles: []
 })
 export class AppLayoutComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
   isSidebarCollapsed = signal(false);
 
   toggleSidebar(): void {
@@ -174,6 +202,16 @@ export class AppLayoutComponent {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe({
+      next: () => {
+        console.log('Logout realizado com sucesso');
+      },
+      error: (error) => {
+        console.error('Erro ao fazer logout:', error);
+        // Mesmo com erro, limpar dados locais e redirecionar
+        this.authService['clearAuthData']();
+        this.router.navigate(['/auth/login']);
+      }
+    });
   }
 }

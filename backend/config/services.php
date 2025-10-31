@@ -35,4 +35,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | VAPID Configuration (Web Push Notifications)
+    |--------------------------------------------------------------------------
+    |
+    | VAPID (Voluntary Application Server Identification) keys are used for
+    | web push notifications. These keys allow the push service to verify
+    | that the messages are coming from your application.
+    |
+    */
+    'vapid' => [
+        'subject' => env('VAPID_SUBJECT', 'mailto:noreply@utfpets.com'),
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+    ],
+
 ];

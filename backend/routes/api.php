@@ -10,6 +10,7 @@ use App\Http\Controllers\ReminderController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\PushSubscriptionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,16 +39,6 @@ Route::get('/health', function () {
     ]);
 });
 
-// Rotas públicas de autenticação
-Route::prefix('auth')->group(function () {
-    Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
-    Route::middleware('jwt.auth')->group(function () {
-        Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('me', [AuthController::class, 'me']);
-    });
-});
-
 // ========================================
 // NÃO É MUST HAVE - Artigos educacionais
 // ========================================
@@ -57,8 +48,22 @@ Route::prefix('auth')->group(function () {
 //     Route::get('/{slug}', [EducationalArticleController::class, 'show']);
 // });
 
+// Rotas da API v1
+Route::prefix('v1')->group(function () {
+    // Rotas públicas de autenticação (sem middleware)
+    Route::prefix('auth')->group(function () {
+        Route::post('register', [AuthController::class, 'register']);
+        Route::post('login', [AuthController::class, 'login']);
+    });
+});;
+
 // Rotas protegidas que requerem autenticação
 Route::prefix('v1')->middleware('jwt.auth')->group(function () {
+    // Rotas de autenticação protegidas
+    Route::prefix('auth')->group(function () {
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::get('me', [AuthController::class, 'me']);
+    });
     // Rotas de locations
     Route::get('locations', [LocationController::class, 'index']);
     Route::post('locations', [LocationController::class, 'store']);
@@ -82,7 +87,21 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::put('pets/{pet}', [PetController::class, 'update']);
     Route::post('pets/{pet}', [PetController::class, 'update']);
     Route::delete('pets/{pet}', [PetController::class, 'destroy']);
-    
+
+    // Rota global para listar todas as refeições do usuário
+    Route::get('meals', [MealController::class, 'indexAll']);
+
+    // Rotas globais de compartilhamento de pets
+    Route::get('shared-pets/by-me', [SharedPetController::class, 'sharedByMe']);
+    Route::get('shared-pets/with-me', [SharedPetController::class, 'sharedWithMe']);
+
+    // Rotas globais de compartilhamento de locations
+    Route::get('shared-locations/by-me', [SharedLocationController::class, 'sharedByMe']);
+    Route::get('shared-locations/with-me', [SharedLocationController::class, 'sharedWithMe']);
+
+    // Rota global para listar todos os lembretes do usuário
+    Route::get('reminders', [ReminderController::class, 'indexAll']);
+
     // Rotas de refeições aninhadas com pets
     Route::prefix('pets/{pet}')->group(function () {
         Route::apiResource('meals', MealController::class);
@@ -128,6 +147,11 @@ Route::prefix('v1')->middleware('jwt.auth')->group(function () {
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
     Route::patch('notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+
+    // Rotas de push subscriptions
+    Route::get('push-subscriptions', [PushSubscriptionController::class, 'index']);
+    Route::post('push-subscriptions', [PushSubscriptionController::class, 'store']);
+    Route::delete('push-subscriptions', [PushSubscriptionController::class, 'destroy']);
     
     // ========================================
     // NÃO É MUST HAVE - Calendário

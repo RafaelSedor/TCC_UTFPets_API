@@ -38,9 +38,19 @@ class Pet extends Model
         'weight' => 'float'
     ];
 
+    protected $appends = ['photo_url'];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Alias for user() relationship - represents the owner of the pet
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->user();
     }
 
     public function location(): BelongsTo
@@ -138,6 +148,14 @@ class Pet extends Model
         }
 
         return false;
+    }
+
+    /**
+     * Accessor for photo_url attribute
+     */
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->photo;
     }
 
     /**

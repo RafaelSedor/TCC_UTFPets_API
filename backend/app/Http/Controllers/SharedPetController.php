@@ -18,6 +18,73 @@ use Illuminate\Support\Facades\DB;
 class SharedPetController extends Controller
 {
     /**
+     * Lista todos os pets compartilhados PELO usuário autenticado (by-me)
+     */
+    public function sharedByMe(): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Busca todos os pets que o usuário possui e que foram compartilhados
+        $sharedPets = SharedPet::whereHas('pet', function($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+        ->with(['pet:id,name,species,photo', 'user:id,name,email'])
+        ->get()
+        ->map(function($shared) {
+            return [
+                'id' => $shared->id,
+                'pet_id' => $shared->pet_id,
+                'pet' => $shared->pet,
+                'user_id' => $shared->user_id,
+                'shared_with_user' => $shared->user,
+                'permission_level' => $shared->role->value === 'editor' ? 'write' : 'read',
+                'invitation_status' => $shared->invitation_status->value,
+                'created_at' => $shared->created_at,
+            ];
+        });
+
+        return response()->json($sharedPets);
+    }
+
+    /**
+     * Lista todos os pets compartilhados COM o usuário autenticado (with-me)
+     */
+    public function sharedWithMe(): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Busca todos os compartilhamentos onde o usuário foi convidado
+        $sharedPets = SharedPet::where('user_id', $user->id)
+            ->with(['pet:id,name,species,photo,user_id', 'pet.owner:id,name,email'])
+            ->get()
+            ->map(function($shared) {
+                $petData = [
+                    'id' => $shared->pet->id,
+                    'name' => $shared->pet->name,
+                    'species' => $shared->pet->species,
+                    'photo_url' => $shared->pet->photo,
+                    'owner' => $shared->pet->owner ? [
+                        'id' => $shared->pet->owner->id,
+                        'name' => $shared->pet->owner->name,
+                        'email' => $shared->pet->owner->email,
+                    ] : null,
+                ];
+
+                return [
+                    'id' => $shared->id,
+                    'pet_id' => $shared->pet_id,
+                    'user_id' => $shared->user_id,
+                    'pet' => $petData,
+                    'permission_level' => $shared->role->value === 'editor' ? 'write' : 'read',
+                    'invitation_status' => $shared->invitation_status->value,
+                    'created_at' => $shared->created_at,
+                ];
+            });
+
+        return response()->json($sharedPets);
+    }
+
+    /**
      * Lista todos os participantes de um pet
      */
     public function index(Pet $pet): JsonResponse

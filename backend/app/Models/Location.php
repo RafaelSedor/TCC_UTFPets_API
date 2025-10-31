@@ -33,6 +33,14 @@ class Location extends Model
     }
 
     /**
+     * Alias for user() relationship - represents the owner of the location
+     */
+    public function owner(): BelongsTo
+    {
+        return $this->user();
+    }
+
+    /**
      * Relacionamento com Pets (pets neste local)
      */
     public function pets(): HasMany

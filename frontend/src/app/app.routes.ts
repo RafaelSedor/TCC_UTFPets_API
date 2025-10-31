@@ -77,6 +77,33 @@ export const routes: Routes = [
       {
         path: 'sharing',
         loadComponent: () => import('./features/sharing/components/sharing.component').then(m => m.SharingComponent)
+      },
+      {
+        path: 'invitations',
+        loadComponent: () => import('./features/sharing/components/invitations.component').then(m => m.InvitationsComponent)
+      },
+      // Profile route
+      {
+        path: 'profile',
+        loadComponent: () => import('./core/components/profile.component').then(m => m.ProfileComponent)
+      },
+      // Notifications route
+      {
+        path: 'notifications',
+        loadComponent: () => import('./features/notifications/components/notification-list.component').then(m => m.NotificationListComponent)
+      },
+      // Admin routes
+      {
+        path: 'admin/users',
+        loadComponent: () => import('./features/admin/components/admin-users.component').then(m => m.AdminUsersComponent)
+      },
+      {
+        path: 'admin/pets',
+        loadComponent: () => import('./features/admin/components/admin-pets.component').then(m => m.AdminPetsComponent)
+      },
+      {
+        path: 'admin/audit-logs',
+        loadComponent: () => import('./features/admin/components/admin-audit-logs.component').then(m => m.AdminAuditLogsComponent)
       }
     ]
   },

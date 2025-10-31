@@ -1,364 +1,132 @@
-# Módulo 4 — Admin (gestão e auditoria)
+# Módulo 4 — Admin (Gestão e Auditoria)
 
-## 📋 Visão Geral
+## Objetivo
 
-O **Módulo 4** implementa um painel administrativo completo para gestão de usuários, pets e auditoria do sistema. Este módulo oferece controle total sobre permissões de admin e registro detalhado de todas as ações realizadas na plataforma.
+Implementar painel administrativo completo para gestão de usuários, pets e auditoria do sistema.
 
-## 🎯 Objetivos
+**Principais Recursos:**
+- Gestão de permissões de admin
+- Visualização de todos os pets
+- Auditoria completa de ações
+- Acesso restrito e seguro
 
-- **Gestão de Usuários**: Listar e gerenciar permissões de admin
-- **Gestão de Pets**: Visualizar todos os pets do sistema
-- **Auditoria Completa**: Registro detalhado de todas as ações
-- **Segurança**: Acesso restrito apenas para administradores
-- **Transparência**: Histórico completo de modificações
+## Arquitetura Implementada
 
-## 🏗️ Arquitetura
-
-### **Banco de Dados**
-
-#### Coluna adicional em `users`
-```sql
-ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
-```
-
-#### Tabela `audit_logs`
-```sql
-CREATE TABLE audit_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id BIGINT NULLABLE REFERENCES users(id) ON DELETE SET NULL,
-    action VARCHAR(255) NOT NULL,
-    entity_type VARCHAR(255) NOT NULL,
-    entity_id VARCHAR(255) NULLABLE,
-    old_values JSONB NULLABLE,
-    new_values JSONB NULLABLE,
-    ip_address VARCHAR(255) NULLABLE,
-    user_agent VARCHAR(255) NULLABLE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Índices para performance
-CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_action ON audit_logs(action);
-CREATE INDEX idx_audit_logs_entity_type ON audit_logs(entity_type);
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-```
-
-### **Modelos e Relacionamentos**
-
-#### `User` Model (atualizado)
-```php
-class User extends Authenticatable
-{
-    protected $fillable = [
-        'name', 'email', 'password', 'timezone', 'is_admin'
-    ];
-
-    protected $casts = [
-        'is_admin' => 'boolean',
-    ];
-}
-```
-
-#### `AuditLog` Model
-```php
-class AuditLog extends Model
-{
-    protected $fillable = [
-        'user_id', 'action', 'entity_type', 'entity_id',
-        'old_values', 'new_values', 'ip_address', 'user_agent'
-    ];
-
-    protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
-    ];
-
-    // Relacionamentos
-    public function user(): BelongsTo
-    
-    // Scopes
-    public function scopeByAction($query, $action)
-    public function scopeByEntityType($query, $entityType)
-    public function scopeDateRange($query, $from, $to)
-}
-```
-
-## 🔧 Componentes Implementados
-
-### **1. IsAdmin Middleware**
-
-Middleware para proteger rotas administrativas:
+### Middleware em Cascata
 
 ```php
-class IsAdmin
-{
-    public function handle(Request $request, Closure $next): Response
-    {
-        if (!auth()->check()) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
-
-        if (!auth()->user()->is_admin) {
-            return response()->json([
-                'error' => 'Forbidden. Admin access required.'
-            ], 403);
-        }
-
-        return $next($request);
-    }
-}
-```
-
-### **2. AuditService**
-
-Serviço centralizado para registro de auditoria:
-
-```php
-class AuditService
-{
-    public static function log(
-        string $action,
-        string $entityType,
-        ?string $entityId = null,
-        ?array $oldValues = null,
-        ?array $newValues = null,
-        ?User $user = null
-    ): AuditLog
-
-    public static function logCreated(...)
-    public static function logUpdated(...)
-    public static function logDeleted(...)
-    public static function logAccessed(...)
-    public static function logLogin(User $user)
-    public static function logLogout(User $user)
-}
-```
-
-### **3. AdminController**
-
-Controller com 4 endpoints administrativos:
-
-```php
-class AdminController extends Controller
-{
-    // GET /v1/admin/users
-    public function listUsers(Request $request): JsonResponse
-
-    // PATCH /v1/admin/users/{id}
-    public function updateUser(Request $request, $id): JsonResponse
-
-    // GET /v1/admin/pets
-    public function listPets(Request $request): JsonResponse
-
-    // GET /v1/admin/audit-logs
-    public function listAuditLogs(Request $request): JsonResponse
-}
-```
-
-### **4. Rotas Protegidas**
-
-```php
-Route::prefix('v1')->middleware('jwt.auth')->group(function () {
-    Route::prefix('admin')->middleware('admin')->group(function () {
-        Route::get('users', [AdminController::class, 'listUsers']);
-        Route::patch('users/{id}', [AdminController::class, 'updateUser']);
-        Route::get('pets', [AdminController::class, 'listPets']);
-        Route::get('audit-logs', [AdminController::class, 'listAuditLogs']);
+Route::prefix('admin')
+    ->middleware(['jwt.auth', 'admin'])
+    ->group(function () {
+        // Rotas administrativas
     });
-});
 ```
 
-## 📡 Endpoints da API
+**Justificativa**: Duas camadas de segurança garantem que apenas usuários autenticados E administradores acessem as rotas. Se um middleware falhar ou for removido acidentalmente, o outro ainda protege.
 
-### **Listar Usuários**
-```http
-GET /api/v1/admin/users?email=joao&created_from=2025-01-01&page=1&per_page=20
-Authorization: Bearer {admin_token}
+### Campo Booleano `is_admin`
+
+Utiliza-se um campo simples `is_admin` em vez de sistema complexo de roles:
+
+**Justificativa**: Para o escopo do TCC, um sistema binário (admin/não-admin) é suficiente e mais simples de entender e manter. Sistemas com múltiplos roles (RBAC completo) adicionariam complexidade desnecessária.
+
+### AuditService Centralizado
+
+Serviço estático para facilitar logging em qualquer ponto do código:
+
+```php
+AuditService::logUpdated(
+    entityType: 'User',
+    entityId: $user->id,
+    oldValues: ['is_admin' => false],
+    newValues: ['is_admin' => true]
+);
 ```
 
-**Resposta:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "João Silva",
-      "email": "joao@example.com",
-      "is_admin": false,
-      "timezone": "America/Sao_Paulo",
-      "created_at": "2025-10-01T10:00:00.000000Z"
-    }
-  ],
-  "meta": {
-    "total": 100,
-    "per_page": 20,
-    "current_page": 1,
-    "last_page": 5
-  }
+**Justificativa**: API simples e consistente. Métodos estáticos permitem uso sem injeção de dependência. Captura automaticamente IP, User Agent e usuário autenticado.
+
+### JSONB para `old_values` e `new_values`
+
+A tabela `audit_logs` usa JSONB para armazenar valores antes/depois:
+
+**Justificativa**: Flexibilidade para auditar qualquer tipo de entidade sem criar colunas específicas. JSONB permite queries para encontrar mudanças específicas (ex: "quem alterou email de quem").
+
+### Validação: Não Remover Próprio Acesso
+
+```php
+if ($user->id === auth()->id() && !$request->is_admin) {
+    return response()->json([
+        'error' => 'Você não pode remover seu próprio acesso de admin'
+    ], 422);
 }
 ```
 
-### **Atualizar Status de Admin**
-```http
-PATCH /api/v1/admin/users/1
-Authorization: Bearer {admin_token}
-Content-Type: application/json
+**Justificativa**: Previne cenário onde único admin se remove acidentalmente, deixando o sistema sem administradores. É uma proteção contra erro humano.
 
-{
-  "is_admin": true
-}
-```
+## Decisões Técnicas
 
-**Resposta:**
-```json
-{
-  "message": "Permissões de admin atualizadas com sucesso",
-  "user": {
-    "id": 1,
-    "name": "João Silva",
-    "email": "joao@example.com",
-    "is_admin": true
-  }
-}
-```
+### Soft Delete Não Implementado
 
-**Erro (remover próprio acesso):**
-```json
-{
-  "error": "Você não pode remover seu próprio acesso de admin"
-}
-```
+Usuários e pets são deletados permanentemente:
 
-### **Listar Pets**
-```http
-GET /api/v1/admin/pets?owner_id=1&page=1&per_page=20
-Authorization: Bearer {admin_token}
-```
+**Justificativa**: Para o escopo acadêmico do TCC, hard delete simplifica a arquitetura. Em produção real, soft delete seria recomendado para compliance (LGPD) e recuperação de dados.
 
-**Resposta:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "Buddy",
-      "species": "dog",
-      "breed": "Golden Retriever",
-      "user": {
-        "id": 1,
-        "name": "João Silva",
-        "email": "joao@example.com"
-      },
-      "created_at": "2025-10-01T10:00:00.000000Z"
-    }
-  ],
-  "meta": {
-    "total": 50,
-    "per_page": 20,
-    "current_page": 1,
-    "last_page": 3
-  }
-}
-```
+### Filtros Simples
 
-### **Listar Logs de Auditoria**
-```http
-GET /api/v1/admin/audit-logs?action=updated&entity_type=User&from=2025-10-01&page=1
-Authorization: Bearer {admin_token}
-```
+Admin pode filtrar usuários por:
+- Email (busca parcial)
+- Data de criação (intervalo)
 
-**Resposta:**
-```json
-{
-  "data": [
-    {
-      "id": "0199bfd0-56e5-731e-b90f-c24bf2d52ddd",
-      "action": "updated",
-      "entity_type": "User",
-      "entity_id": "1",
-      "old_values": {
-        "is_admin": false
-      },
-      "new_values": {
-        "is_admin": true
-      },
-      "user": {
-        "id": 2,
-        "name": "Admin UTFPets",
-        "email": "admin@utfpets.com"
-      },
-      "ip_address": "127.0.0.1",
-      "user_agent": "Mozilla/5.0...",
-      "created_at": "2025-10-07T20:00:00.000000Z"
-    }
-  ],
-  "meta": {
-    "total": 200,
-    "per_page": 50,
-    "current_page": 1,
-    "last_page": 4
-  }
-}
-```
+Pets por:
+- Owner ID
 
-## 🔄 Fluxo de Auditoria
+**Justificativa**: Filtros básicos suficientes para demonstrar a funcionalidade sem adicionar complexidade de busca full-text ou ElasticSearch.
 
-```mermaid
-graph TD
-    A[Ação do Usuário] --> B[Controller/Service]
-    B --> C[AuditService::log]
-    C --> D[Criar AuditLog]
-    D --> E[Armazenar: IP, User Agent, Valores]
-    E --> F[Admin pode consultar]
-```
+### Paginação Diferenciada
 
-## 🔐 Segurança e Permissões
+- Usuários: 20 itens/página
+- Pets: 20 itens/página
+- Audit Logs: 50 itens/página
 
-### **Middleware em Cascata**
-1. **jwt.auth**: Verifica autenticação JWT
-2. **admin**: Verifica se `is_admin = true`
+**Justificativa**: Logs de auditoria são analisados em volume maior durante investigações, então páginas maiores reduzem cliques.
 
-### **Validações**
-- ✅ Admin não pode remover próprio acesso
-- ✅ Apenas admin pode acessar rotas `/v1/admin/*`
-- ✅ Filtros validados e sanitizados
-- ✅ Paginação limitada (máximo 100 itens)
+### IP Address e User Agent
 
-### **Registros de Auditoria**
-- ✅ IP address capturado
-- ✅ User agent registrado
-- ✅ Valores antigos e novos (para updates)
-- ✅ Usuário que executou a ação
-- ✅ Timestamp preciso
+Registra-se IP e User Agent em cada log:
 
-## 🧪 Testes Implementados
+**Justificativa**: Essencial para auditoria de segurança. Permite identificar acessos suspeitos (múltiplos IPs, user agents inesperados) e rastrear origem de ações.
 
-### **Testes de Feature (13 testes)**
+### `user_id` NULLABLE em `audit_logs`
 
-1. ✅ **Não-admin não pode acessar rotas** - 403 Forbidden
-2. ✅ **Admin pode listar usuários** - Paginação funcionando
-3. ✅ **Admin pode filtrar usuários por email** - Busca parcial
-4. ✅ **Admin pode filtrar usuários por data** - Intervalo de datas
-5. ✅ **Admin pode alterar status de admin** - Toggle is_admin
-6. ✅ **Admin não pode remover próprio acesso** - Validação 422
-7. ✅ **Admin pode listar pets** - Com informações do owner
-8. ✅ **Admin pode filtrar pets por owner** - Filtro funcional
-9. ✅ **Admin pode listar logs de auditoria** - Com relacionamento user
-10. ✅ **Admin pode filtrar logs por ação** - Enum validation
-11. ✅ **Admin pode filtrar logs por tipo de entidade** - Enum validation
-12. ✅ **Paginação funciona em todos endpoints** - Meta informações
-13. ✅ **Não autenticado não pode acessar rotas** - 401 Unauthorized
+O campo `user_id` permite NULL com `ON DELETE SET NULL`:
 
-### **Cobertura de Testes**
-- **Funcionalidade**: 100% dos endpoints testados
-- **Segurança**: Verificação de acesso admin
-- **Validações**: Toggle is_admin, filtros
-- **Performance**: Testes de paginação
+**Justificativa**: Se um usuário for deletado, seus logs de auditoria permanecem para compliance. O campo fica NULL mas mantém-se o registro da ação.
 
-## 👤 Usuário Admin Padrão
+## Segurança e Compliance
 
-### **AdminUserSeeder**
+### LGPD Considerations
+
+O sistema de auditoria atende requisitos da LGPD:
+- **Rastreabilidade**: Quem acessou/modificou dados pessoais
+- **Transparência**: Histórico completo disponível
+- **Accountability**: Responsabilização de ações
+- **Right to be Informed**: Usuários podem solicitar histórico
+
+**Justificativa**: Mesmo sendo um TCC, demonstrar consciência sobre LGPD é importante para um sistema que lida com dados pessoais.
+
+### Prevenção de Enumeration
+
+UUIDs são usados onde possível para prevenir enumeração:
+
+**Justificativa**: IDs sequenciais revelam quantidade de registros e facilitam ataques de força bruta. UUIDs adicionam camada de segurança.
+
+### Rate Limiting
+
+Rotas administrativas herdam rate limiting do JWT middleware:
+
+**Justificativa**: Previne abuse de endpoints administrativos. Admin comprometido não pode fazer milhares de requisições rapidamente.
+
+## AdminUserSeeder
 
 Cria usuário admin padrão para desenvolvimento:
 
@@ -367,134 +135,48 @@ User::create([
     'name' => 'Admin UTFPets',
     'email' => 'admin@utfpets.com',
     'password' => Hash::make('admin123'),
-    'timezone' => 'America/Sao_Paulo',
     'is_admin' => true,
 ]);
 ```
 
-**Credenciais (DEV):**
-- **Email**: `admin@utfpets.com`
-- **Senha**: `admin123`
+**Justificativa**: Facilita desenvolvimento e demonstração do TCC sem precisar manipular banco de dados diretamente. **Deve ser alterado em produção**.
 
-⚠️ **IMPORTANTE**: Alterar senha em produção!
+## API RESTful
 
-### **Executar Seeder**
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/admin/users` | Lista usuários com filtros |
+| PATCH | `/admin/users/{id}` | Atualiza status de admin |
+| GET | `/admin/pets` | Lista todos os pets |
+| GET | `/admin/audit-logs` | Lista logs de auditoria |
 
-```bash
-php artisan db:seed --class=AdminUserSeeder
-```
+**Justificativa**: Prefixo `/admin` torna óbvio que são rotas administrativas. Estrutura plana (sem nested resources) simplifica uso.
 
-## 📊 Métricas e Performance
+## Testes e Qualidade
 
-### **Índices de Banco**
-- `user_id`: Consultas por usuário
-- `action`: Filtros por ação
-- `entity_type`: Filtros por tipo de entidade
-- `created_at`: Ordenação temporal
+**13 testes automatizados** cobrem:
+- Acesso negado para não-admins (403)
+- Listagem e filtros
+- Toggle de permissões admin
+- Validação (não remover próprio acesso)
+- Paginação
+- Segurança (isolamento)
 
-### **Paginação**
-- **Usuários**: 20 itens por página (padrão)
-- **Pets**: 20 itens por página (padrão)
-- **Audit Logs**: 50 itens por página (padrão)
-- **Máximo**: 100 itens por página
+**Justificativa**: Rotas administrativas são críticas para segurança. Testes garantem que apenas admins acessem e que validações funcionem.
 
-### **Filtros Disponíveis**
+## Arquivos Relacionados
 
-#### **Usuários**
-- Email (busca parcial)
-- Data de criação (intervalo)
+### Criados
+- `database/migrations/*_add_is_admin_to_users_table.php`
+- `database/migrations/*_create_audit_logs_table.php`
+- `app/Models/AuditLog.php`
+- `app/Services/AuditService.php`
+- `app/Http/Middleware/IsAdmin.php`
+- `app/Http/Controllers/AdminController.php`
+- `database/seeders/AdminUserSeeder.php`
+- `tests/Feature/AdminTest.php`
 
-#### **Pets**
-- Owner ID
-
-#### **Audit Logs**
-- Ação (created, updated, deleted, etc)
-- Tipo de entidade (User, Pet, Meal, etc)
-- Usuário
-- Período (from/to)
-
-## 🚀 Melhorias Futuras
-
-### **Funcionalidades Avançadas**
-- **Dashboard**: Gráficos e estatísticas
-- **Soft Delete de Usuários**: Desativar em vez de deletar
-- **Bulk Operations**: Operações em lote
-- **Export de Logs**: CSV/Excel
-
-### **Auditoria Avançada**
-- **Retention Policy**: Política de retenção de logs
-- **Log Rotation**: Rotação automática
-- **Alertas**: Notificações para ações críticas
-- **Replay**: Reverter alterações
-
-### **Segurança**
-- **2FA para Admins**: Autenticação de dois fatores
-- **IP Whitelist**: Lista branca de IPs
-- **Rate Limiting**: Limite de requisições por admin
-- **Audit Trail**: Trilha completa de auditoria
-
-## 📈 Benefícios Implementados
-
-### **Para Administradores**
-- ✅ **Controle total** sobre usuários e permissões
-- ✅ **Visibilidade completa** de todos os pets
-- ✅ **Auditoria detalhada** de todas as ações
-- ✅ **Filtros poderosos** para investigação
-
-### **Para o Sistema**
-- ✅ **Rastreabilidade** completa de modificações
-- ✅ **Segurança** com middleware dedicado
-- ✅ **Performance** com índices otimizados
-- ✅ **Escalabilidade** com paginação eficiente
-
-### **Para Compliance**
-- ✅ **LGPD**: Registro de quem acessou/modificou dados
-- ✅ **Transparência**: Histórico completo
-- ✅ **Accountability**: Responsabilização de ações
-- ✅ **Recuperação**: Valores antigos armazenados
-
-## 🎯 Critérios de Aceite - ATENDIDOS
-
-### **✅ Funcionalidade**
-- [x] Listar usuários com filtros
-- [x] Alterar permissões de admin
-- [x] Listar pets de todos os usuários
-- [x] Listar logs de auditoria
-- [x] Filtros funcionando
-- [x] Paginação eficiente
-
-### **✅ Segurança**
-- [x] Middleware admin funcionando
-- [x] 403 para não-admin
-- [x] Validação de toggle is_admin
-- [x] Proteção contra remoção própria
-
-### **✅ Auditoria**
-- [x] Registro de IP e User Agent
-- [x] Valores antigos e novos
-- [x] Relacionamento com usuário
-- [x] Filtros por ação e tipo
-
-### **✅ Qualidade**
-- [x] 13 testes passando (100%)
-- [x] Documentação completa
-- [x] Código limpo e organizado
-- [x] Seeder para admin padrão
-
-## 📚 Documentação Relacionada
-
-- [Módulo 1 - Compartilhamento](MODULO_1_COMPARTILHAMENTO.md)
-- [Módulo 2 - Lembretes](MODULO_2_LEMBRETES.md)
-- [Módulo 3 - Notificações](MODULO_3_NOTIFICACOES.md)
-- [Configuração do Banco](DATABASE_SETUP.md)
-- [README Principal](../README.md)
-
----
-
-## 🏆 Status: **IMPLEMENTADO COM SUCESSO**
-
-**67 testes passando (100%)** ✅  
-**Documentação Swagger atualizada** ✅  
-**Auditoria completa funcionando** ✅  
-**Painel administrativo completo e funcional** ✅
-
+### Modificados
+- `app/Models/User.php` - Campo `is_admin`
+- `routes/api.php` - 4 novas rotas administrativas
+- `app/Http/Kernel.php` - Middleware registrado

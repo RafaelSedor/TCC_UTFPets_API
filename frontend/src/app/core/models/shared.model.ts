@@ -1,5 +1,5 @@
 export interface Location {
-  id: number;
+  id: string;  // UUID
   name: string;
   address?: string;
   created_at: string;
@@ -9,7 +9,7 @@ export interface Location {
 
 export interface SharedLocation {
   id: number;
-  location_id: number;
+  location_id: string;  // UUID - references Location
   shared_with_user_id: number;
   role: 'owner' | 'editor' | 'viewer';
   status: 'pending' | 'accepted' | 'rejected';
@@ -26,8 +26,10 @@ export interface SharedLocation {
 export interface SharedPetAccess {
   id: number;
   pet_id: number;
-  shared_with_user_id: number;
+  shared_with_user_id?: number;
+  user_id?: number;
   permission_level: 'read' | 'write';
+  invitation_status?: 'pending' | 'accepted' | 'declined' | 'revoked';
   created_at: string;
   updated_at: string;
   pet: {

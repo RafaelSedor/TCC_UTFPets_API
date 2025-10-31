@@ -14,6 +14,61 @@ use Illuminate\Support\Facades\DB;
 class SharedLocationController extends Controller
 {
     /**
+     * Lista todas as locations compartilhadas PELO usuário autenticado (by-me)
+     */
+    public function sharedByMe(): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Busca todas as locations que o usuário possui e que foram compartilhadas
+        $sharedLocations = SharedLocation::whereHas('location', function($query) use ($user) {
+            $query->where('user_id', $user->id);
+        })
+        ->with(['location:id,name,description', 'user:id,name,email'])
+        ->get()
+        ->map(function($shared) {
+            return [
+                'id' => $shared->id,
+                'location_id' => $shared->location_id,
+                'location' => $shared->location,
+                'user_id' => $shared->user_id,
+                'shared_with_user' => $shared->user,
+                'role' => $shared->role->value,
+                'invitation_status' => $shared->invitation_status->value,
+                'created_at' => $shared->created_at,
+            ];
+        });
+
+        return response()->json($sharedLocations);
+    }
+
+    /**
+     * Lista todas as locations compartilhadas COM o usuário autenticado (with-me)
+     */
+    public function sharedWithMe(): JsonResponse
+    {
+        $user = auth()->user();
+
+        // Busca todos os compartilhamentos onde o usuário foi convidado
+        $sharedLocations = SharedLocation::where('user_id', $user->id)
+            ->with(['location:id,name,description,user_id', 'location.owner:id,name,email'])
+            ->get()
+            ->map(function($shared) {
+                return [
+                    'id' => $shared->id,
+                    'location_id' => $shared->location_id,
+                    'location' => $shared->location,
+                    'owner' => $shared->location->owner,
+                    'role' => $shared->role->value,
+                    'invitation_status' => $shared->invitation_status->value,
+                    'created_at' => $shared->created_at,
+                ];
+            });
+
+        return response()->json($sharedLocations);
+    }
+
+    /**
      * Lista todos os participantes de uma location
      */
     public function index(Location $location): JsonResponse

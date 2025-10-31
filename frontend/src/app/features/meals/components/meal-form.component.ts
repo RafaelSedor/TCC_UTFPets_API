@@ -2,19 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MealService } from '../services/meal.service';
 import { PetService } from '../../pets/services/pet.service';
 import { Pet } from '../../../core/models/pet.model';
-import { MealFormData } from '../../../core/models/meal.model';
 
 @Component({
   selector: 'app-meal-form',
@@ -22,206 +12,179 @@ import { MealFormData } from '../../../core/models/meal.model';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-
-    MatProgressSpinnerModule,
-    MatSnackBarModule
+    RouterModule
   ],
   template: `
-    <div class="container">
-      <mat-card>
-        <mat-card-header>
-          <button mat-icon-button routerLink="/app/meals">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <mat-card-title>{{ isEditMode ? 'Editar Refeição' : 'Registrar Refeição' }}</mat-card-title>
-        </mat-card-header>
+    <div class="max-w-3xl mx-auto">
+      <!-- Header -->
+      <div class="flex items-center space-x-4 mb-8">
+        <button
+          routerLink="/app/meals"
+          class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">{{ isEditMode ? 'Editar Refeição' : 'Registrar Refeição' }}</h1>
+          <p class="text-gray-600 mt-1">{{ isEditMode ? 'Atualize as informações da refeição' : 'Registre uma nova refeição para seu pet' }}</p>
+        </div>
+      </div>
 
-        <mat-card-content>
-          @if (loading) {
-            <div class="loading">
-              <mat-spinner></mat-spinner>
-            </div>
-          } @else {
-            <form [formGroup]="mealForm" (ngSubmit)="onSubmit()">
-              <mat-form-field appearance="outline">
-                <mat-label>Pet</mat-label>
-                <mat-select formControlName="pet_id" required>
-                  @for (pet of pets; track pet.id) {
-                    <mat-option [value]="pet.id">{{ pet.name }}</mat-option>
-                  }
-                </mat-select>
-                @if (mealForm.get('pet_id')?.hasError('required') && mealForm.get('pet_id')?.touched) {
-                  <mat-error>Pet é obrigatório</mat-error>
+      <!-- Form Card -->
+      <div class="card">
+        @if (loading) {
+          <div class="flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
+            <p class="text-gray-600 mt-4 text-lg">Carregando...</p>
+          </div>
+        } @else {
+          <form [formGroup]="mealForm" (ngSubmit)="onSubmit()" class="space-y-6">
+            <!-- Pet Select -->
+            <div>
+              <label for="pet_id" class="label">Pet *</label>
+              <select
+                id="pet_id"
+                formControlName="pet_id"
+                class="input"
+                [class.input-error]="mealForm.get('pet_id')?.invalid && mealForm.get('pet_id')?.touched"
+              >
+                <option value="">Selecione um pet</option>
+                @for (pet of pets; track pet.id) {
+                  <option [value]="pet.id">{{ pet.name }}</option>
                 }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Data e Hora da Refeição</mat-label>
-                <input matInput type="datetime-local" formControlName="meal_time" required>
-                @if (mealForm.get('meal_time')?.hasError('required') && mealForm.get('meal_time')?.touched) {
-                  <mat-error>Data e hora são obrigatórios</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Quantidade (gramas)</mat-label>
-                <input matInput type="number" formControlName="quantity" required min="0">
-                <mat-hint>Quantidade em gramas</mat-hint>
-                @if (mealForm.get('quantity')?.hasError('required') && mealForm.get('quantity')?.touched) {
-                  <mat-error>Quantidade é obrigatória</mat-error>
-                }
-                @if (mealForm.get('quantity')?.hasError('min')) {
-                  <mat-error>Quantidade deve ser maior que zero</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Observações</mat-label>
-                <textarea matInput formControlName="notes" rows="4" placeholder="Ex: Comeu tudo, deixou um pouco, etc."></textarea>
-              </mat-form-field>
-
-              <div class="photo-upload">
-                <div class="photo-preview">
-                  @if (photoPreview) {
-                    <img [src]="photoPreview" alt="Preview">
-                  } @else {
-                    <div class="no-photo">
-                      <mat-icon>add_photo_alternate</mat-icon>
-                      <span>Adicionar foto</span>
-                    </div>
-                  }
-                </div>
-                <input type="file" #fileInput accept="image/*" (change)="onFileSelected($event)" style="display: none">
-                <button mat-stroked-button type="button" (click)="fileInput.click()">
-                  <mat-icon>upload</mat-icon>
-                  {{ photoPreview ? 'Trocar Foto' : 'Adicionar Foto' }}
-                </button>
-                @if (photoPreview) {
-                  <button mat-stroked-button type="button" color="warn" (click)="removePhoto()">
-                    <mat-icon>delete</mat-icon>
-                    Remover Foto
-                  </button>
-                }
-              </div>
-
-              @if (errorMessage) {
-                <div class="error-message">
-                  <mat-icon>error</mat-icon>
-                  {{ errorMessage }}
-                </div>
+              </select>
+              @if (mealForm.get('pet_id')?.hasError('required') && mealForm.get('pet_id')?.touched) {
+                <p class="error-message">Pet é obrigatório</p>
               }
+            </div>
 
-              <div class="form-actions">
-                <button mat-stroked-button type="button" routerLink="/app/meals">
-                  Cancelar
-                </button>
-                <button mat-raised-button color="primary" type="submit" [disabled]="mealForm.invalid || submitting">
-                  @if (submitting) {
-                    <mat-spinner diameter="20"></mat-spinner>
-                  } @else {
-                    {{ isEditMode ? 'Atualizar' : 'Registrar' }}
-                  }
-                </button>
+            <!-- Food Type Input -->
+            <div>
+              <label for="food_type" class="label">Tipo de Alimento *</label>
+              <input
+                id="food_type"
+                type="text"
+                formControlName="food_type"
+                placeholder="Ex: Ração Premium, Patê de Frango, etc."
+                class="input"
+                [class.input-error]="mealForm.get('food_type')?.invalid && mealForm.get('food_type')?.touched"
+              />
+              @if (mealForm.get('food_type')?.hasError('required') && mealForm.get('food_type')?.touched) {
+                <p class="error-message">Tipo de alimento é obrigatório</p>
+              }
+            </div>
+
+            <!-- Quantity and Unit -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Quantity Input -->
+              <div>
+                <label for="quantity" class="label">Quantidade *</label>
+                <input
+                  id="quantity"
+                  type="number"
+                  formControlName="quantity"
+                  placeholder="Ex: 150"
+                  min="0"
+                  step="0.01"
+                  class="input"
+                  [class.input-error]="mealForm.get('quantity')?.invalid && mealForm.get('quantity')?.touched"
+                />
+                @if (mealForm.get('quantity')?.hasError('required') && mealForm.get('quantity')?.touched) {
+                  <p class="error-message">Quantidade é obrigatória</p>
+                }
+                @if (mealForm.get('quantity')?.hasError('min') && mealForm.get('quantity')?.touched) {
+                  <p class="error-message">Quantidade deve ser maior que zero</p>
+                }
               </div>
-            </form>
-          }
-        </mat-card-content>
-      </mat-card>
+
+              <!-- Unit Select -->
+              <div>
+                <label for="unit" class="label">Unidade *</label>
+                <select
+                  id="unit"
+                  formControlName="unit"
+                  class="input"
+                  [class.input-error]="mealForm.get('unit')?.invalid && mealForm.get('unit')?.touched"
+                >
+                  <option value="">Selecione</option>
+                  <option value="g">Gramas (g)</option>
+                  <option value="ml">Mililitros (ml)</option>
+                </select>
+                @if (mealForm.get('unit')?.hasError('required') && mealForm.get('unit')?.touched) {
+                  <p class="error-message">Unidade é obrigatória</p>
+                }
+              </div>
+            </div>
+
+            <!-- Date Time Input -->
+            <div>
+              <label for="scheduled_for" class="label">Data e Hora da Refeição *</label>
+              <input
+                id="scheduled_for"
+                type="datetime-local"
+                formControlName="scheduled_for"
+                class="input"
+                [class.input-error]="mealForm.get('scheduled_for')?.invalid && mealForm.get('scheduled_for')?.touched"
+              />
+              @if (mealForm.get('scheduled_for')?.hasError('required') && mealForm.get('scheduled_for')?.touched) {
+                <p class="error-message">Data e hora são obrigatórios</p>
+              }
+            </div>
+
+            <!-- Notes Textarea -->
+            <div>
+              <label for="notes" class="label">Observações</label>
+              <textarea
+                id="notes"
+                formControlName="notes"
+                rows="4"
+                placeholder="Ex: Comeu tudo, deixou um pouco, preferiu a ração nova..."
+                class="input resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Error Message -->
+            @if (errorMessage) {
+              <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center space-x-2">
+                <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ errorMessage }}</span>
+              </div>
+            }
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                routerLink="/app/meals"
+                class="btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn-primary"
+                [disabled]="mealForm.invalid || submitting"
+              >
+                @if (submitting) {
+                  <div class="flex items-center space-x-2">
+                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>{{ isEditMode ? 'Atualizando...' : 'Registrando...' }}</span>
+                  </div>
+                } @else {
+                  <span>{{ isEditMode ? 'Atualizar' : 'Registrar' }}</span>
+                }
+              </button>
+            </div>
+          </form>
+        }
+      </div>
     </div>
   `,
-  styles: [`
-    .container {
-      max-width: 600px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    mat-card-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    .photo-upload {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: center;
-    }
-
-    .photo-preview {
-      width: 200px;
-      height: 200px;
-      border: 2px dashed #ddd;
-      border-radius: 8px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f9f9f9;
-    }
-
-    .photo-preview img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .no-photo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      color: #999;
-    }
-
-    .no-photo mat-icon {
-      font-size: 48px;
-      width: 48px;
-      height: 48px;
-    }
-
-    .error-message {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: #ffebee;
-      color: #c62828;
-      border-radius: 4px;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 48px;
-    }
-  `]
+  styles: []
 })
 export class MealFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -229,12 +192,9 @@ export class MealFormComponent implements OnInit {
   private petService = inject(PetService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private snackBar = inject(MatSnackBar);
 
   mealForm: FormGroup;
   pets: Pet[] = [];
-  selectedFile?: File;
-  photoPreview?: string;
   isEditMode = false;
   mealId?: number;
   loading = true;
@@ -244,8 +204,10 @@ export class MealFormComponent implements OnInit {
   constructor() {
     this.mealForm = this.fb.group({
       pet_id: ['', Validators.required],
-      meal_time: ['', Validators.required],
-      quantity: ['', [Validators.required, Validators.min(1)]],
+      food_type: ['', Validators.required],
+      quantity: ['', [Validators.required, Validators.min(0)]],
+      unit: ['', Validators.required],
+      scheduled_for: ['', Validators.required],
       notes: ['']
     });
   }
@@ -270,76 +232,66 @@ export class MealFormComponent implements OnInit {
       // Set current date/time as default
       const now = new Date();
       const dateTimeString = now.toISOString().slice(0, 16);
-      this.mealForm.patchValue({ meal_time: dateTimeString });
+      this.mealForm.patchValue({
+        scheduled_for: dateTimeString,
+        unit: 'g' // Default to grams
+      });
     }
   }
 
   loadPets(): void {
     this.petService.getAll().subscribe({
-      next: (response) => {
-        this.pets = response.data;
+      next: (pets) => {
+        this.pets = Array.isArray(pets) ? pets : [];
       },
       error: (error) => {
         console.error('Erro ao carregar pets:', error);
         this.errorMessage = 'Erro ao carregar lista de pets';
+        this.pets = [];
       }
     });
   }
 
   loadMeal(id: number): void {
-    // We need to fetch the meal - but we need petId first
-    // For now, we'll get petId from query params or fetch all meals
-    const petId = this.route.snapshot.queryParamMap.get('pet_id');
-    if (petId) {
-      this.mealService.getById(+petId, id).subscribe({
-        next: (response) => {
-          const meal = response.data;
+    // Primeiro, buscar a refeição da lista geral para obter o pet_id
+    this.mealService.getAll().subscribe({
+      next: (meals) => {
+        const meal = meals.find(m => m.id === id);
+        if (meal) {
+          // Agora que temos o pet_id, buscar os detalhes completos
+          this.mealService.getById(meal.pet_id, id).subscribe({
+            next: (mealDetails) => {
+              const scheduledFor = new Date(mealDetails.scheduled_for);
+              const dateTimeString = scheduledFor.toISOString().slice(0, 16);
 
-          // Convert meal_time to datetime-local format
-          const mealTime = new Date(meal.meal_time);
-          const dateTimeString = mealTime.toISOString().slice(0, 16);
+              this.mealForm.patchValue({
+                pet_id: mealDetails.pet_id,
+                food_type: mealDetails.food_type,
+                quantity: mealDetails.quantity,
+                unit: mealDetails.unit,
+                scheduled_for: dateTimeString,
+                notes: mealDetails.notes || ''
+              });
 
-          this.mealForm.patchValue({
-            pet_id: meal.pet_id,
-            meal_time: dateTimeString,
-            quantity: meal.quantity,
-            notes: meal.notes || ''
+              this.loading = false;
+            },
+            error: (error) => {
+              console.error('Erro ao carregar detalhes da refeição:', error);
+              this.errorMessage = 'Erro ao carregar refeição';
+              this.loading = false;
+            }
           });
-
-          if (meal.photo_url) {
-            this.photoPreview = meal.photo_url;
-          }
-
-          this.loading = false;
-        },
-        error: (error) => {
-          console.error('Erro ao carregar refeição:', error);
-          this.errorMessage = 'Erro ao carregar refeição';
+        } else {
+          this.errorMessage = 'Refeição não encontrada';
           this.loading = false;
         }
-      });
-    } else {
-      this.errorMessage = 'Pet ID não encontrado';
-      this.loading = false;
-    }
-  }
-
-  onFileSelected(event: any): void {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile = file;
-
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.photoPreview = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  removePhoto(): void {
-    this.selectedFile = undefined;
-    this.photoPreview = undefined;
+      },
+      error: (error) => {
+        console.error('Erro ao buscar refeição:', error);
+        this.errorMessage = 'Erro ao carregar refeição';
+        this.loading = false;
+      }
+    });
   }
 
   onSubmit(): void {
@@ -347,10 +299,7 @@ export class MealFormComponent implements OnInit {
       this.submitting = true;
       this.errorMessage = '';
 
-      const formData: MealFormData = {
-        ...this.mealForm.value,
-        photo: this.selectedFile
-      };
+      const formData = this.mealForm.value;
 
       const request = this.isEditMode && this.mealId
         ? this.mealService.update(this.mealId, formData)
@@ -358,11 +307,6 @@ export class MealFormComponent implements OnInit {
 
       request.subscribe({
         next: () => {
-          this.snackBar.open(
-            this.isEditMode ? 'Refeição atualizada com sucesso!' : 'Refeição registrada com sucesso!',
-            'Fechar',
-            { duration: 3000 }
-          );
           this.router.navigate(['/app/meals']);
         },
         error: (error) => {

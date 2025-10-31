@@ -2,15 +2,6 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ReminderService } from '../services/reminder.service';
 import { PetService } from '../../pets/services/pet.service';
 import { Pet } from '../../../core/models/pet.model';
@@ -22,199 +13,209 @@ import { ReminderFormData } from '../../../core/models/reminder.model';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatIconModule,
-    MatSelectModule,
-    MatSlideToggleModule,
-    MatProgressSpinnerModule,
-    MatSnackBarModule
+    RouterModule
   ],
   template: `
-    <div class="container">
-      <mat-card>
-        <mat-card-header>
-          <button mat-icon-button routerLink="/app/reminders">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <mat-card-title>{{ isEditMode ? 'Editar Lembrete' : 'Criar Lembrete' }}</mat-card-title>
-        </mat-card-header>
+    <div class="max-w-3xl mx-auto">
+      <!-- Header -->
+      <div class="flex items-center space-x-4 mb-8">
+        <button
+          routerLink="/app/reminders"
+          class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </button>
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">{{ isEditMode ? 'Editar Lembrete' : 'Criar Lembrete' }}</h1>
+          <p class="text-gray-600 mt-1">{{ isEditMode ? 'Atualize as informações do lembrete' : 'Configure um novo lembrete para seu pet' }}</p>
+        </div>
+      </div>
 
-        <mat-card-content>
-          @if (loading) {
-            <div class="loading">
-              <mat-spinner></mat-spinner>
-            </div>
-          } @else {
-            <form [formGroup]="reminderForm" (ngSubmit)="onSubmit()">
-              <mat-form-field appearance="outline">
-                <mat-label>Pet</mat-label>
-                <mat-select formControlName="pet_id" required>
-                  @for (pet of pets; track pet.id) {
-                    <mat-option [value]="pet.id">{{ pet.name }}</mat-option>
-                  }
-                </mat-select>
-                @if (reminderForm.get('pet_id')?.hasError('required') && reminderForm.get('pet_id')?.touched) {
-                  <mat-error>Pet é obrigatório</mat-error>
+      <!-- Form Card -->
+      <div class="card">
+        @if (loading) {
+          <div class="flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600"></div>
+            <p class="text-gray-600 mt-4 text-lg">Carregando...</p>
+          </div>
+        } @else {
+          <form [formGroup]="reminderForm" (ngSubmit)="onSubmit()" class="space-y-6">
+            <!-- Pet Select -->
+            <div>
+              <label for="pet_id" class="label">Pet *</label>
+              <select
+                id="pet_id"
+                formControlName="pet_id"
+                class="input"
+                [class.input-error]="reminderForm.get('pet_id')?.invalid && reminderForm.get('pet_id')?.touched"
+              >
+                <option value="">Selecione um pet</option>
+                @for (pet of pets; track pet.id) {
+                  <option [value]="pet.id">{{ pet.name }}</option>
                 }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Título</mat-label>
-                <input matInput formControlName="title" required placeholder="Ex: Dar remédio">
-                @if (reminderForm.get('title')?.hasError('required') && reminderForm.get('title')?.touched) {
-                  <mat-error>Título é obrigatório</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo</mat-label>
-                <mat-select formControlName="type" required>
-                  <mat-option value="feeding">
-                    <mat-icon>restaurant</mat-icon>
-                    Alimentação
-                  </mat-option>
-                  <mat-option value="vet">
-                    <mat-icon>medical_services</mat-icon>
-                    Veterinário
-                  </mat-option>
-                  <mat-option value="medication">
-                    <mat-icon>medication</mat-icon>
-                    Medicação
-                  </mat-option>
-                  <mat-option value="grooming">
-                    <mat-icon>content_cut</mat-icon>
-                    Higiene
-                  </mat-option>
-                  <mat-option value="other">
-                    <mat-icon>event</mat-icon>
-                    Outro
-                  </mat-option>
-                </mat-select>
-                @if (reminderForm.get('type')?.hasError('required') && reminderForm.get('type')?.touched) {
-                  <mat-error>Tipo é obrigatório</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Data e Hora</mat-label>
-                <input matInput type="datetime-local" formControlName="reminder_time" required>
-                @if (reminderForm.get('reminder_time')?.hasError('required') && reminderForm.get('reminder_time')?.touched) {
-                  <mat-error>Data e hora são obrigatórios</mat-error>
-                }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Repetir</mat-label>
-                <mat-select formControlName="repeat_interval">
-                  <mat-option [value]="null">Não repetir</mat-option>
-                  <mat-option value="daily">Diariamente</mat-option>
-                  <mat-option value="weekly">Semanalmente</mat-option>
-                  <mat-option value="monthly">Mensalmente</mat-option>
-                </mat-select>
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Descrição</mat-label>
-                <textarea
-                  matInput
-                  formControlName="description"
-                  rows="4"
-                  placeholder="Adicione detalhes sobre o lembrete...">
-                </textarea>
-              </mat-form-field>
-
-              <div class="toggle-field">
-                <mat-slide-toggle formControlName="is_active" color="primary">
-                  Lembrete ativo
-                </mat-slide-toggle>
-              </div>
-
-              @if (errorMessage) {
-                <div class="error-message">
-                  <mat-icon>error</mat-icon>
-                  {{ errorMessage }}
-                </div>
+              </select>
+              @if (reminderForm.get('pet_id')?.hasError('required') && reminderForm.get('pet_id')?.touched) {
+                <p class="error-message">Pet é obrigatório</p>
               }
+            </div>
 
-              <div class="form-actions">
-                <button mat-stroked-button type="button" routerLink="/app/reminders">
-                  Cancelar
-                </button>
-                <button mat-raised-button color="primary" type="submit" [disabled]="reminderForm.invalid || submitting">
-                  @if (submitting) {
-                    <mat-spinner diameter="20"></mat-spinner>
-                  } @else {
-                    {{ isEditMode ? 'Atualizar' : 'Criar' }}
-                  }
-                </button>
+            <!-- Title Input -->
+            <div>
+              <label for="title" class="label">Título *</label>
+              <input
+                id="title"
+                type="text"
+                formControlName="title"
+                placeholder="Ex: Dar remédio"
+                class="input"
+                [class.input-error]="reminderForm.get('title')?.invalid && reminderForm.get('title')?.touched"
+              />
+              @if (reminderForm.get('title')?.hasError('required') && reminderForm.get('title')?.touched) {
+                <p class="error-message">Título é obrigatório</p>
+              }
+            </div>
+
+            <!-- Type Select -->
+            <div>
+              <label for="type" class="label">Tipo *</label>
+              <select
+                id="type"
+                formControlName="type"
+                class="input"
+                [class.input-error]="reminderForm.get('type')?.invalid && reminderForm.get('type')?.touched"
+              >
+                <option value="">Selecione um tipo</option>
+                <option value="feeding">
+                  🍽️ Alimentação
+                </option>
+                <option value="vet">
+                  🏥 Veterinário
+                </option>
+                <option value="medication">
+                  💊 Medicação
+                </option>
+                <option value="grooming">
+                  ✂️ Higiene
+                </option>
+                <option value="other">
+                  📅 Outro
+                </option>
+              </select>
+              @if (reminderForm.get('type')?.hasError('required') && reminderForm.get('type')?.touched) {
+                <p class="error-message">Tipo é obrigatório</p>
+              }
+            </div>
+
+            <!-- Date Time Input -->
+            <div>
+              <label for="reminder_time" class="label">Data e Hora *</label>
+              <input
+                id="reminder_time"
+                type="datetime-local"
+                formControlName="reminder_time"
+                class="input"
+                [class.input-error]="reminderForm.get('reminder_time')?.invalid && reminderForm.get('reminder_time')?.touched"
+              />
+              @if (reminderForm.get('reminder_time')?.hasError('required') && reminderForm.get('reminder_time')?.touched) {
+                <p class="error-message">Data e hora são obrigatórios</p>
+              }
+            </div>
+
+            <!-- Repeat Interval Select -->
+            <div>
+              <label for="repeat_interval" class="label">Repetir</label>
+              <select
+                id="repeat_interval"
+                formControlName="repeat_interval"
+                class="input"
+              >
+                <option [ngValue]="null">Não repetir</option>
+                <option value="daily">🔄 Diariamente</option>
+                <option value="weekly">📅 Semanalmente</option>
+                <option value="monthly">🗓️ Mensalmente</option>
+              </select>
+            </div>
+
+            <!-- Description Textarea -->
+            <div>
+              <label for="description" class="label">Descrição</label>
+              <textarea
+                id="description"
+                formControlName="description"
+                rows="4"
+                placeholder="Adicione detalhes sobre o lembrete..."
+                class="input resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Active Toggle -->
+            <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                  <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <div>
+                  <p class="font-semibold text-gray-900">Lembrete ativo</p>
+                  <p class="text-sm text-gray-600">Receber notificações deste lembrete</p>
+                </div>
               </div>
-            </form>
-          }
-        </mat-card-content>
-      </mat-card>
+              <button
+                type="button"
+                (click)="toggleActive()"
+                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                [ngClass]="reminderForm.get('is_active')?.value ? 'bg-primary-600' : 'bg-gray-200'"
+              >
+                <span
+                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                  [ngClass]="reminderForm.get('is_active')?.value ? 'translate-x-6' : 'translate-x-1'"
+                ></span>
+              </button>
+            </div>
+
+            <!-- Error Message -->
+            @if (errorMessage) {
+              <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center space-x-2">
+                <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{{ errorMessage }}</span>
+              </div>
+            }
+
+            <!-- Form Actions -->
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                routerLink="/app/reminders"
+                class="btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn-primary"
+                [disabled]="reminderForm.invalid || submitting"
+              >
+                @if (submitting) {
+                  <div class="flex items-center space-x-2">
+                    <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>{{ isEditMode ? 'Atualizando...' : 'Criando...' }}</span>
+                  </div>
+                } @else {
+                  <span>{{ isEditMode ? 'Atualizar' : 'Criar' }}</span>
+                }
+              </button>
+            </div>
+          </form>
+        }
+      </div>
     </div>
   `,
-  styles: [`
-    .container {
-      max-width: 600px;
-      margin: 24px auto;
-      padding: 0 16px;
-    }
-
-    mat-card-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    mat-form-field {
-      width: 100%;
-    }
-
-    mat-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .toggle-field {
-      padding: 12px 0;
-    }
-
-    .error-message {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 12px;
-      background: #ffebee;
-      color: #c62828;
-      border-radius: 4px;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .loading {
-      display: flex;
-      justify-content: center;
-      padding: 48px;
-    }
-  `]
+  styles: []
 })
 export class ReminderFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -222,12 +223,11 @@ export class ReminderFormComponent implements OnInit {
   private petService = inject(PetService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
-  private snackBar = inject(MatSnackBar);
 
   reminderForm: FormGroup;
   pets: Pet[] = [];
   isEditMode = false;
-  reminderId?: number;
+  reminderId?: string;  // UUID
   loading = true;
   submitting = false;
   errorMessage = '';
@@ -250,7 +250,7 @@ export class ReminderFormComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEditMode = true;
-      this.reminderId = +id;
+      this.reminderId = id;  // Keep as string (UUID)
       this.loadReminder(this.reminderId);
     } else {
       this.loading = false;
@@ -265,21 +265,20 @@ export class ReminderFormComponent implements OnInit {
 
   loadPets(): void {
     this.petService.getAll().subscribe({
-      next: (response) => {
-        this.pets = response.data;
+      next: (pets) => {
+        this.pets = Array.isArray(pets) ? pets : [];
       },
       error: (error) => {
         console.error('Erro ao carregar pets:', error);
         this.errorMessage = 'Erro ao carregar lista de pets';
+        this.pets = [];
       }
     });
   }
 
-  loadReminder(id: number): void {
+  loadReminder(id: string): void {
     this.reminderService.getById(id).subscribe({
-      next: (response) => {
-        const reminder = response.data;
-
+      next: (reminder) => {
         // Convert reminder_time to datetime-local format
         const reminderTime = new Date(reminder.reminder_time);
         const dateTimeString = reminderTime.toISOString().slice(0, 16);
@@ -304,7 +303,28 @@ export class ReminderFormComponent implements OnInit {
     });
   }
 
+  toggleActive(): void {
+    const currentValue = this.reminderForm.get('is_active')?.value;
+    this.reminderForm.patchValue({ is_active: !currentValue });
+  }
+
   onSubmit(): void {
+    // Mark all fields as touched to show validation errors
+    Object.keys(this.reminderForm.controls).forEach(key => {
+      this.reminderForm.get(key)?.markAsTouched();
+    });
+
+    // Debug: Log form values and validity
+    console.log('Form values:', this.reminderForm.value);
+    console.log('Form valid:', this.reminderForm.valid);
+    console.log('Form errors:', this.reminderForm.errors);
+    Object.keys(this.reminderForm.controls).forEach(key => {
+      const control = this.reminderForm.get(key);
+      if (control?.invalid) {
+        console.log(`${key} is invalid:`, control.errors);
+      }
+    });
+
     if (this.reminderForm.valid) {
       this.submitting = true;
       this.errorMessage = '';
@@ -317,11 +337,6 @@ export class ReminderFormComponent implements OnInit {
 
       request.subscribe({
         next: () => {
-          this.snackBar.open(
-            this.isEditMode ? 'Lembrete atualizado com sucesso!' : 'Lembrete criado com sucesso!',
-            'Fechar',
-            { duration: 3000 }
-          );
           this.router.navigate(['/app/reminders']);
         },
         error: (error) => {
@@ -330,6 +345,9 @@ export class ReminderFormComponent implements OnInit {
           this.submitting = false;
         }
       });
+    } else {
+      // Show error message when form is invalid
+      this.errorMessage = 'Por favor, preencha todos os campos obrigatórios.';
     }
   }
 }
