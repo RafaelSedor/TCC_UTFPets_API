@@ -173,33 +173,29 @@ Swagger UI: http://localhost:8081/swagger
 
 ## Deploy em Produção
 
-O projeto está configurado para deploy automático no Google Cloud Platform via GitHub Actions.
+Deploy automático configurado no Google Cloud Platform via GitHub Actions.
 
-### Configuração Inicial (uma vez)
-
-1. **Sincronizar secrets do GitHub:**
-```powershell
-# Windows - sincroniza todas as variáveis do backend/.env
-.\scripts\sync-secrets.ps1 -Repository "RafaelSedor/TCC_UTFPets_API"
-
-# Adicionar GCP Service Account
-gh secret set GCP_SA_KEY --repo RafaelSedor/TCC_UTFPets_API < caminho/para/gcp-sa-key.json
-```
-
-2. **Deploy automático:**
-   - Push para `master` ou `main` dispara deploy automático
-   - Ou execute manualmente: `gh workflow run deploy-vm.yml`
-
-### Infraestrutura GCP
-- **VM:** e2-small (Compute Engine) em southamerica-east1
-- **Banco:** Cloud SQL PostgreSQL
-- **Containers:** Docker Compose com 5 serviços
-- **SSL:** Let's Encrypt (renovação automática)
+### Infraestrutura
+- **Cloud Provider:** Google Cloud Platform (GCP)
+- **VM:** e2-small, Debian 12, southamerica-east1-b
+- **Banco de Dados:** Cloud SQL PostgreSQL
+- **Containers:** Docker Compose (5 serviços: app, cloud-sql-proxy, nginx, certbot, frontend)
+- **SSL/TLS:** Let's Encrypt com renovação automática
 - **Domínios:**
   - Frontend: https://utfpets.online
   - API: https://api.utfpets.online
+  - Swagger: https://api.utfpets.online/swagger
 
-Ver [.github/workflows/deploy-vm.yml](.github/workflows/deploy-vm.yml) para detalhes do pipeline.
+### Pipeline CI/CD
+- **Trigger:** Push para `master` ou `main`
+- **Etapas:**
+  1. Backup automático da versão anterior
+  2. Deploy via gcloud scp
+  3. Build de containers Docker
+  4. Migrations e otimizações
+  5. Health check
+- **Secrets:** Sincronizados via [scripts/sync-secrets.ps1](scripts/sync-secrets.ps1)
+- **Workflow:** [.github/workflows/deploy-vm.yml](.github/workflows/deploy-vm.yml)
 
 ## Desenvolvimento
 
