@@ -36,20 +36,37 @@ jobs:
           extensions: pdo, pdo_pgsql, mbstring, xml, bcmath, zip
           coverage: none
 
-      - name: Copy .env.testing
+      - name: Create .env for testing
         run: |
           cd backend
-          cp .env.testing .env
+          cat > .env <<EOF
+          APP_NAME="UTFPets Test"
+          APP_ENV=testing
+          APP_KEY=base64:$(openssl rand -base64 32)
+          APP_DEBUG=true
+          APP_TIMEZONE=America/Sao_Paulo
+          APP_URL=http://localhost
+
+          DB_CONNECTION=sqlite
+          DB_DATABASE=:memory:
+
+          CACHE_DRIVER=array
+          QUEUE_CONNECTION=sync
+          SESSION_DRIVER=array
+
+          CLOUDINARY_URL=
+          CLOUDINARY_CLOUD_NAME=test
+          CLOUDINARY_API_KEY=test
+          CLOUDINARY_API_SECRET=test
+
+          JWT_SECRET=test-secret-key-for-testing-only
+          JWT_ALGO=HS256
+          EOF
 
       - name: Install Composer dependencies
         run: |
           cd backend
           composer install --prefer-dist --no-progress --no-interaction
-
-      - name: Generate APP_KEY
-        run: |
-          cd backend
-          php artisan key:generate
 
       - name: Run Backend Tests
         run: |
@@ -74,13 +91,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: |
           cd frontend
-          npm ci
+          npm install --legacy-peer-deps
 
       - name: Run linting
         run: |
