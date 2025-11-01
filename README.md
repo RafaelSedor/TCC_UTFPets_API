@@ -173,20 +173,33 @@ Swagger UI: http://localhost:8081/swagger
 
 ## Deploy em Produção
 
-O projeto está configurado para deploy automático na Google Cloud VM via GitHub Actions.
+O projeto está configurado para deploy automático no Google Cloud Platform via GitHub Actions.
 
-### Domínios
-- **Frontend:** https://utfpets.online
-- **API:** https://api.utfpets.online
-- **Swagger UI:** https://api.utfpets.online/swagger
+### Configuração Inicial (uma vez)
+
+1. **Sincronizar secrets do GitHub:**
+```powershell
+# Windows - sincroniza todas as variáveis do backend/.env
+.\scripts\sync-secrets.ps1 -Repository "RafaelSedor/TCC_UTFPets_API"
+
+# Adicionar GCP Service Account
+gh secret set GCP_SA_KEY --repo RafaelSedor/TCC_UTFPets_API < caminho/para/gcp-sa-key.json
+```
+
+2. **Deploy automático:**
+   - Push para `master` ou `main` dispara deploy automático
+   - Ou execute manualmente: `gh workflow run deploy-vm.yml`
 
 ### Infraestrutura GCP
 - **VM:** e2-small (Compute Engine) em southamerica-east1
-- **Banco de Dados:** Cloud SQL PostgreSQL
-- **SSL/TLS:** Let's Encrypt (renovação automática)
+- **Banco:** Cloud SQL PostgreSQL
 - **Containers:** Docker Compose com 5 serviços
+- **SSL:** Let's Encrypt (renovação automática)
+- **Domínios:**
+  - Frontend: https://utfpets.online
+  - API: https://api.utfpets.online
 
-Documentação completa: [backend/docs/DEPLOY.md](backend/docs/DEPLOY.md)
+Ver [.github/workflows/deploy-vm.yml](.github/workflows/deploy-vm.yml) para detalhes do pipeline.
 
 ## Desenvolvimento
 

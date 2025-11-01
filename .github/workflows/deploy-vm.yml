@@ -1,9 +1,26 @@
+# Deploy Automático para GCP VM
+#
+# Este workflow faz deploy para Google Cloud Platform usando:
+#   - VM: e2-small no GCP Compute Engine
+#   - DB: Cloud SQL PostgreSQL
+#   - Containers: Docker Compose
+#
+# Secrets necessários (sincronize com scripts/sync-secrets.ps1):
+#   - GCP_SA_KEY: Service Account JSON do GCP
+#   - Todas as variáveis de ambiente da aplicação (APP_KEY, DB_*, JWT_SECRET, CLOUDINARY_*, etc.)
+#
+# Como usar:
+#   1. Sincronizar secrets: .\scripts\sync-secrets.ps1 -Repository "usuario/repo"
+#   2. Push para master: git push origin master
+
 name: Deploy to Production
 
 on:
   push:
     branches:
       - master
+      - main
+  workflow_dispatch:
 
 env:
   PROJECT_ID: tccutfpets
@@ -116,90 +133,106 @@ jobs:
             ./* ${VM_NAME}:${APP_DIR}/ \
             2>&1 | grep -v "Warning: Permanently added" | grep -v ".env" | grep -v "vendor" || true
 
-      - name: Create .env file
+      - name: Create backend .env file
         run: |
-          echo "📝 Creating .env file from GitHub Secrets..."
+          echo "📝 Creating backend/.env file from GitHub Secrets..."
 
-          cat > /tmp/.env <<'EOF'
+          cat > /tmp/backend.env <<'EOF'
+          # Application
           APP_NAME="${{ secrets.APP_NAME || 'UTFPets API' }}"
-          APP_ENV="${{ secrets.APP_ENV || 'production' }}"
-          APP_KEY="${{ secrets.APP_KEY }}"
-          APP_DEBUG="${{ secrets.APP_DEBUG || 'false' }}"
-          APP_URL="${{ secrets.APP_URL || 'http://34.39.150.157:8080' }}"
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_TIMEZONE="${{ secrets.APP_TIMEZONE || 'America/Sao_Paulo' }}"
+          APP_URL=${{ secrets.APP_URL }}
+          APP_LOCALE="${{ secrets.APP_LOCALE || 'pt_BR' }}"
+          APP_FALLBACK_LOCALE="${{ secrets.APP_FALLBACK_LOCALE || 'pt_BR' }}"
+          APP_FAKER_LOCALE="${{ secrets.APP_FAKER_LOCALE || 'pt_BR' }}"
+          APP_MAINTENANCE_DRIVER="${{ secrets.APP_MAINTENANCE_DRIVER || 'file' }}"
+          APP_MAINTENANCE_STORE="${{ secrets.APP_MAINTENANCE_STORE || 'database' }}"
 
+          BCRYPT_ROUNDS=${{ secrets.BCRYPT_ROUNDS || 10 }}
+
+          # Logging
           LOG_CHANNEL="${{ secrets.LOG_CHANNEL || 'stack' }}"
+          LOG_STACK="${{ secrets.LOG_STACK || 'single' }}"
           LOG_DEPRECATIONS_CHANNEL="${{ secrets.LOG_DEPRECATIONS_CHANNEL || 'null' }}"
-          LOG_LEVEL="${{ secrets.LOG_LEVEL || 'debug' }}"
+          LOG_LEVEL="${{ secrets.LOG_LEVEL || 'error' }}"
 
+          # Database
           DB_CONNECTION="${{ secrets.DB_CONNECTION || 'pgsql' }}"
-          DB_HOST="${{ secrets.DB_HOST }}"
-          DB_PORT="${{ secrets.DB_PORT || '5432' }}"
-          DB_DATABASE="${{ secrets.DB_DATABASE }}"
-          DB_USERNAME="${{ secrets.DB_USERNAME }}"
+          DB_HOST="${{ secrets.DB_HOST || 'cloud-sql-proxy' }}"
+          DB_PORT=${{ secrets.DB_PORT || 5432 }}
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
           DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
 
-          BROADCAST_DRIVER="${{ secrets.BROADCAST_DRIVER || 'log' }}"
-          CACHE_DRIVER="${{ secrets.CACHE_DRIVER || 'file' }}"
+          # Session
+          SESSION_DRIVER="${{ secrets.SESSION_DRIVER || 'database' }}"
+          SESSION_LIFETIME=${{ secrets.SESSION_LIFETIME || 120 }}
+          SESSION_ENCRYPT="${{ secrets.SESSION_ENCRYPT || 'false' }}"
+          SESSION_PATH="${{ secrets.SESSION_PATH || '/' }}"
+          SESSION_DOMAIN="${{ secrets.SESSION_DOMAIN || '' }}"
+
+          # Cache, Queue, Broadcasting
+          BROADCAST_CONNECTION="${{ secrets.BROADCAST_CONNECTION || 'log' }}"
           FILESYSTEM_DISK="${{ secrets.FILESYSTEM_DISK || 'local' }}"
           QUEUE_CONNECTION="${{ secrets.QUEUE_CONNECTION || 'sync' }}"
-          SESSION_DRIVER="${{ secrets.SESSION_DRIVER || 'file' }}"
-          SESSION_LIFETIME="${{ secrets.SESSION_LIFETIME || '120' }}"
+          CACHE_STORE="${{ secrets.CACHE_STORE || 'file' }}"
+          CACHE_PREFIX="${{ secrets.CACHE_PREFIX || 'utfpets_cache' }}"
 
-          MEMCACHED_HOST="${{ secrets.MEMCACHED_HOST || '127.0.0.1' }}"
-
+          # Redis
+          REDIS_CLIENT="${{ secrets.REDIS_CLIENT || 'phpredis' }}"
           REDIS_HOST="${{ secrets.REDIS_HOST || '127.0.0.1' }}"
           REDIS_PASSWORD="${{ secrets.REDIS_PASSWORD || 'null' }}"
-          REDIS_PORT="${{ secrets.REDIS_PORT || '6379' }}"
+          REDIS_PORT=${{ secrets.REDIS_PORT || 6379 }}
 
-          MAIL_MAILER="${{ secrets.MAIL_MAILER || 'smtp' }}"
-          MAIL_HOST="${{ secrets.MAIL_HOST || 'mailpit' }}"
-          MAIL_PORT="${{ secrets.MAIL_PORT || '1025' }}"
-          MAIL_USERNAME="${{ secrets.MAIL_USERNAME || 'null' }}"
-          MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD || 'null' }}"
-          MAIL_ENCRYPTION="${{ secrets.MAIL_ENCRYPTION || 'null' }}"
-          MAIL_FROM_ADDRESS="${{ secrets.MAIL_FROM_ADDRESS || 'hello@example.com' }}"
-          MAIL_FROM_NAME="${{ secrets.MAIL_FROM_NAME || '${APP_NAME}' }}"
+          # Mail
+          MAIL_MAILER="${{ secrets.MAIL_MAILER || 'log' }}"
+          MAIL_HOST="${{ secrets.MAIL_HOST || 'localhost' }}"
+          MAIL_PORT=${{ secrets.MAIL_PORT || 1025 }}
+          MAIL_USERNAME="${{ secrets.MAIL_USERNAME || '' }}"
+          MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD || '' }}"
+          MAIL_ENCRYPTION="${{ secrets.MAIL_ENCRYPTION || 'tls' }}"
+          MAIL_FROM_ADDRESS="${{ secrets.MAIL_FROM_ADDRESS || 'noreply@utfpets.com' }}"
+          MAIL_FROM_NAME="${{ secrets.MAIL_FROM_NAME || 'UTFPets' }}"
 
+          # AWS
           AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID || '' }}"
           AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY || '' }}"
           AWS_DEFAULT_REGION="${{ secrets.AWS_DEFAULT_REGION || 'us-east-1' }}"
           AWS_BUCKET="${{ secrets.AWS_BUCKET || '' }}"
           AWS_USE_PATH_STYLE_ENDPOINT="${{ secrets.AWS_USE_PATH_STYLE_ENDPOINT || 'false' }}"
 
-          PUSHER_APP_ID="${{ secrets.PUSHER_APP_ID || '' }}"
-          PUSHER_APP_KEY="${{ secrets.PUSHER_APP_KEY || '' }}"
-          PUSHER_APP_SECRET="${{ secrets.PUSHER_APP_SECRET || '' }}"
-          PUSHER_HOST="${{ secrets.PUSHER_HOST || '' }}"
-          PUSHER_PORT="${{ secrets.PUSHER_PORT || '443' }}"
-          PUSHER_SCHEME="${{ secrets.PUSHER_SCHEME || 'https' }}"
-          PUSHER_APP_CLUSTER="${{ secrets.PUSHER_APP_CLUSTER || 'mt1' }}"
-
-          VITE_APP_NAME="${{ secrets.VITE_APP_NAME || '${APP_NAME}' }}"
-          VITE_PUSHER_APP_KEY="${{ secrets.VITE_PUSHER_APP_KEY || '${PUSHER_APP_KEY}' }}"
-          VITE_PUSHER_HOST="${{ secrets.VITE_PUSHER_HOST || '${PUSHER_HOST}' }}"
-          VITE_PUSHER_PORT="${{ secrets.VITE_PUSHER_PORT || '${PUSHER_PORT}' }}"
-          VITE_PUSHER_SCHEME="${{ secrets.VITE_PUSHER_SCHEME || '${PUSHER_SCHEME}' }}"
-          VITE_PUSHER_APP_CLUSTER="${{ secrets.VITE_PUSHER_APP_CLUSTER || '${PUSHER_APP_CLUSTER}' }}"
-
-          JWT_SECRET="${{ secrets.JWT_SECRET }}"
-          JWT_TTL="${{ secrets.JWT_TTL || '60' }}"
-
+          # Cloudinary
           CLOUDINARY_URL="${{ secrets.CLOUDINARY_URL }}"
+          CLOUDINARY_UPLOAD_PRESET="${{ secrets.CLOUDINARY_UPLOAD_PRESET }}"
           CLOUDINARY_CLOUD_NAME="${{ secrets.CLOUDINARY_CLOUD_NAME }}"
           CLOUDINARY_API_KEY="${{ secrets.CLOUDINARY_API_KEY }}"
           CLOUDINARY_API_SECRET="${{ secrets.CLOUDINARY_API_SECRET }}"
 
+          # JWT
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          JWT_ALGO="${{ secrets.JWT_ALGO || 'HS256' }}"
+
+          # CORS
+          CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS || '*' }}"
+
+          # GCP
           GOOGLE_CLOUD_PROJECT="${{ secrets.GOOGLE_CLOUD_PROJECT || 'tccutfpets' }}"
-          GOOGLE_APPLICATION_CREDENTIALS="${{ secrets.GOOGLE_APPLICATION_CREDENTIALS || '/opt/utfpets/storage/keys/gcp-service-account.json' }}"
+          GOOGLE_APPLICATION_CREDENTIALS="/opt/utfpets/storage/keys/gcp-service-account.json"
           CLOUD_SQL_CONNECTION_NAME="${{ secrets.CLOUD_SQL_CONNECTION_NAME || 'tccutfpets:southamerica-east1:tcc' }}"
+
+          # Vite
+          VITE_APP_NAME="${{ secrets.VITE_APP_NAME || 'UTFPets' }}"
           EOF
 
-          gcloud compute scp /tmp/.env ${VM_NAME}:${APP_DIR}/.env \
+          gcloud compute scp /tmp/backend.env ${VM_NAME}:${APP_DIR}/backend/.env \
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID}
 
-          rm /tmp/.env
-          echo "✅ .env file created on VM"
+          rm /tmp/backend.env
+          echo "✅ backend/.env file created on VM"
 
       - name: Setup GCP service account
         run: |
