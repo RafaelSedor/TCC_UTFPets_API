@@ -17,7 +17,7 @@
 # Durante o deploy, o workflow irá criar dinamicamente:
 #   - backend/.env (variáveis do Laravel)
 #   - frontend/.env (variáveis do Angular)
-#   - .env.production (variáveis do Docker Compose)
+#   - .env.production (variáveis do Docker Compose)k
 
 name: Deploy to Production
 
