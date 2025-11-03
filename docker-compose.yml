@@ -117,6 +117,7 @@ services:
       # Frontend static files (from frontend container)
       - frontend-dist:/usr/share/nginx/html:ro
       # Nginx configurations (production with SSL)
+      - ./nginx/production/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/production/utfpets.online.conf:/etc/nginx/conf.d/utfpets.conf:ro
       - ./nginx/production/api.utfpets.online.conf:/etc/nginx/conf.d/api.conf:ro
       # SSL certificates
