@@ -442,7 +442,7 @@ jobs:
               echo '      VM IP: '\$(curl -s ifconfig.me 2>/dev/null || echo 'unknown')
 
               echo '   📝 Running certbot...'
-              if docker run --rm \
+              docker run --rm \
                 -v \${PWD}/certbot/conf:/etc/letsencrypt \
                 -v \${PWD}/certbot/www:/var/www/certbot \
                 --network utfpets_app-network \
@@ -455,7 +455,10 @@ jobs:
                 -d utfpets.online \
                 -d www.utfpets.online \
                 --non-interactive \
-                --verbose 2>&1 | sed 's/^/   /'; then
+                --verbose 2>&1 | sed 's/^/   /' || true
+
+              echo '   🔍 Verifying certificate...'
+              if [ -f certbot/conf/live/utfpets.online/fullchain.pem ]; then
                 echo '   ✅ Let'\''s Encrypt certificate obtained successfully!'
                 openssl x509 -in certbot/conf/live/utfpets.online/fullchain.pem -noout -subject -issuer -dates | sed 's/^/   /'
               else
@@ -475,7 +478,7 @@ jobs:
               echo '      api.utfpets.online -> '\$(nslookup api.utfpets.online 8.8.8.8 2>/dev/null | grep 'Address:' | tail -1 | awk '{print \$2}' || echo 'DNS lookup failed')
 
               echo '   📝 Running certbot...'
-              if docker run --rm \
+              docker run --rm \
                 -v \${PWD}/certbot/conf:/etc/letsencrypt \
                 -v \${PWD}/certbot/www:/var/www/certbot \
                 --network utfpets_app-network \
@@ -487,7 +490,10 @@ jobs:
                 --no-eff-email \
                 -d api.utfpets.online \
                 --non-interactive \
-                --verbose 2>&1 | sed 's/^/   /'; then
+                --verbose 2>&1 | sed 's/^/   /' || true
+
+              echo '   🔍 Verifying certificate...'
+              if [ -f certbot/conf/live/api.utfpets.online/fullchain.pem ]; then
                 echo '   ✅ Let'\''s Encrypt certificate obtained successfully!'
                 openssl x509 -in certbot/conf/live/api.utfpets.online/fullchain.pem -noout -subject -issuer -dates | sed 's/^/   /'
               else
