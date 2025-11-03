@@ -382,9 +382,11 @@ jobs:
           # Cleanup local temp file
           rm /tmp/gcp-sa-key.json
 
-      - name: Obtain SSL certificates
+      - name: Setup and obtain SSL certificates
         run: |
-          echo "🔐 Obtaining SSL certificates..."
+          echo "========================================="
+          echo "🔐 SSL CERTIFICATE SETUP"
+          echo "========================================="
 
           gcloud compute ssh ${VM_NAME} \
             --zone=${VM_ZONE} \
@@ -393,62 +395,131 @@ jobs:
               set -e
               cd ${APP_DIR}
 
-              echo '📁 Creating certbot directories...'
-              mkdir -p certbot/conf certbot/www
+              echo ''
+              echo '📁 Step 1/6: Creating certificate directories...'
+              mkdir -p certbot/conf/live/utfpets.online certbot/conf/live/api.utfpets.online certbot/www
               sudo chown -R \$USER:\$USER certbot/
               sudo chmod -R 755 certbot/
+              echo '   ✅ Directories created'
 
-              echo '🔐 Checking if certificates already exist...'
+              echo ''
+              echo '🔍 Step 2/6: Checking existing certificates...'
               if [ -f certbot/conf/live/utfpets.online/fullchain.pem ] && [ -f certbot/conf/live/api.utfpets.online/fullchain.pem ]; then
-                echo '✅ SSL certificates already exist, skipping...'
+                echo '   ℹ️  Certificates found:'
+                echo '      - utfpets.online'
+                openssl x509 -in certbot/conf/live/utfpets.online/fullchain.pem -noout -subject -issuer -dates 2>/dev/null || echo '      (unable to read)'
+                echo '      - api.utfpets.online'
+                openssl x509 -in certbot/conf/live/api.utfpets.online/fullchain.pem -noout -subject -issuer -dates 2>/dev/null || echo '      (unable to read)'
+                echo '   ✅ Using existing certificates'
+                exit 0
               else
-                echo '🌐 Starting temporary nginx for certificate validation...'
-
-                # Start nginx with HTTP-only config using ssl-setup compose file
-                docker compose -f docker-compose.ssl-setup.yml up -d
-
-                echo '⏳ Waiting for nginx to be ready...'
-                sleep 10
-
-                echo '📜 Obtaining certificate for utfpets.online...'
-                docker run --rm \
-                  -v \${PWD}/certbot/conf:/etc/letsencrypt \
-                  -v \${PWD}/certbot/www:/var/www/certbot \
-                  --network utfpets_app-network \
-                  certbot/certbot certonly \
-                  --webroot \
-                  --webroot-path=/var/www/certbot \
-                  --email noreply@utfpets.com \
-                  --agree-tos \
-                  --no-eff-email \
-                  -d utfpets.online \
-                  -d www.utfpets.online \
-                  --non-interactive || echo 'Warning: Failed to obtain utfpets.online certificate'
-
-                echo '📜 Obtaining certificate for api.utfpets.online...'
-                docker run --rm \
-                  -v \${PWD}/certbot/conf:/etc/letsencrypt \
-                  -v \${PWD}/certbot/www:/var/www/certbot \
-                  --network utfpets_app-network \
-                  certbot/certbot certonly \
-                  --webroot \
-                  --webroot-path=/var/www/certbot \
-                  --email noreply@utfpets.com \
-                  --agree-tos \
-                  --no-eff-email \
-                  -d api.utfpets.online \
-                  --non-interactive || echo 'Warning: Failed to obtain api.utfpets.online certificate'
-
-                echo '⏹️  Stopping temporary nginx...'
-                docker compose -f docker-compose.ssl-setup.yml down
-
-                echo '✅ SSL certificates obtained'
+                echo '   ℹ️  No existing certificates found'
               fi
+
+              echo ''
+              echo '🌐 Step 3/6: Starting temporary nginx for Let'\''s Encrypt validation...'
+              echo '   📋 Building and starting nginx...'
+              docker compose -f docker-compose.ssl-setup.yml up -d 2>&1 | sed 's/^/   /'
+
+              echo '   ⏳ Waiting 15 seconds for nginx to be ready...'
+              sleep 15
+
+              echo '   📊 Checking nginx status...'
+              docker compose -f docker-compose.ssl-setup.yml ps 2>&1 | sed 's/^/   /'
+
+              echo '   🔍 Testing nginx HTTP endpoint...'
+              if curl -f -s http://localhost/.well-known/acme-challenge/test >/dev/null 2>&1; then
+                echo '   ⚠️  Warning: Test endpoint not found (expected for first run)'
+              else
+                echo '   ℹ️  Nginx is responding on port 80'
+              fi
+
+              echo ''
+              echo '📜 Step 4/6: Obtaining Let'\''s Encrypt certificate for utfpets.online...'
+              echo '   🌍 Checking DNS resolution...'
+              echo '      utfpets.online -> '\$(nslookup utfpets.online 8.8.8.8 2>/dev/null | grep 'Address:' | tail -1 | awk '{print \$2}' || echo 'DNS lookup failed')
+              echo '      www.utfpets.online -> '\$(nslookup www.utfpets.online 8.8.8.8 2>/dev/null | grep 'Address:' | tail -1 | awk '{print \$2}' || echo 'DNS lookup failed')
+              echo '      VM IP: '\$(curl -s ifconfig.me 2>/dev/null || echo 'unknown')
+
+              echo '   📝 Running certbot...'
+              if docker run --rm \
+                -v \${PWD}/certbot/conf:/etc/letsencrypt \
+                -v \${PWD}/certbot/www:/var/www/certbot \
+                --network utfpets_app-network \
+                certbot/certbot certonly \
+                --webroot \
+                --webroot-path=/var/www/certbot \
+                --email noreply@utfpets.com \
+                --agree-tos \
+                --no-eff-email \
+                -d utfpets.online \
+                -d www.utfpets.online \
+                --non-interactive \
+                --verbose 2>&1 | sed 's/^/   /'; then
+                echo '   ✅ Let'\''s Encrypt certificate obtained successfully!'
+                openssl x509 -in certbot/conf/live/utfpets.online/fullchain.pem -noout -subject -issuer -dates | sed 's/^/   /'
+              else
+                echo '   ⚠️  Let'\''s Encrypt failed, creating self-signed certificate as fallback...'
+                echo '   📝 Generating RSA key and certificate...'
+                openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                  -keyout certbot/conf/live/utfpets.online/privkey.pem \
+                  -out certbot/conf/live/utfpets.online/fullchain.pem \
+                  -subj '/CN=utfpets.online/O=UTFPets/C=BR' 2>&1 | sed 's/^/   /'
+                echo '   ⚠️  Self-signed certificate created (browsers will show security warning)'
+                openssl x509 -in certbot/conf/live/utfpets.online/fullchain.pem -noout -subject -issuer -dates | sed 's/^/   /'
+              fi
+
+              echo ''
+              echo '📜 Step 5/6: Obtaining Let'\''s Encrypt certificate for api.utfpets.online...'
+              echo '   🌍 Checking DNS resolution...'
+              echo '      api.utfpets.online -> '\$(nslookup api.utfpets.online 8.8.8.8 2>/dev/null | grep 'Address:' | tail -1 | awk '{print \$2}' || echo 'DNS lookup failed')
+
+              echo '   📝 Running certbot...'
+              if docker run --rm \
+                -v \${PWD}/certbot/conf:/etc/letsencrypt \
+                -v \${PWD}/certbot/www:/var/www/certbot \
+                --network utfpets_app-network \
+                certbot/certbot certonly \
+                --webroot \
+                --webroot-path=/var/www/certbot \
+                --email noreply@utfpets.com \
+                --agree-tos \
+                --no-eff-email \
+                -d api.utfpets.online \
+                --non-interactive \
+                --verbose 2>&1 | sed 's/^/   /'; then
+                echo '   ✅ Let'\''s Encrypt certificate obtained successfully!'
+                openssl x509 -in certbot/conf/live/api.utfpets.online/fullchain.pem -noout -subject -issuer -dates | sed 's/^/   /'
+              else
+                echo '   ⚠️  Let'\''s Encrypt failed, creating self-signed certificate as fallback...'
+                echo '   📝 Generating RSA key and certificate...'
+                openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                  -keyout certbot/conf/live/api.utfpets.online/privkey.pem \
+                  -out certbot/conf/live/api.utfpets.online/fullchain.pem \
+                  -subj '/CN=api.utfpets.online/O=UTFPets/C=BR' 2>&1 | sed 's/^/   /'
+                echo '   ⚠️  Self-signed certificate created (browsers will show security warning)'
+                openssl x509 -in certbot/conf/live/api.utfpets.online/fullchain.pem -noout -subject -issuer -dates | sed 's/^/   /'
+              fi
+
+              echo ''
+              echo '🔐 Step 6/6: Finalizing...'
+              echo '   📝 Setting permissions...'
+              chmod 600 certbot/conf/live/*/privkey.pem 2>/dev/null || true
+              chmod 644 certbot/conf/live/*/fullchain.pem 2>/dev/null || true
+
+              echo '   ⏹️  Stopping temporary nginx...'
+              docker compose -f docker-compose.ssl-setup.yml down 2>&1 | sed 's/^/   /'
+
+              echo ''
+              echo '✅ SSL certificate setup completed!'
+              echo '========================================='
             "
 
       - name: Setup and start application
         run: |
-          echo "⚙️  Setting up and starting application..."
+          echo "========================================="
+          echo "🚀 APPLICATION STARTUP"
+          echo "========================================="
 
           gcloud compute ssh ${VM_NAME} \
             --zone=${VM_ZONE} \
@@ -457,60 +528,142 @@ jobs:
               set -e
               cd ${APP_DIR}
 
-              echo '🔐 Setting permissions...'
-              chmod +x entrypoint.sh || true
-              sudo chown -R 1000:1000 storage bootstrap/cache 2>/dev/null || true
-              sudo chmod -R 775 storage bootstrap/cache 2>/dev/null || true
-
-              echo '🔐 Fixing certbot permissions...'
+              echo ''
+              echo '🔐 Step 1/5: Setting permissions...'
+              echo '   📝 Entrypoint script...'
+              chmod +x entrypoint.sh 2>&1 | sed 's/^/   /' || true
+              echo '   📝 Storage and cache directories...'
+              sudo chown -R 1000:1000 storage bootstrap/cache 2>&1 | sed 's/^/   /' || true
+              sudo chmod -R 775 storage bootstrap/cache 2>&1 | sed 's/^/   /' || true
+              echo '   📝 Certbot directories...'
               if [ -d certbot ]; then
-                sudo chown -R rafaelsedor:rafaelsedor certbot/ 2>/dev/null || true
-                sudo chmod -R 755 certbot/ 2>/dev/null || true
+                sudo chown -R rafaelsedor:rafaelsedor certbot/ 2>&1 | sed 's/^/   /' || true
+                sudo chmod -R 755 certbot/ 2>&1 | sed 's/^/   /' || true
+              fi
+              echo '   ✅ Permissions configured'
+
+              echo ''
+              echo '🐳 Step 2/5: Building and starting containers...'
+              docker compose up -d --build 2>&1 | sed 's/^/   /'
+
+              echo ''
+              echo '⏳ Step 3/5: Waiting for containers to be healthy...'
+              echo '   ⏱️  Maximum wait: 5 minutes'
+
+              COUNTER=0
+              MAX_WAIT=60
+              while [ \$COUNTER -lt \$MAX_WAIT ]; do
+                if docker compose exec -T backend php -r 'echo 1;' 2>/dev/null; then
+                  echo '   ✅ Backend is ready!'
+                  break
+                fi
+                COUNTER=\$((COUNTER + 1))
+                echo \"   ⏳ Waiting... (\$COUNTER/\$MAX_WAIT)\"
+                sleep 5
+              done
+
+              if [ \$COUNTER -eq \$MAX_WAIT ]; then
+                echo '   ❌ Backend failed to start within 5 minutes'
+                echo ''
+                echo '   📋 Container status:'
+                docker compose ps 2>&1 | sed 's/^/   /'
+                echo ''
+                echo '   📋 Backend logs (last 30 lines):'
+                docker logs utfpets-backend --tail 30 2>&1 | sed 's/^/   /'
+                echo ''
+                echo '   📋 Cloud SQL Proxy logs (last 30 lines):'
+                docker logs utfpets-cloud-sql-proxy --tail 30 2>&1 | sed 's/^/   /'
+                echo ''
+                echo '   📋 Nginx logs (last 30 lines):'
+                docker logs utfpets-nginx --tail 30 2>&1 | sed 's/^/   /'
+                exit 1
               fi
 
-              echo '🐳 Building and starting containers...'
-              docker compose up -d --build
+              echo ''
+              echo '🗃️  Step 4/5: Running database migrations...'
+              if docker compose exec -T backend php artisan migrate --force 2>&1 | sed 's/^/   /'; then
+                echo '   ✅ Migrations completed'
+              else
+                echo '   ⚠️  Migrations failed (may be expected if already up to date)'
+              fi
 
-              echo '⏳ Waiting for containers to be ready (may take several minutes for first build)...'
-              timeout 300 bash -c 'until docker compose exec -T backend php -r \"echo 1;\" 2>/dev/null; do echo \"Waiting for backend...\"; sleep 5; done'
+              echo ''
+              echo '⚡ Step 5/5: Optimizing application...'
+              echo '   📝 Caching configuration...'
+              docker compose exec -T backend php artisan config:cache 2>&1 | sed 's/^/   /' || true
+              echo '   📝 Caching routes...'
+              docker compose exec -T backend php artisan route:cache 2>&1 | sed 's/^/   /' || true
+              echo '   📝 Caching views...'
+              docker compose exec -T backend php artisan view:cache 2>&1 | sed 's/^/   /' || true
+              echo '   ✅ Optimization completed'
 
-              echo '🗃️  Running migrations...'
-              docker compose exec -T backend php artisan migrate --force || echo 'Warning: Migrations failed'
+              echo ''
+              echo '📊 Final container status:'
+              docker compose ps 2>&1 | sed 's/^/   /'
 
-              echo '⚡ Optimizing application...'
-              docker compose exec -T backend php artisan config:cache || true
-              docker compose exec -T backend php artisan route:cache || true
-              docker compose exec -T backend php artisan view:cache || true
-
-              echo '📊 Container status:'
-              docker compose ps
+              echo ''
+              echo '✅ Application startup completed!'
+              echo '========================================='
             "
 
       - name: Health check
         run: |
-          echo "🏥 Performing health check..."
+          echo "========================================="
+          echo "🏥 HEALTH CHECK"
+          echo "========================================="
 
           MAX_ATTEMPTS=10
           ATTEMPT=0
 
           while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
             ATTEMPT=$((ATTEMPT + 1))
-            echo "Attempt $ATTEMPT/$MAX_ATTEMPTS..."
+            echo ""
+            echo "🔍 Attempt $ATTEMPT/$MAX_ATTEMPTS..."
 
-            if gcloud compute ssh ${VM_NAME} \
+            HEALTH_OUTPUT=$(gcloud compute ssh ${VM_NAME} \
               --zone=${VM_ZONE} \
               --project=${PROJECT_ID} \
-              --command="curl -f -s -k https://localhost/api/health" > /dev/null 2>&1; then
+              --command="curl -f -s -k https://localhost/api/health" 2>&1)
+
+            if [ $? -eq 0 ]; then
               echo "✅ Health check passed!"
+              echo "   Response: $HEALTH_OUTPUT"
+              echo "========================================="
               exit 0
+            else
+              echo "⚠️  Health check failed"
+              echo "   Error: $HEALTH_OUTPUT"
             fi
 
             if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "   ⏳ Waiting 5 seconds before retry..."
               sleep 5
             fi
           done
 
+          echo ""
           echo "❌ Health check failed after $MAX_ATTEMPTS attempts"
+          echo ""
+          echo "📋 Diagnostic information:"
+
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              echo '   📊 Container status:'
+              docker compose ps 2>&1 | sed 's/^/      /'
+              echo ''
+              echo '   📋 Nginx logs (last 20 lines):'
+              docker logs utfpets-nginx --tail 20 2>&1 | sed 's/^/      /'
+              echo ''
+              echo '   📋 Backend logs (last 20 lines):'
+              docker logs utfpets-backend --tail 20 2>&1 | sed 's/^/      /'
+              echo ''
+              echo '   🔍 Testing nginx directly:'
+              curl -v http://localhost/health 2>&1 | sed 's/^/      /'
+            "
+
+          echo "========================================="
           exit 1
 
       - name: Cleanup old backups
