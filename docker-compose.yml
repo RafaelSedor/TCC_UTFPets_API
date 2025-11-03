@@ -55,6 +55,7 @@ services:
     volumes:
       - ./backend/storage:/var/www/storage
       - ./backend/bootstrap/cache:/var/www/bootstrap/cache
+      - ./backend/storage/keys/gcp-service-account.json:/secrets/gcp-service-account.json:ro
     expose:
       - "9000"
     networks:

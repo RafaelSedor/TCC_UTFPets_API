@@ -173,7 +173,7 @@ jobs:
 
           # Google Cloud
           GOOGLE_CLOUD_PROJECT="${{ secrets.GOOGLE_CLOUD_PROJECT || 'tccutfpets' }}"
-          GOOGLE_APPLICATION_CREDENTIALS="/opt/utfpets/storage/keys/gcp-service-account.json"
+          GOOGLE_APPLICATION_CREDENTIALS="/secrets/gcp-service-account.json"
           CLOUD_SQL_CONNECTION_NAME="${{ secrets.CLOUD_SQL_CONNECTION_NAME || 'tccutfpets:southamerica-east1:tcc' }}"
 
           # Database
@@ -358,10 +358,10 @@ jobs:
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID} \
             --command="
-              sudo mkdir -p ${APP_DIR}/storage/keys
-              sudo rm -rf ${APP_DIR}/storage/keys/gcp-service-account.json
-              sudo chown \$USER:\$USER ${APP_DIR}/storage/keys
-              sudo chmod 755 ${APP_DIR}/storage/keys
+              sudo mkdir -p ${APP_DIR}/backend/storage/keys
+              sudo rm -rf ${APP_DIR}/backend/storage/keys/gcp-service-account.json
+              sudo chown \$USER:\$USER ${APP_DIR}/backend/storage/keys
+              sudo chmod 755 ${APP_DIR}/backend/storage/keys
             "
 
           # Copy the service account key to VM (to home first, then move)
@@ -374,8 +374,8 @@ jobs:
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID} \
             --command="
-              mv ~/gcp-sa-key.json ${APP_DIR}/storage/keys/gcp-service-account.json
-              chmod 600 ${APP_DIR}/storage/keys/gcp-service-account.json
+              mv ~/gcp-sa-key.json ${APP_DIR}/backend/storage/keys/gcp-service-account.json
+              chmod 600 ${APP_DIR}/backend/storage/keys/gcp-service-account.json
               echo '✅ Service account key configured'
             "
 
