@@ -122,9 +122,9 @@ services:
       - ./backend/public:/var/www/backend/public:ro
       # Frontend static files (from frontend container)
       - frontend-dist:/usr/share/nginx/html:ro
-      # Nginx configurations
-      - ./nginx/utfpets.online.conf:/etc/nginx/conf.d/utfpets.conf:ro
-      - ./nginx/api.utfpets.online.conf:/etc/nginx/conf.d/api.conf:ro
+      # Nginx configurations (production with SSL)
+      - ./nginx/production/utfpets.online.conf:/etc/nginx/conf.d/utfpets.conf:ro
+      - ./nginx/production/api.utfpets.online.conf:/etc/nginx/conf.d/api.conf:ro
       # SSL certificates
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro

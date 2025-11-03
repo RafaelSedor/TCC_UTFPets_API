@@ -382,6 +382,70 @@ jobs:
           # Cleanup local temp file
           rm /tmp/gcp-sa-key.json
 
+      - name: Obtain SSL certificates
+        run: |
+          echo "🔐 Obtaining SSL certificates..."
+
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              set -e
+              cd ${APP_DIR}
+
+              echo '📁 Creating certbot directories...'
+              mkdir -p certbot/conf certbot/www
+              sudo chown -R \$USER:\$USER certbot/
+              sudo chmod -R 755 certbot/
+
+              echo '🔐 Checking if certificates already exist...'
+              if [ -f certbot/conf/live/utfpets.online/fullchain.pem ] && [ -f certbot/conf/live/api.utfpets.online/fullchain.pem ]; then
+                echo '✅ SSL certificates already exist, skipping...'
+              else
+                echo '🌐 Starting temporary nginx for certificate validation...'
+
+                # Start nginx with HTTP-only config using ssl-setup compose file
+                docker compose -f docker-compose.ssl-setup.yml up -d
+
+                echo '⏳ Waiting for nginx to be ready...'
+                sleep 10
+
+                echo '📜 Obtaining certificate for utfpets.online...'
+                docker run --rm \
+                  -v \${PWD}/certbot/conf:/etc/letsencrypt \
+                  -v \${PWD}/certbot/www:/var/www/certbot \
+                  --network utfpets_app-network \
+                  certbot/certbot certonly \
+                  --webroot \
+                  --webroot-path=/var/www/certbot \
+                  --email noreply@utfpets.com \
+                  --agree-tos \
+                  --no-eff-email \
+                  -d utfpets.online \
+                  -d www.utfpets.online \
+                  --non-interactive || echo 'Warning: Failed to obtain utfpets.online certificate'
+
+                echo '📜 Obtaining certificate for api.utfpets.online...'
+                docker run --rm \
+                  -v \${PWD}/certbot/conf:/etc/letsencrypt \
+                  -v \${PWD}/certbot/www:/var/www/certbot \
+                  --network utfpets_app-network \
+                  certbot/certbot certonly \
+                  --webroot \
+                  --webroot-path=/var/www/certbot \
+                  --email noreply@utfpets.com \
+                  --agree-tos \
+                  --no-eff-email \
+                  -d api.utfpets.online \
+                  --non-interactive || echo 'Warning: Failed to obtain api.utfpets.online certificate'
+
+                echo '⏹️  Stopping temporary nginx...'
+                docker compose -f docker-compose.ssl-setup.yml down
+
+                echo '✅ SSL certificates obtained'
+              fi
+            "
+
       - name: Setup and start application
         run: |
           echo "⚙️  Setting up and starting application..."
@@ -408,15 +472,15 @@ jobs:
               docker compose up -d --build
 
               echo '⏳ Waiting for containers to be ready (may take several minutes for first build)...'
-              timeout 300 bash -c 'until docker compose exec -T app php -r \"echo 1;\" 2>/dev/null; do echo \"Waiting for app...\"; sleep 5; done'
+              timeout 300 bash -c 'until docker compose exec -T backend php -r \"echo 1;\" 2>/dev/null; do echo \"Waiting for backend...\"; sleep 5; done'
 
               echo '🗃️  Running migrations...'
-              docker compose exec -T app php artisan migrate --force || echo 'Warning: Migrations failed'
+              docker compose exec -T backend php artisan migrate --force || echo 'Warning: Migrations failed'
 
               echo '⚡ Optimizing application...'
-              docker compose exec -T app php artisan config:cache || true
-              docker compose exec -T app php artisan route:cache || true
-              docker compose exec -T app php artisan view:cache || true
+              docker compose exec -T backend php artisan config:cache || true
+              docker compose exec -T backend php artisan route:cache || true
+              docker compose exec -T backend php artisan view:cache || true
 
               echo '📊 Container status:'
               docker compose ps
@@ -436,7 +500,7 @@ jobs:
             if gcloud compute ssh ${VM_NAME} \
               --zone=${VM_ZONE} \
               --project=${PROJECT_ID} \
-              --command="curl -f -s http://localhost/api/health" > /dev/null 2>&1; then
+              --command="curl -f -s -k https://localhost/api/health" > /dev/null 2>&1; then
               echo "✅ Health check passed!"
               exit 0
             fi
@@ -471,9 +535,10 @@ jobs:
           if [ "${{ job.status }}" == "success" ]; then
             echo "✅ DEPLOYMENT SUCCESSFUL!"
             echo "========================================="
-            echo "🌐 API: http://34.39.150.157:8080"
-            echo "📚 Swagger: http://34.39.150.157:8080/swagger"
-            echo "💚 Health: http://34.39.150.157:8080/api/health"
+            echo "🌐 Frontend: https://utfpets.online"
+            echo "🔧 API: https://api.utfpets.online"
+            echo "📚 Swagger: https://api.utfpets.online/swagger"
+            echo "💚 Health: https://api.utfpets.online/api/health"
             echo "========================================="
           else
             echo "❌ DEPLOYMENT FAILED!"

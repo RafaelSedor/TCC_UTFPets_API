@@ -1,0 +1,24 @@
+# Docker Compose temporário para obtenção de certificados SSL
+# Este arquivo é usado apenas durante o processo de setup inicial do SSL
+
+services:
+  # Nginx temporário com configuração HTTP-only para validação do certbot
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: utfpets-nginx-ssl-setup
+    ports:
+      - "80:80"
+    volumes:
+      # Frontend static files (placeholder)
+      - ./frontend/dist/frontend:/usr/share/nginx/html:ro
+      # Nginx HTTP-only configurations (for SSL certificate validation)
+      - ./nginx/ssl-setup/utfpets.online.conf:/etc/nginx/conf.d/utfpets.conf:ro
+      - ./nginx/ssl-setup/api.utfpets.online.conf:/etc/nginx/conf.d/api.conf:ro
+      # Certbot webroot
+      - ./certbot/www:/var/www/certbot:ro
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
