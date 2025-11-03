@@ -426,10 +426,17 @@ jobs:
                 echo '   ℹ️  Certificates found:'
                 echo '      - utfpets.online'
                 openssl x509 -in certbot/conf/live/utfpets.online/fullchain.pem -noout -subject -issuer -dates 2>/dev/null || echo '      (unable to read)'
-                echo '      - api.utfpets.online'
-                openssl x509 -in certbot/conf/live/api.utfpets.online/fullchain.pem -noout -subject -issuer -dates 2>/dev/null || echo '      (unable to read)'
-                echo '   ✅ Using existing certificates'
-                exit 0
+
+                # Check if certificates are self-signed
+                ISSUER_CHECK=\$(openssl x509 -in certbot/conf/live/utfpets.online/fullchain.pem -noout -issuer 2>/dev/null | grep -i \"Let\\\\'s Encrypt\" || echo '')
+                if [ -z \"\$ISSUER_CHECK\" ]; then
+                  echo '   ⚠️  Self-signed certificate detected - will obtain Let\\\\'s Encrypt certificate'
+                  echo '   📝 Removing self-signed certificates...'
+                  rm -rf certbot/conf/live/utfpets.online certbot/conf/live/api.utfpets.online certbot/conf/archive certbot/conf/renewal
+                else
+                  echo '   ✅ Valid Let\\\\'s Encrypt certificates found - using existing'
+                  exit 0
+                fi
               else
                 echo '   ℹ️  No existing certificates found'
               fi
