@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 <#
 .SYNOPSIS
     Sincroniza variáveis de ambiente do .env para GitHub Actions Secrets
@@ -12,17 +12,20 @@
       - Autenticado: gh auth login
       - Acesso de admin ao repositório
 
-    O script sincroniza automaticamente 50+ variáveis incluindo:
+    O script sincroniza automaticamente 80+ variáveis incluindo:
       - Aplicação (APP_NAME, APP_KEY, APP_URL)
       - Banco de dados (DB_*)
       - Cache/Queue (REDIS_*, CACHE_*)
       - Email (MAIL_*)
       - Cloudinary (CLOUDINARY_*)
-      - JWT (JWT_SECRET, JWT_ALGO)
+      - JWT (JWT_SECRET, JWT_TTL, JWT_ALGO)
       - CORS (CORS_ALLOWED_ORIGINS)
+      - Feature Flags (FEATURE_*)
+      - PWA & Notifications (VAPID_*, FCM_*)
+      - Frontend (VITE_*)
 
 .PARAMETER EnvFile
-    Caminho para o arquivo .env (padrão: backend/.env)
+    Caminho para o arquivo .env (padrão: .env.production)
 
 .PARAMETER Repository
     Repositório GitHub no formato owner/repo
@@ -40,7 +43,7 @@
 
 .EXAMPLE
     # Usar arquivo .env customizado
-    .\scripts\sync-secrets.ps1 -Repository "rafaelsedor/TCC_UTFPets_API" -EnvFile "backend/.env.production"
+    .\scripts\sync-secrets.ps1 -Repository "rafaelsedor/TCC_UTFPets_API" -EnvFile "backend/.env"
 
 .NOTES
     Autor: Rafael Sedor
@@ -50,7 +53,7 @@
 
 param(
     [Parameter(Mandatory=$false)]
-    [string]$EnvFile = "backend/.env",
+    [string]$EnvFile = ".env.production",
 
     [Parameter(Mandatory=$true)]
     [string]$Repository,
@@ -106,7 +109,8 @@ try {
 # Verificar se o arquivo .env existe
 Write-Host ""
 Write-Host "📁 Verificando arquivo .env..."
-$envPath = Join-Path $PSScriptRoot ".." $EnvFile
+$rootPath = Join-Path $PSScriptRoot ".."
+$envPath = Join-Path $rootPath $EnvFile
 if (-not (Test-Path $envPath)) {
     Write-ColorOutput Red "✗ Arquivo não encontrado: $envPath"
     exit 1
@@ -118,6 +122,7 @@ Write-Host ""
 Write-Host "📖 Lendo variáveis de ambiente..."
 $envVars = @{}
 $secretsToSync = @(
+    # Application
     "APP_NAME",
     "APP_ENV",
     "APP_KEY",
@@ -130,30 +135,51 @@ $secretsToSync = @(
     "APP_MAINTENANCE_DRIVER",
     "APP_MAINTENANCE_STORE",
     "BCRYPT_ROUNDS",
+
+    # URLs
+    "API_PUBLIC_URL",
+    "FRONTEND_URL",
+
+    # Logging
     "LOG_CHANNEL",
     "LOG_STACK",
     "LOG_DEPRECATIONS_CHANNEL",
     "LOG_LEVEL",
+
+    # Google Cloud
+    "GOOGLE_CLOUD_PROJECT",
+    "CLOUD_SQL_CONNECTION_NAME",
+
+    # Database
     "DB_CONNECTION",
     "DB_HOST",
     "DB_PORT",
     "DB_DATABASE",
     "DB_USERNAME",
     "DB_PASSWORD",
+
+    # Session
     "SESSION_DRIVER",
     "SESSION_LIFETIME",
     "SESSION_ENCRYPT",
     "SESSION_PATH",
     "SESSION_DOMAIN",
+
+    # Cache, Queue, Broadcasting
     "BROADCAST_CONNECTION",
     "FILESYSTEM_DISK",
     "QUEUE_CONNECTION",
+    "QUEUE_MAX_TRIES",
     "CACHE_STORE",
     "CACHE_PREFIX",
+
+    # Redis
     "REDIS_CLIENT",
     "REDIS_HOST",
     "REDIS_PASSWORD",
     "REDIS_PORT",
+
+    # Mail
     "MAIL_MAILER",
     "MAIL_HOST",
     "MAIL_PORT",
@@ -162,20 +188,52 @@ $secretsToSync = @(
     "MAIL_ENCRYPTION",
     "MAIL_FROM_ADDRESS",
     "MAIL_FROM_NAME",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "AWS_DEFAULT_REGION",
-    "AWS_BUCKET",
-    "AWS_USE_PATH_STYLE_ENDPOINT",
-    "VITE_APP_NAME",
+
+    # Cloudinary
     "CLOUDINARY_URL",
     "CLOUDINARY_UPLOAD_PRESET",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
+
+    # JWT
     "JWT_SECRET",
+    "JWT_TTL",
     "JWT_ALGO",
-    "CORS_ALLOWED_ORIGINS"
+
+    # CORS
+    "CORS_ALLOWED_ORIGINS",
+    "CORS_ALLOW_CREDENTIALS",
+
+    # Feature Flags
+    "FEATURE_PUSH_NOTIFICATIONS",
+    "FEATURE_WEIGHTS_TRACKING",
+    "FEATURE_CALENDAR_EXPORT",
+
+    # Weights Tracking
+    "WEIGHTS_MIN_VALUE",
+    "WEIGHTS_MAX_VALUE",
+
+    # Calendar Export
+    "CALENDAR_DOMAIN",
+
+    # Push Notifications (FCM)
+    "FCM_KEY",
+    "FCM_PROJECT_ID",
+
+    # PWA & Notifications
+    "VAPID_PUBLIC_KEY",
+    "VAPID_PRIVATE_KEY",
+    "VAPID_SUBJECT",
+    "ENABLE_PWA",
+    "ENABLE_NOTIFICATIONS",
+
+    # Frontend (Vite/Angular)
+    "VITE_APP_NAME",
+    "VITE_APP_VERSION",
+    "VITE_API_URL",
+    "VITE_API_PUBLIC_URL",
+    "NODE_ENV"
 )
 
 Get-Content $envPath | ForEach-Object {

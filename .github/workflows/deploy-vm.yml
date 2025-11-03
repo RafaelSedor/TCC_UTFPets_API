@@ -7,11 +7,17 @@
 #
 # Secrets necessários (sincronize com scripts/sync-secrets.ps1):
 #   - GCP_SA_KEY: Service Account JSON do GCP
-#   - Todas as variáveis de ambiente da aplicação (APP_KEY, DB_*, JWT_SECRET, CLOUDINARY_*, etc.)
+#   - Todas as variáveis de ambiente do .env.production (80+ variáveis)
 #
 # Como usar:
-#   1. Sincronizar secrets: .\scripts\sync-secrets.ps1 -Repository "usuario/repo"
-#   2. Push para master: git push origin master
+#   1. Editar .env.production com valores de produção
+#   2. Sincronizar secrets: .\scripts\sync-secrets.ps1 -Repository "usuario/repo"
+#   3. Push para master: git push origin master
+#
+# Durante o deploy, o workflow irá criar dinamicamente:
+#   - backend/.env (variáveis do Laravel)
+#   - frontend/.env (variáveis do Angular)
+#   - .env.production (variáveis do Docker Compose)
 
 name: Deploy to Production
 
@@ -153,13 +159,22 @@ jobs:
           APP_MAINTENANCE_DRIVER="${{ secrets.APP_MAINTENANCE_DRIVER || 'file' }}"
           APP_MAINTENANCE_STORE="${{ secrets.APP_MAINTENANCE_STORE || 'database' }}"
 
-          BCRYPT_ROUNDS=${{ secrets.BCRYPT_ROUNDS || 10 }}
+          BCRYPT_ROUNDS=${{ secrets.BCRYPT_ROUNDS || 12 }}
+
+          # URLs
+          API_PUBLIC_URL="${{ secrets.API_PUBLIC_URL || secrets.APP_URL }}"
+          FRONTEND_URL="${{ secrets.FRONTEND_URL || 'https://utfpets.online' }}"
 
           # Logging
           LOG_CHANNEL="${{ secrets.LOG_CHANNEL || 'stack' }}"
-          LOG_STACK="${{ secrets.LOG_STACK || 'single' }}"
+          LOG_STACK="${{ secrets.LOG_STACK || 'daily' }}"
           LOG_DEPRECATIONS_CHANNEL="${{ secrets.LOG_DEPRECATIONS_CHANNEL || 'null' }}"
           LOG_LEVEL="${{ secrets.LOG_LEVEL || 'error' }}"
+
+          # Google Cloud
+          GOOGLE_CLOUD_PROJECT="${{ secrets.GOOGLE_CLOUD_PROJECT || 'tccutfpets' }}"
+          GOOGLE_APPLICATION_CREDENTIALS="/opt/utfpets/storage/keys/gcp-service-account.json"
+          CLOUD_SQL_CONNECTION_NAME="${{ secrets.CLOUD_SQL_CONNECTION_NAME || 'tccutfpets:southamerica-east1:tcc' }}"
 
           # Database
           DB_CONNECTION="${{ secrets.DB_CONNECTION || 'pgsql' }}"
@@ -179,7 +194,8 @@ jobs:
           # Cache, Queue, Broadcasting
           BROADCAST_CONNECTION="${{ secrets.BROADCAST_CONNECTION || 'log' }}"
           FILESYSTEM_DISK="${{ secrets.FILESYSTEM_DISK || 'local' }}"
-          QUEUE_CONNECTION="${{ secrets.QUEUE_CONNECTION || 'sync' }}"
+          QUEUE_CONNECTION="${{ secrets.QUEUE_CONNECTION || 'database' }}"
+          QUEUE_MAX_TRIES=${{ secrets.QUEUE_MAX_TRIES || 5 }}
           CACHE_STORE="${{ secrets.CACHE_STORE || 'file' }}"
           CACHE_PREFIX="${{ secrets.CACHE_PREFIX || 'utfpets_cache' }}"
 
@@ -215,18 +231,35 @@ jobs:
 
           # JWT
           JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          JWT_TTL=${{ secrets.JWT_TTL || 60 }}
           JWT_ALGO="${{ secrets.JWT_ALGO || 'HS256' }}"
 
           # CORS
-          CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS || '*' }}"
+          CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS || 'https://utfpets.online,https://api.utfpets.online' }}"
+          CORS_ALLOW_CREDENTIALS="${{ secrets.CORS_ALLOW_CREDENTIALS || 'true' }}"
 
-          # GCP
-          GOOGLE_CLOUD_PROJECT="${{ secrets.GOOGLE_CLOUD_PROJECT || 'tccutfpets' }}"
-          GOOGLE_APPLICATION_CREDENTIALS="/opt/utfpets/storage/keys/gcp-service-account.json"
-          CLOUD_SQL_CONNECTION_NAME="${{ secrets.CLOUD_SQL_CONNECTION_NAME || 'tccutfpets:southamerica-east1:tcc' }}"
+          # Feature Flags
+          FEATURE_PUSH_NOTIFICATIONS="${{ secrets.FEATURE_PUSH_NOTIFICATIONS || 'true' }}"
+          FEATURE_WEIGHTS_TRACKING="${{ secrets.FEATURE_WEIGHTS_TRACKING || 'true' }}"
+          FEATURE_CALENDAR_EXPORT="${{ secrets.FEATURE_CALENDAR_EXPORT || 'true' }}"
 
-          # Vite
-          VITE_APP_NAME="${{ secrets.VITE_APP_NAME || 'UTFPets' }}"
+          # Weights Tracking
+          WEIGHTS_MIN_VALUE="${{ secrets.WEIGHTS_MIN_VALUE || '0.1' }}"
+          WEIGHTS_MAX_VALUE="${{ secrets.WEIGHTS_MAX_VALUE || '999.9' }}"
+
+          # Calendar Export
+          CALENDAR_DOMAIN="${{ secrets.CALENDAR_DOMAIN || 'utfpets.online' }}"
+
+          # Push Notifications (FCM)
+          FCM_KEY="${{ secrets.FCM_KEY || '' }}"
+          FCM_PROJECT_ID="${{ secrets.FCM_PROJECT_ID || 'tccutfpets' }}"
+
+          # PWA & Notifications
+          VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}"
+          VAPID_PRIVATE_KEY="${{ secrets.VAPID_PRIVATE_KEY }}"
+          VAPID_SUBJECT="${{ secrets.VAPID_SUBJECT || 'mailto:noreply@utfpets.com' }}"
+          ENABLE_PWA="${{ secrets.ENABLE_PWA || 'true' }}"
+          ENABLE_NOTIFICATIONS="${{ secrets.ENABLE_NOTIFICATIONS || 'true' }}"
           EOF
 
           gcloud compute scp /tmp/backend.env ${VM_NAME}:${APP_DIR}/backend/.env \
@@ -235,6 +268,83 @@ jobs:
 
           rm /tmp/backend.env
           echo "✅ backend/.env file created on VM"
+
+      - name: Create frontend .env file
+        run: |
+          echo "📝 Creating frontend/.env file from GitHub Secrets..."
+
+          cat > /tmp/frontend.env <<'EOF'
+          # UTFPets Frontend - Environment Variables (Production)
+
+          # API Configuration
+          VITE_API_URL="${{ secrets.VITE_API_URL || 'https://api.utfpets.online/api' }}"
+          VITE_API_PUBLIC_URL="${{ secrets.VITE_API_PUBLIC_URL || 'https://api.utfpets.online' }}"
+
+          # Application Info
+          VITE_APP_NAME="${{ secrets.VITE_APP_NAME || 'UTFPets' }}"
+          VITE_APP_VERSION="${{ secrets.VITE_APP_VERSION || '1.0.0' }}"
+
+          # Environment
+          NODE_ENV=production
+          EOF
+
+          gcloud compute scp /tmp/frontend.env ${VM_NAME}:${APP_DIR}/frontend/.env \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID}
+
+          rm /tmp/frontend.env
+          echo "✅ frontend/.env file created on VM"
+
+      - name: Create .env.production file
+        run: |
+          echo "📝 Creating .env.production file from GitHub Secrets..."
+
+          cat > /tmp/production.env <<'EOF'
+          # Docker Compose Environment Variables (Production)
+
+          # Google Cloud SQL
+          CLOUD_SQL_CONNECTION_NAME="${{ secrets.CLOUD_SQL_CONNECTION_NAME || 'tccutfpets:southamerica-east1:tcc' }}"
+
+          # Database
+          DB_CONNECTION="${{ secrets.DB_CONNECTION || 'pgsql' }}"
+          DB_HOST="${{ secrets.DB_HOST || 'cloud-sql-proxy' }}"
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+          DB_PORT=${{ secrets.DB_PORT || 5432 }}
+
+          # Application
+          APP_NAME="${{ secrets.APP_NAME || 'UTFPets API' }}"
+          APP_ENV=production
+          APP_KEY=${{ secrets.APP_KEY }}
+          APP_DEBUG=false
+          APP_URL=${{ secrets.APP_URL }}
+
+          # JWT
+          JWT_SECRET="${{ secrets.JWT_SECRET }}"
+          JWT_TTL=${{ secrets.JWT_TTL || 60 }}
+
+          # Cloudinary
+          CLOUDINARY_URL="${{ secrets.CLOUDINARY_URL }}"
+          CLOUDINARY_CLOUD_NAME="${{ secrets.CLOUDINARY_CLOUD_NAME }}"
+          CLOUDINARY_UPLOAD_PRESET="${{ secrets.CLOUDINARY_UPLOAD_PRESET }}"
+
+          # URLs
+          API_PUBLIC_URL="${{ secrets.API_PUBLIC_URL || secrets.APP_URL }}"
+          FRONTEND_URL="${{ secrets.FRONTEND_URL || 'https://utfpets.online' }}"
+
+          # PWA & Notifications
+          VAPID_PUBLIC_KEY="${{ secrets.VAPID_PUBLIC_KEY }}"
+          ENABLE_PWA="${{ secrets.ENABLE_PWA || 'true' }}"
+          ENABLE_NOTIFICATIONS="${{ secrets.ENABLE_NOTIFICATIONS || 'true' }}"
+          EOF
+
+          gcloud compute scp /tmp/production.env ${VM_NAME}:${APP_DIR}/.env.production \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID}
+
+          rm /tmp/production.env
+          echo "✅ .env.production file created on VM"
 
       - name: Setup GCP service account
         run: |
