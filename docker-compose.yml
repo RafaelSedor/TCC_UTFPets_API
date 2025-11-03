@@ -165,8 +165,6 @@ services:
       - URL=/api-docs.json
       - URLS_PRIMARY_NAME=UTFPets API
       - BASE_URL=/swagger
-    depends_on:
-      - nginx
     networks:
       - app-network
     security_opt:
