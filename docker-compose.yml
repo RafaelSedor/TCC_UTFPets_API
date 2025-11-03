@@ -162,9 +162,8 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
     environment:
-      - URL=/api-docs.json
+      - URL=https://api.utfpets.online/api-docs.json
       - URLS_PRIMARY_NAME=UTFPets API
-      - BASE_URL=/swagger
     networks:
       - app-network
     security_opt:
