@@ -587,11 +587,7 @@ jobs:
 
               echo ''
               echo '🗃️  Step 4/5: Running database migrations...'
-              if docker compose exec -T backend php artisan migrate --force 2>&1 | sed 's/^/   /'; then
-                echo '   ✅ Migrations completed'
-              else
-                echo '   ⚠️  Migrations failed (may be expected if already up to date)'
-              fi
+              docker compose exec -T backend php artisan migrate --force 2>&1 | sed 's/^/   /' || echo '   ⚠️  Migrations failed - check database connection'
 
               echo ''
               echo '⚡ Step 5/5: Optimizing application...'
@@ -626,19 +622,22 @@ jobs:
             echo ""
             echo "🔍 Attempt $ATTEMPT/$MAX_ATTEMPTS..."
 
+            # Try HTTPS first, fallback to HTTP
             HEALTH_OUTPUT=$(gcloud compute ssh ${VM_NAME} \
               --zone=${VM_ZONE} \
               --project=${PROJECT_ID} \
-              --command="curl -f -s -k https://localhost/api/health" 2>&1)
+              --command="curl -f -s -k https://localhost/health 2>&1 || curl -f -s http://localhost/health 2>&1")
 
-            if [ $? -eq 0 ]; then
+            HEALTH_STATUS=$?
+
+            if [ $HEALTH_STATUS -eq 0 ]; then
               echo "✅ Health check passed!"
               echo "   Response: $HEALTH_OUTPUT"
               echo "========================================="
               exit 0
             else
-              echo "⚠️  Health check failed"
-              echo "   Error: $HEALTH_OUTPUT"
+              echo "⚠️  Health check failed (exit code: $HEALTH_STATUS)"
+              echo "   Response: $HEALTH_OUTPUT"
             fi
 
             if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
