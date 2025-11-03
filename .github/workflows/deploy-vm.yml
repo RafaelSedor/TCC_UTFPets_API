@@ -397,7 +397,7 @@ jobs:
 
               echo ''
               echo '📁 Step 1/6: Creating certificate directories...'
-              mkdir -p certbot/conf/live/utfpets.online certbot/conf/live/api.utfpets.online certbot/www
+              sudo mkdir -p certbot/conf/live/utfpets.online certbot/conf/live/api.utfpets.online certbot/www
               sudo chown -R \$USER:\$USER certbot/
               sudo chmod -R 755 certbot/
               echo '   ✅ Directories created'
