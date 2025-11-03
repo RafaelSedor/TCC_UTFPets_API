@@ -126,6 +126,8 @@ services:
         condition: service_healthy
       frontend:
         condition: service_healthy
+      swagger-ui:           
+      condition: service_started  
     networks:
       - app-network
     security_opt:
