@@ -84,8 +84,7 @@ services:
       - ENABLE_PWA=${ENABLE_PWA:-true}
       - ENABLE_NOTIFICATIONS=${ENABLE_NOTIFICATIONS:-true}
     volumes:
-      # Arquivos buildados do Angular ficam em /usr/share/nginx/html (ver Dockerfile)
-      - frontend-dist:/usr/share/nginx/html
+      # Apenas nginx config - arquivos já estão no container via Dockerfile
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     expose:
       - "80"
@@ -115,8 +114,6 @@ services:
     volumes:
       # Backend public files
       - ./backend/public:/var/www/backend/public:ro
-      # Frontend static files (from frontend container)
-      - frontend-dist:/usr/share/nginx/html:ro
       # Nginx configurations (production with SSL)
       - ./nginx/production/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/production/utfpets.online.conf:/etc/nginx/conf.d/utfpets.conf:ro
@@ -172,13 +169,6 @@ services:
       - app-network
     security_opt:
       - no-new-privileges:true
-
-# ========================================
-# VOLUMES
-# ========================================
-volumes:
-  frontend-dist:
-    driver: local
 
 # ========================================
 # NETWORKS
