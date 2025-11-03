@@ -17,7 +17,7 @@
 # Durante o deploy, o workflow irá criar dinamicamente:
 #   - backend/.env (variáveis do Laravel)
 #   - frontend/.env (variáveis do Angular)
-#   - .env.production (variáveis do Docker Compose)k
+#   - .env.production (variáveis do Docker Compose)
 
 name: Deploy to Production
 
@@ -105,6 +105,24 @@ jobs:
                 echo \"✅ Backup created: \${BACKUP_NAME}\"
               else
                 echo 'ℹ️  First deployment - no backup needed'
+              fi
+            "
+
+      - name: Fix permissions before file copy
+        run: |
+          echo "🔧 Fixing permissions for file copy..."
+
+          gcloud compute ssh ${VM_NAME} \
+            --zone=${VM_ZONE} \
+            --project=${PROJECT_ID} \
+            --command="
+              if [ -d ${APP_DIR} ]; then
+                echo 'Setting ownership and permissions...'
+                sudo chown -R \$USER:\$USER ${APP_DIR} || true
+                sudo chmod -R 755 ${APP_DIR} || true
+                echo '✅ Permissions fixed'
+              else
+                echo 'ℹ️  Directory does not exist yet, skipping'
               fi
             "
 
@@ -617,23 +635,24 @@ jobs:
           # First, verify containers are running
           echo ""
           echo "📊 Step 1/2: Verifying containers..."
-          CONTAINER_STATUS=$(gcloud compute ssh ${VM_NAME} \
+
+          # Get container status using simpler format
+          CONTAINER_OUTPUT=$(gcloud compute ssh ${VM_NAME} \
             --zone=${VM_ZONE} \
             --project=${PROJECT_ID} \
-            --command="docker compose ps --format json" 2>&1)
+            --command="cd ${APP_DIR} && docker compose ps" 2>&1)
 
-          echo "$CONTAINER_STATUS" | grep -q '"State":"running"'
-          if [ $? -eq 0 ]; then
-            echo "✅ Containers are running"
+          # Show container status
+          echo "$CONTAINER_OUTPUT" | sed 's/^/   /'
+
+          # Check if key containers are running
+          if echo "$CONTAINER_OUTPUT" | grep -q "utfpets-backend" && \
+             echo "$CONTAINER_OUTPUT" | grep -q "utfpets-nginx" && \
+             echo "$CONTAINER_OUTPUT" | grep -q "utfpets-frontend"; then
+            echo "✅ Core containers detected"
           else
             echo "⚠️  Some containers may not be running"
           fi
-
-          # Show container status
-          gcloud compute ssh ${VM_NAME} \
-            --zone=${VM_ZONE} \
-            --project=${PROJECT_ID} \
-            --command="docker compose ps" | sed 's/^/   /'
 
           echo ""
           echo "🔍 Step 2/2: Testing application endpoints..."
