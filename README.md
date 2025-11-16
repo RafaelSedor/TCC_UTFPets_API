@@ -237,13 +237,6 @@ npm test
 npm run e2e
 ```
 
-### Testes E2E (Selenium)
-
-```bash
-# Executar todos os testes E2E
-docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
-```
-
 ## Endpoints Principais da API
 
 ### Autenticação
@@ -282,13 +275,6 @@ docker-compose -f docker-compose.e2e.yml up --abort-on-container-exit
 | Criar/Editar refeição | ✅ | ✅ | ❌ |
 | Gerenciar compartilhamento | ✅ | ❌ | ❌ |
 
-## Documentação
-
-- [Backend API Documentation](backend/docs/INDEX.md)
-- [Frontend Development Guide](frontend/README.md)
-- [Deployment Guide](backend/docs/DEPLOY.md)
-- [Testing Guide](tests/README.md)
-- [Architecture Decision Records](docs/ADR.md)
 
 ## Metodologia Ágil
 
@@ -323,8 +309,7 @@ O projeto segue **Scrum** com sprints de 2 semanas e **Kanban** para visualizaç
 ## Autor
 
 **Rafael Sedor Oliveira Deda**
-Trabalho de Conclusão de Curso (TCC) - UTFPR
-Tecnologia em Análise e Desenvolvimento de Sistemas
+Trabalho de Conclusão de Curso (TCC)
 
 ## Licença
 
