@@ -181,10 +181,7 @@ Deploy automático configurado no Google Cloud Platform via GitHub Actions.
 - **Banco de Dados:** Cloud SQL PostgreSQL
 - **Containers:** Docker Compose (5 serviços: app, cloud-sql-proxy, nginx, certbot, frontend)
 - **SSL/TLS:** Let's Encrypt com renovação automática
-- **Domínios:**
-  - Frontend: https://utfpets.online
-  - API: https://api.utfpets.online
-  - Swagger: https://api.utfpets.online/swagger
+- **Domínios:** o frontend, a API e o Swagger rodavam em domínio próprio durante o TCC; a demo pública foi encerrada após a apresentação
 
 ### Pipeline CI/CD
 - **Trigger:** Push para `master` ou `main`
@@ -261,7 +258,7 @@ npm run e2e
 - `POST /api/v1/locations/{location}/share` - Compartilha location
 - `PATCH /api/v1/locations/{location}/share/{user}` - Altera papel
 
-**Ver todos os endpoints:** https://api.utfpets.online/swagger
+**Ver todos os endpoints:** Swagger UI local em http://localhost:8081 (veja a seção Containers e Portas)
 
 ## Sistema de Permissões
 
@@ -300,11 +297,9 @@ O projeto segue **Scrum** com sprints de 2 semanas e **Kanban** para visualizaç
 - **PostgreSQL:** localhost:5432
 - **Swagger UI:** http://localhost:8081
 
-### Produção
-- **Frontend:** https://utfpets.online
-- **API:** https://api.utfpets.online
+### Produção (demo encerrada após o TCC)
+- **Frontend e API:** VM no GCP com domínio próprio, hoje desativado
 - **PostgreSQL:** Cloud SQL (privado)
-- **Swagger UI:** https://api.utfpets.online/swagger
 
 ## Autor
 
